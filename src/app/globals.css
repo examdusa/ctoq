@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.headline {
+  overflow: hidden; /* Ensures the content is not revealed until the animation */
+  white-space: nowrap; /* Keeps the content on a single line */
+  margin: 0 auto; /* Gives that scrolling effect as the typing happens */
+  animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+del {
+  color: rgba(darkgray, 0.5);
+  text-decoration: none;
+  position: relative;
+  font-weight: 100;
+  &:before {
+    content: " ";
+    display: block;
+    width: 100%;
+    border-top: 3px solid rgba(darkgray, 0.8);
+    height: 4px;
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    transform: rotate(-11deg);
+  }
+  &:after {
+    content: " ";
+    display: block;
+    width: 100%;
+    border-top: 3px solid rgba(darkgray, 0.8);
+    height: 4px;
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    transform: rotate(11deg);
+  }
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 50%;
+  }
+}
+
+/* The typewriter cursor effect */
+@keyframes blink-caret {
+  from,
+  to {
+    border-color: transparent;
+  }
+  50% {
+    border-color: orange;
+  }
+}
