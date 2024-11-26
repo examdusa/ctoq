@@ -20,7 +20,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Content2Quiz",
   description:
-    "Transform URLs and Keywords into Comprehensive Question Banks. Harness the power of AI to create customized question sets for education, training, and assessment.",
+    "Transforms URLs and Keywords into Comprehensive Question Banks. Harness the power of AI to create customized question sets for education, training, and assessment.",
 };
 
 export default function RootLayout({
