@@ -1,13 +1,13 @@
 "use client";
 import { SelectSubscription } from "@/db/schema";
-import { uploadResume } from "@/utllities/apiFunctions";
+import { GenerateQBankPayload, uploadResume } from "@/utllities/apiFunctions";
 import {
   Alert,
   Badge,
   Button,
+  FileInput,
   Flex,
   Grid,
-  Group,
   List,
   LoadingOverlay,
   NumberInput,
@@ -15,36 +15,53 @@ import {
   Select,
   Text,
   Textarea,
+  Tooltip,
+  UnstyledButton,
   useMantineColorScheme,
   useMantineTheme,
 } from "@mantine/core";
-import { Dropzone, FileWithPath } from "@mantine/dropzone";
 import "@mantine/dropzone/styles.css";
 import { useForm } from "@mantine/form";
 import {
-  IconFileDescription,
+  IconFile3d,
   IconInfoCircle,
   IconLockAccess,
-  IconUpload,
   IconX,
 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import z from "zod";
 
-const formObject = z.object({
-  qType: z.enum(["mcq"]),
-  difficulty: z.enum(["easy"]),
-  qCount: z.number().min(0).max(30),
-  promptUrl: z.string().url().nullable(),
-  prompt: z.string().nullable(),
-  resume: z.instanceof(File) as z.ZodType<FileWithPath | null>,
-});
+const formObject = z
+  .object({
+    qType: z.enum([
+      "mcq",
+      "mcq_similar",
+      "fill_blank",
+      "true_false",
+      "open_ended",
+    ]),
+    difficulty: z.enum(["easy", "medium", "hard"]),
+    qCount: z.number().min(0).max(30),
+    promptUrl: z.string().url().nullable(),
+    prompt: z.string(),
+    resumeUrl: z.string().url("Enter valid url").min(1, "Enter resume url"),
+    resumeFile: z.instanceof(File) as z.ZodType<File | null>,
+  })
+  .refine((data) => !!data.resumeUrl || !!data.resumeFile, {
+    message: "Either resumeUrl or resumeFile must be provided.",
+    path: ["resumeUrl", "resumeFile"],
+  });
 
 export type FormObjectType = z.infer<typeof formObject>;
 
 interface CriteriaFormProps {
-  generateQuestions: (values: FormObjectType, qType: "GWA" | "GWOA") => void;
+  generateQuestions: (
+    values: GenerateQBankPayload,
+    qType: "GWA" | "GWOA",
+    candidateName: string | null,
+    resumeContent: boolean
+  ) => void;
   isLoading: boolean;
   subscription: SelectSubscription | undefined;
   printResult: (flag: boolean) => void;
@@ -84,8 +101,6 @@ const priceList: PriceDetail = {
   },
 };
 
-const imageMimeTypes = ["application/pdf"];
-
 function CriteriaForm({
   generateQuestions,
   isLoading,
@@ -98,9 +113,10 @@ function CriteriaForm({
   const [contentType, setContentType] = useState<"Resume" | "URL" | "Keyword">(
     "Keyword"
   );
-  const { mutateAsync: uploadResumeFile, isLoading: uploadingResume } =
+  const { mutateAsync: uploadUserResume, isLoading: uploadingResume } =
     useMutation({
-      mutationFn: uploadResume,
+      mutationFn: async ({ file, url }: { file: File | null; url: string }) =>
+        await uploadResume(url, file),
     });
 
   const { queries, features } = useMemo(() => {
@@ -119,7 +135,8 @@ function CriteriaForm({
       qCount: 10,
       promptUrl: "",
       prompt: "",
-      resume: null,
+      resumeUrl: "",
+      resumeFile: null,
     },
     validate: {
       qCount: (value) => {
@@ -152,41 +169,35 @@ function CriteriaForm({
         }
         return null;
       },
-      resume: (value) => {
-        if (contentType === "Resume" && !value) {
-          return "Please select a file";
-        }
-        return null;
-      },
     },
   });
 
   const disableActionButton = useMemo(() => {
     if (subscription) {
-      return subscription.queries === 0;
+      if (subscription.queries === 0) {
+        return true;
+      }
     }
-    if (contentType === "Resume") {
-      if (uploadingResume) return true;
-      const { resume } = form.getValues();
-      if (resume) return false;
-      return true;
-    }
-
     if (isLoading) {
       return true;
     }
-    return false;
-  }, [contentType, isLoading, subscription, form, uploadingResume]);
-
-  const fileName = useMemo(() => {
     if (contentType === "Resume") {
-      const { resume } = form.getValues();
-      if (resume) {
-        return resume.name;
-      }
-      return "N/A";
+      if (uploadingResume) return true;
+      const { resumeUrl, resumeFile } = form.values;
+      if (resumeUrl || resumeFile) return false;
+      return true;
+    } else if (contentType === "Keyword") {
+      const { prompt } = form.values;
+      if (prompt) return false;
+      return true;
+    } else if (contentType === "URL") {
+      const { promptUrl } = form.values;
+      if (promptUrl) return false;
+      return true;
     }
-  }, [contentType, form]);
+
+    return false;
+  }, [contentType, isLoading, subscription, uploadingResume, form]);
 
   const disableFields = useMemo(() => {
     if (subscription) {
@@ -195,23 +206,33 @@ function CriteriaForm({
     return false;
   }, [subscription]);
 
-  const isFileSelected = useMemo(() => {
-    const { resume } = form.getValues();
-    return contentType === "Resume" && resume ? true : false;
-  }, [form, contentType]);
-
   async function handleSubmit(values: FormObjectType) {
     if (contentType === "Resume") {
-      if (values.resume) {
-        await uploadResumeFile(values.resume, {
-          onSuccess: (data) => {},
-          onError: (err) => {
-            console.error("UPLOAD_RESUME_ERROR: ", err);
-          },
-        });
-      }
+      const { resumeFile, resumeUrl } = values;
+      const uploadRes = await uploadUserResume({
+        url: resumeUrl,
+        file: resumeFile,
+      });
+
+      const {
+        skills_and_experience: { experience_details, skills, experience_level },candidate_name
+      } = uploadRes;
+      generateQuestions(
+        {
+          ...values,
+          prompt: [...experience_details, experience_level,...skills],
+        },
+        queryType,
+        candidate_name ?? null,
+        true
+      );
     } else {
-      generateQuestions(values, queryType);
+      generateQuestions(
+        { ...values, prompt: values.prompt ? [values.prompt] : [] },
+        queryType,
+        null,
+        false
+      );
     }
   }
 
@@ -247,7 +268,7 @@ function CriteriaForm({
           loaderProps={{ children: <IconLockAccess width={50} height={50} /> }}
         />
         <Grid p={"xs"}>
-          <Grid.Col span={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
+          <Grid.Col span={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
             <Select
               label="Content Type"
               placeholder="Pick a type"
@@ -265,7 +286,7 @@ function CriteriaForm({
               ]}
             />
           </Grid.Col>
-          <Grid.Col span={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
+          <Grid.Col span={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
             <Select
               label="Question Type"
               placeholder="Pick a type"
@@ -281,7 +302,7 @@ function CriteriaForm({
               {...form.getInputProps("qType")}
             />
           </Grid.Col>
-          <Grid.Col span={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
+          <Grid.Col span={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
             <Select
               size="xs"
               label="Difficulty"
@@ -296,7 +317,7 @@ function CriteriaForm({
               {...form.getInputProps("difficulty")}
             />
           </Grid.Col>
-          <Grid.Col span={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
+          <Grid.Col span={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
             <NumberInput
               size="xs"
               label="# of Questions"
@@ -320,7 +341,7 @@ function CriteriaForm({
                 label="URL"
                 placeholder="Content url goes here"
                 rows={4}
-                disabled={form.getValues()?.prompt!.length > 0 || disableFields}
+                disabled={form.values?.prompt!.length > 0 || disableFields}
                 {...form.getInputProps("promptUrl")}
                 key={form.key("promptUrl")}
                 pt={5}
@@ -332,9 +353,7 @@ function CriteriaForm({
               <Textarea
                 label="Keyword"
                 placeholder="Query keywords"
-                disabled={
-                  form.getValues()?.promptUrl!.length > 0 || disableFields
-                }
+                disabled={form.values?.promptUrl!.length > 0 || disableFields}
                 rows={4}
                 {...form.getInputProps("prompt")}
                 key={form.key("prompt")}
@@ -342,82 +361,58 @@ function CriteriaForm({
             </Grid.Col>
           )}
           {contentType === "Resume" && (
-            <Dropzone
-              onDrop={(files) => {
-                form.setFieldValue("resume", files[0]);
-              }}
-              disabled={disableFields}
-              onReject={(files) => console.log("rejected files", files)}
-              maxSize={1 * 1024 ** 2}
-              key={form.key("resume")}
-              {...form.getInputProps("resume")}
-              accept={imageMimeTypes}
-              mx={"sm"}
-              multiple={false}
-              w={"100%"}
-              my={"md"}
-            >
-              <Group
-                justify="center"
-                gap="sm"
-                mih={150}
-                style={{ pointerEvents: "none" }}
-              >
-                <Dropzone.Accept>
-                  <IconUpload
-                    style={{
-                      width: rem(52),
-                      height: rem(52),
-                      color: "var(--mantine-color-blue-6)",
-                    }}
-                    stroke={1.5}
-                  />
-                </Dropzone.Accept>
-                <Dropzone.Reject>
-                  <IconX
-                    style={{
-                      width: rem(52),
-                      height: rem(52),
-                      color: "var(--mantine-color-red-6)",
-                    }}
-                    stroke={1.5}
-                  />
-                </Dropzone.Reject>
-                <Dropzone.Idle>
-                  <IconFileDescription
-                    style={{
-                      width: rem(52),
-                      height: rem(52),
-                      color: "var(--mantine-color-dimmed)",
-                    }}
-                    stroke={1.5}
-                  />
-                </Dropzone.Idle>
-
-                {!isFileSelected ? (
-                  <div>
-                    <Text size="xl" inline>
-                      Drag or click to select files
-                    </Text>
-                    <Text size="sm" inline mt={7}>
-                      Only pdf files are accepted
-                    </Text>
-                    <Text size="sm" inline mt={7}>
-                      File size should not exceed 1mb
-                    </Text>
-                  </div>
-                ) : uploadingResume ? (
-                  <Text>Uploading file...</Text>
-                ) : (
-                  <Flex direction={"column"} w={"auto"} h={"auto"} gap={"xs"}>
-                    <Text size="sm" fw={"bold"}>
-                      File name: {fileName}
-                    </Text>
-                    <Button variant="outline">Change file</Button>
-                  </Flex>
-                )}
-              </Group>
-            </Dropzone>
+            <>
+              <Grid.Col>
+                <Textarea
+                  label="Resume URL"
+                  placeholder="Enter resume url"
+                  rows={2}
+                  {...form.getInputProps("resumeUrl")}
+                  key={form.key("resumeUrl")}
+                />
+              </Grid.Col>
+              <Grid.Col>
+                <FileInput
+                  label="Resume file"
+                  multiple={false}
+                  key={form.key("resumeFile")}
+                  placeholder="Click to select file"
+                  leftSection={
+                    <IconFile3d
+                      style={{ width: rem(18), height: rem(18) }}
+                      stroke={1.5}
+                    />
+                  }
+                  rightSection={
+                    form.values.resumeFile && (
+                      <Tooltip label="Delete file">
+                        <UnstyledButton
+                          onClick={(event) => {
+                            form.setFieldValue("resumeFile", null);
+                          }}
+                        >
+                          <IconX
+                            color="red"
+                            style={{
+                              width: rem(18),
+                              height: rem(18),
+                              cursor: "pointer",
+                            }}
+                          />
+                        </UnstyledButton>
+                      </Tooltip>
+                    )
+                  }
+                  leftSectionPointerEvents="none"
+                  {...form.getInputProps("resumeFile")}
+                  onChange={(file) => {
+                    if (file) {
+                      form.setFieldValue("resumeFile", file);
+                    }
+                  }}
+                />
+              </Grid.Col>
+            </>
           )}
           <Grid.Col span={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
             <Button

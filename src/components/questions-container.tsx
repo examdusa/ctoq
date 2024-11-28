@@ -3,12 +3,12 @@
 import { SelectQuestionBank, SelectSubscription } from "@/db/schema";
 import { QuestionSchema } from "@/utllities/apiFunctions";
 import {
+  ActionIcon,
   Badge,
   Button,
   Divider,
   Flex,
   Grid,
-  Loader,
   Paper,
   ScrollArea,
   Text,
@@ -16,13 +16,16 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { IconEdit, IconPlus } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import tz from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Dispatch, SetStateAction, useEffect, useRef } from "react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useRef } from "react";
+import { AddQuestion } from "./modals/add-question-modal";
 import { AlertModal } from "./modals/alert-modal";
+import { EditQuestionModal } from "./modals/edit-question-modal";
 import { OverlayModal } from "./modals/loader";
 import { Pricing } from "./pricing";
 
@@ -30,12 +33,11 @@ dayjs.extend(tz);
 dayjs.extend(utc);
 
 interface Props {
-  questions: SelectQuestionBank[];
-  isLoading: boolean;
-  generatingQuestions: boolean;
+  questions: Record<string, SelectQuestionBank>;
   subscription: SelectSubscription | undefined;
   print: boolean;
   setPrint: Dispatch<SetStateAction<boolean>>;
+  isLoading: boolean;
 }
 
 interface RenderQuestionRecordProps {
@@ -47,13 +49,17 @@ interface RenderQuestionProps {
   question: QuestionSchema;
   index: number;
   withAnswer: boolean;
+  questionId: string;
 }
 
-// function parseTime(date: Date) {
-//   return dayjs(date).utc().tz(dayjs.tz.guess()).format("MM-DD-YYYY | hh:mm a");
-// }
-
-function RenderQuestion({ question, index, withAnswer }: RenderQuestionProps) {
+function RenderQuestion({
+  question,
+  index,
+  withAnswer,
+  questionId,
+}: RenderQuestionProps) {
+  const [opened, { open: openEditModal, close: closeEditModal }] =
+    useDisclosure();
   return (
     <Flex
       direction={"column"}
@@ -62,32 +68,72 @@ function RenderQuestion({ question, index, withAnswer }: RenderQuestionProps) {
       gap={8}
       align={"self-start"}
     >
-      <Text>
-        {index}. {question.question}
-      </Text>
+      <Flex
+        direction={"row"}
+        w={"100%"}
+        gap={"sm"}
+        align={"center"}
+        justify={"start"}
+      >
+        <Text>
+          {index}. {question.question}
+        </Text>
+        <Tooltip label="Edit question">
+          <UnstyledButton
+            onClick={(e) => {
+              openEditModal();
+            }}
+          >
+            <IconEdit />
+          </UnstyledButton>
+        </Tooltip>
+      </Flex>
       <Flex direction={"column"} h={"auto"} w={"auto"} gap={3} px={"md"}>
         {Object.entries(question.options).map(([key, value], index) => {
           return (
-            <Text key={index} truncate>
+            <Text key={index} className="break-words w-full max-w-md">
               {key}. {value}
             </Text>
           );
         })}
       </Flex>
       {withAnswer && (
-        <Badge variant="outline" color="orange" size="lg" radius="sm">
+        <Badge variant="outline" bg="teal" color="white" size="lg" radius="sm">
           Answer: {question.answer}
         </Badge>
       )}
+      <EditQuestionModal
+        open={opened}
+        close={closeEditModal}
+        question={question}
+        questionId={questionId}
+        index={index - 1}
+      />
     </Flex>
   );
 }
 
 function RenderQuestionRecrod({ record, planName }: RenderQuestionRecordProps) {
   const [opened, { close, open }] = useDisclosure();
+  const [showAddModal, { close: closeAddModal, open: openAddModal }] =
+    useDisclosure();
+
+  const questions = useMemo(() => {
+    return record.questions as QuestionSchema[];
+  }, [record]);
+
+  const questionBankLabel = useMemo(() => {
+    const { prompt } = record;
+
+    if (prompt) {
+      if (prompt.length > 0) return prompt;
+    }
+
+    return "Questions based on prompt URL";
+  }, [record]);
 
   function handleGoogleQuiz() {
-    if (planName !== "Starter") {
+    if (planName === "Starter") {
       open();
       return;
     }
@@ -132,6 +178,7 @@ function RenderQuestionRecrod({ record, planName }: RenderQuestionRecordProps) {
     printWindow.print();
     printWindow.close();
   }
+
   return (
     <Paper
       shadow="md"
@@ -150,9 +197,19 @@ function RenderQuestionRecrod({ record, planName }: RenderQuestionRecordProps) {
           justify={"space-between"}
         >
           <Text size="xl" fw={"bold"}>
-            {record.prompt}
+            {questionBankLabel}
           </Text>
           <Flex direction={"row"} w={"auto"} gap={"sm"} align={"center"}>
+            <Tooltip label="Add new question">
+              <ActionIcon
+                variant="default"
+                onClick={() => {
+                  openAddModal();
+                }}
+              >
+                <IconPlus />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label="Google Quiz">
               <UnstyledButton
                 onClick={(e) => {
@@ -195,13 +252,14 @@ function RenderQuestionRecrod({ record, planName }: RenderQuestionRecordProps) {
         </Flex>
         <Divider />
         <Grid gutter={{ base: 5, xs: "md", md: "xl", xl: 50 }}>
-          {(record.questions as QuestionSchema[]).map((question, i) => {
+          {questions.map((question, i) => {
             return (
               <Grid.Col key={i} span={{ xs: 12, sm: 12, md: 6, lg: 6, xl: 6 }}>
                 <RenderQuestion
                   question={question}
                   index={i + 1}
                   withAnswer={record.withAnswer as boolean}
+                  questionId={record.id}
                 />
               </Grid.Col>
             );
@@ -224,18 +282,22 @@ function RenderQuestionRecrod({ record, planName }: RenderQuestionRecordProps) {
             </Button>
           </>
         }
-      ></AlertModal>
+      />
+      <AddQuestion
+        open={showAddModal}
+        close={closeAddModal}
+        questionId={record.id}
+      />
     </Paper>
   );
 }
 
 function QuestionContainer({
   questions,
-  isLoading,
-  generatingQuestions,
   subscription,
   print,
   setPrint,
+  isLoading,
 }: Props) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -291,25 +353,6 @@ function QuestionContainer({
     setPrint(false);
   }, [print, setPrint]);
 
-  if (isLoading) {
-    return (
-      <Flex
-        direction={"column"}
-        w={"100%"}
-        styles={{
-          root: {
-            flexGrow: 1,
-          },
-        }}
-        align={"center"}
-        gap={10}
-        justify={"center"}
-      >
-        <Loader color="blue" size="xl" />
-      </Flex>
-    );
-  }
-
   if (!subscription) {
     return (
       <ScrollArea
@@ -335,7 +378,7 @@ function QuestionContainer({
     );
   }
 
-  if (questions.length === 0 && !isLoading) {
+  if (Object.keys(questions).length === 0) {
     return (
       <Flex
         direction={"column"}
@@ -349,7 +392,6 @@ function QuestionContainer({
         gap={10}
         justify={"center"}
       >
-        <OverlayModal opened={generatingQuestions} />
         <Text>It&apos;s lonely here...</Text>
       </Flex>
     );
@@ -358,9 +400,9 @@ function QuestionContainer({
   return (
     <ScrollArea
       style={{ height: "calc(100vh - 64px)", width: "100%" }}
-      offsetScrollbars
+      offsetScrollbars={"x"}
       my={"xs"}
-      p={0}
+      p={3}
       viewportRef={viewportRef}
     >
       <Flex
@@ -380,8 +422,8 @@ function QuestionContainer({
         px={"sm"}
         gap={10}
       >
-        <OverlayModal opened={generatingQuestions} />
-        {questions.map((rec, i) => (
+        <OverlayModal opened={isLoading} width={80} height={80} />
+        {Object.values(questions).map((rec, i) => (
           <RenderQuestionRecrod
             record={rec}
             key={i}

@@ -2,6 +2,7 @@
 import { ThemeWrapper } from "@/components/app-layout";
 import { Faq } from "@/components/faq";
 import Footer from "@/components/footer";
+import { SelectQuestionBank } from "@/db/schema";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { Button, Flex, ScrollArea, Text, Title } from "@mantine/core";
 import Image from "next/image";
@@ -14,21 +15,40 @@ export default function Home() {
   const { user, isSignedIn, isLoaded } = useUser();
   const { openSignIn } = useClerk();
   const setSubscription = useAppStore((state) => state.setSubscription);
+  const setQuestions = useAppStore((state) => state.setQuestions);
 
   const { mutateAsync: getSubscriptionDetails, data: subscriptionData } =
     trpc.getSubscriptionDetails.useMutation();
+  const { mutateAsync: getStoredQuestions, data: storedQuestions } =
+    trpc.getQuestions.useMutation();
 
   useEffect(() => {
-    if (user && isSignedIn && isLoaded && !subscriptionData) {
+    if (
+      user &&
+      isSignedIn &&
+      isLoaded &&
+      !subscriptionData &&
+      !storedQuestions
+    ) {
+      console.log("here 33");
       (async () => {
-        await getSubscriptionDetails(
-          { userId: user.id },
-          {
-            onSuccess: (data) => {
-              setSubscription(data);
-            },
-          }
-        );
+        const [subsData, questions] = await Promise.all([
+          getSubscriptionDetails({ userId: user.id }),
+          getStoredQuestions({ userId: user.id }),
+        ]);
+        setSubscription(subsData);
+        if (questions) {
+          const formattedData: Record<string, SelectQuestionBank> = {};
+          questions.forEach((item) => {
+            formattedData[item.id] = {
+              ...item,
+              createdAt: item.createdAt ? new Date(item.createdAt) : null,
+              questions: item.questions,
+            };
+          });
+          setQuestions(formattedData);
+        }
+        redirect("/chat");
       })();
     }
   }, [
@@ -38,11 +58,14 @@ export default function Home() {
     getSubscriptionDetails,
     subscriptionData,
     setSubscription,
+    storedQuestions,
+    getStoredQuestions,
+    setQuestions,
   ]);
 
   function handleSignIn() {
     if (!user) {
-      openSignIn({ forceRedirectUrl: "/chat" });
+      openSignIn();
     } else {
       redirect("/chat");
     }

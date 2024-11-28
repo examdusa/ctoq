@@ -1,5 +1,4 @@
 import { FormObjectType } from "@/components/criteria-form";
-import { FileWithPath } from "@mantine/dropzone";
 import z from "zod";
 
 export const questionSchema = z.object({
@@ -20,37 +19,81 @@ export const paymentIntentResponseSchema = z.object({
 export const promptResponseSchema = z.object({
   input: z.string(),
   code: z.number(),
-  quiz_type: z.enum(["mcq", "true/false"]),
+  quiz_type: z.string(),
   questions: z.array(questionSchema),
 });
 
-export const qBankSchema = z.object({
+export const GeneratedQuestions = z.object({
   prompt_responses: z.array(promptResponseSchema),
-  url_responses: z.array(z.any()), // Assuming `url_responses` can hold various types, modify if necessary
+  url_responses: z.array(promptResponseSchema),
 });
 
-const uploadResponseSchema = z.object({
+export const GeneratedQuestionsResponse = z.object({
+  data: GeneratedQuestions,
+  timestamp: z.string(),
+  session: z.string(),
+  id: z.string(),
+});
+
+// const uploadResponseSchema = z
+//   .object({
+//     call_back_url: z.string().url(),
+//     difficulty_level: z.string(),
+//     number_of_questions: z.number().int(),
+//     prompts: z.array(z.string()),
+//     quiz_type: z.string(),
+//     skills_and_experience: z.object({
+//       experience_details: z.array(z.string()),
+//       experience_level: z.string(),
+//       skills: z.array(z.string()),
+//     }),
+//     urls: z.array(z.string().url()),
+//   })
+//   .and(
+//     z
+//       .object({
+//         candidate_name: z.string(),
+//       })
+//       .partial()
+//   );
+
+const skillsExperienceSchema = z.object({
+  experience_details: z.array(z.string()).or(z.string()),
+  experience_level: z.string(),
+  skills: z.array(z.string()),
+});
+
+const uploadResumeResponse = z.object({
   call_back_url: z.string().url(),
-  difficulty_level: z.string(),
-  number_of_questions: z.number().int(),
+  candidate_name: z.string(),
+  difficulty_level: z.enum(["easy", "medium", "hard"]),
+  number_of_questions: z.number().int().positive(),
   prompts: z.array(z.string()),
   quiz_type: z.string(),
-  skills_and_experience: z.object({
-    experience_details: z.array(z.string()),
-    experience_level: z.string(),
-    skills: z.array(z.string()),
-  }),
+  skills_and_experience: skillsExperienceSchema,
   urls: z.array(z.string().url()),
 });
 
-export type UploadResponseSchema = z.infer<typeof uploadResponseSchema>;
+export interface GenerateQBankPayload {
+  qType: "mcq" | "mcq_similar" | "fill_blank" | "true_false" | "open_ended";
+  difficulty: "easy" | "medium" | "hard";
+  qCount: number;
+  promptUrl: string | null;
+  prompt: string[];
+}
+
+export type UploadResponseSchema = z.infer<typeof uploadResumeResponse>;
 
 export type PaymentIntentResponseSchemaType = z.infer<
   typeof paymentIntentResponseSchema
 >;
-export type QBankSchemaType = z.infer<typeof qBankSchema>;
+export type GeneratedQuestionsResponse = z.infer<
+  typeof GeneratedQuestionsResponse
+>;
 export type GeneratedQuestionsSchema = z.infer<typeof promptResponseSchema>;
 export type QuestionSchema = z.infer<typeof questionSchema>;
+
+export type UploadResumeResponse = z.infer<typeof uploadResumeResponse>;
 
 async function generateQuestionBank({
   qCount,
@@ -58,7 +101,7 @@ async function generateQuestionBank({
   prompt,
   qType,
   promptUrl,
-}: FormObjectType) {
+}: GenerateQBankPayload) {
   try {
     const respStr = await fetch(
       "https://examd.us/llmreader/api/questions/callllm",
@@ -68,7 +111,7 @@ async function generateQuestionBank({
           quiz_type: qType,
           difficulty_level: difficulty,
           number_of_questions: qCount,
-          prompts: !prompt ? [] : [prompt],
+          prompts: prompt,
           urls: !promptUrl ? [] : [promptUrl],
           call_back_url: "https://examd.us/llmreader/api/questions/post",
         }),
@@ -84,10 +127,12 @@ async function generateQuestionBank({
   }
 }
 
-async function fetchGeneratedQuestions(): Promise<QBankSchemaType | null> {
+async function fetchGeneratedQuestions(
+  refId: string
+): Promise<GeneratedQuestionsResponse> {
   try {
     const respStr = await fetch(
-      "https://examd.us/llmreader/api/questions/getresponse",
+      `https://examd.us/llmreader/api/questions/getresponse/${refId}`,
       {
         method: "GET",
         headers: {
@@ -96,14 +141,17 @@ async function fetchGeneratedQuestions(): Promise<QBankSchemaType | null> {
       }
     );
     const response = await respStr.json();
-    const validationResult = qBankSchema.safeParse(response);
+    const { data } = response;
+    const parsedData = JSON.parse(data);
+    const structuredData = { ...response, data: parsedData };
+    const { data: validatedData, success } =
+      GeneratedQuestionsResponse.safeParse(structuredData);
 
-    if (validationResult.success) {
-      return validationResult.data;
-    } else {
-      console.error("Validation failed:", validationResult.error);
-      return null;
+    if (success) {
+      return validatedData;
     }
+
+    throw new Error("DATA_VALIDATION_FAILED");
   } catch (err) {
     throw err;
   }
@@ -136,20 +184,28 @@ async function createCheckoutSession(
   }
 }
 
-async function uploadResume(file: FileWithPath): Promise<UploadResponseSchema> {
+async function uploadResume(
+  url: string,
+  file: File | null
+): Promise<UploadResponseSchema> {
   try {
     const formData = new FormData();
-    formData.append("file", file);
+    if (file) {
+      formData.append("file", file);
+    }
+    formData.append("url", url);
     const response = await fetch("https://examd.us/llmresume/upload", {
       method: "POST",
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
       body: formData,
     });
     const jsonRes = await response.json();
-    const parsedRes = uploadResponseSchema.parse(jsonRes);
-    return parsedRes;
+    const { success } = uploadResumeResponse.safeParse(jsonRes);
+
+    if (success) {
+      return jsonRes;
+    }
+
+    throw new Error("URL_RESP_VALIDATION_ERROR");
   } catch (err) {
     throw err;
   }

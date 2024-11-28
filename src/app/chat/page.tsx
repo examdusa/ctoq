@@ -1,163 +1,193 @@
 "use client";
 
 import { ThemeWrapper } from "@/components/app-layout";
-import { CriteriaForm, FormObjectType } from "@/components/criteria-form";
+import { CriteriaForm } from "@/components/criteria-form";
 import { QuestionContainer } from "@/components/questions-container";
-import { SelectQuestionBank } from "@/db/schema";
 import {
   fetchGeneratedQuestions,
+  GeneratedQuestionsResponse,
+  GenerateQBankPayload,
   generateQuestionBank,
 } from "@/utllities/apiFunctions";
 import { useUser } from "@clerk/nextjs";
 import { Flex } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useAppStore } from "../_store/app-store";
 import { trpc } from "../_trpc/client";
 
 export default function ChatContainer() {
-  const { isSignedIn, isLoaded, user } = useUser();
-  const [questionRecs, setQuestionRecs] = useState<SelectQuestionBank[]>([]);
+  const { user } = useUser();
   const [withAnswer, setWithAnswer] = useState<"GWA" | "GWOA">("GWA");
-  const {
-    mutateAsync: fetchStoredQuestions,
-    isLoading: fetchingStoredQuestions,
-    data: storedQuestions,
-  } = trpc.getQuestions.useMutation();
-
-  const {
-    mutateAsync: fetchSubsDetails,
-    isLoading: fetchingSubs,
-    data: subscriptionData,
-  } = trpc.getSubscriptionDetails.useMutation();
-
+  const subscriptionData = useAppStore((state) => state.subscription);
+  const questionList = useAppStore((state) => state.questions);
   const { mutateAsync: updateCount } = trpc.updateQueryCount.useMutation();
   const [refetchQuestions, setRefetchQuestions] = useState(false);
   const [print, setPrint] = useState(false);
-  const saveQBank = trpc.saveQBank.useMutation();
+  const { mutateAsync: saveQBank, isLoading: savingQBank } =
+    trpc.saveQBank.useMutation();
 
   const { mutateAsync: generateQBank, isLoading: generatingQBank } =
     useMutation({
-      mutationFn: (values: FormObjectType) => {
+      mutationFn: (values: GenerateQBankPayload) => {
         setRefetchQuestions(true);
         return generateQuestionBank({
           difficulty: values.difficulty,
-          prompt: values.prompt,
+          prompt: values.prompt ?? [],
           promptUrl: values.promptUrl,
           qCount: values.qCount,
           qType: values.qType,
-          resume: null,
         });
       },
     });
 
-  const fetchSavedQuestions = useCallback(async () => {
-    try {
-      if (user) {
-        const res = await fetchStoredQuestions({ userId: user.id });
-        if (res) {
-          const records: SelectQuestionBank[] = res.map((rec) => {
-            return {
-              userId: rec.userId,
-              id: rec.id,
-              createdAt: rec.createdAt,
-              jobId: rec.jobId,
-              questions: rec.questions ?? [],
-              difficultyLevel: rec.difficultyLevel,
-              questionsCount: rec.questionsCount,
-              prompt: rec.prompt,
-              questionType: rec.questionType,
-              promptUrl: rec.promptUrl,
-              withAnswer: rec.withAnswer,
-            } as SelectQuestionBank;
-          });
-          setQuestionRecs([...records]);
-        }
-      }
-    } catch (err) {
-      console.log("fetchSavedQuestions err: ", err);
-    }
-  }, [user, fetchStoredQuestions, setQuestionRecs]);
+  async function storeQuestionBank(
+    questions: GeneratedQuestionsResponse,
+    refId: string,
+    userId: string,
+    formValues: GenerateQBankPayload
+  ) {
+    const {
+      data: { prompt_responses, url_responses },
+    } = questions;
 
-  const fetchSubscriptionDetails = useCallback(
-    async (userId: string) => {
-      await fetchSubsDetails({ userId });
-    },
-    [fetchSubsDetails]
-  );
-
-  const { mutateAsync: saveResult, isLoading: savingResult } = useMutation({
-    mutationFn: async ({}: {
-      refId: string;
-      userId: string;
-      values: FormObjectType;
-    }) => {
-      return fetchGeneratedQuestions();
-    },
-    retry: refetchQuestions,
-    retryDelay: 2000,
-    onSuccess: async (data, variable) => {
-      if (data && variable.values) {
-        const { prompt_responses } = data;
-        const { questions } = prompt_responses[0];
-        const { difficulty, prompt, promptUrl, qCount, qType } =
-          variable.values;
-        setRefetchQuestions(false);
-        await saveQBank.mutateAsync({
-          jobId: variable.refId,
+    if (prompt_responses.length > 0) {
+      const { questions } = prompt_responses[0];
+      const { difficulty, prompt, promptUrl, qCount, qType } = formValues;
+      setRefetchQuestions(false);
+      await saveQBank(
+        {
+          jobId: refId,
           difficulty: difficulty,
-          userId: variable.userId,
+          userId: userId,
           qCount: qCount,
-          qKeyword: prompt,
+          qKeyword: prompt[0],
           qType: qType,
           questions: { questions: questions },
           qUrl: promptUrl,
           withAnswer: withAnswer,
-        });
-        if (subscriptionData && subscriptionData.queries) {
-          let count = subscriptionData.queries - 1;
-          const { planName } = subscriptionData;
+        },
+        {
+          onSuccess: (data) => {
+            if (data) {
+              const updatedList = {
+                ...questionList,
+                [data.id]: {
+                  ...data,
+                  createdAt: data.createdAt ? new Date(data.createdAt) : null,
+                  questions: data.questions,
+                },
+              };
+              useAppStore.setState({ questions: { ...updatedList } });
+            }
+          },
+        }
+      );
+      if (subscriptionData && subscriptionData.queries) {
+        let count = subscriptionData.queries - 1;
+        const { planName } = subscriptionData;
 
-          if (planName === "Integrated") {
-            count = subscriptionData.queries;
-          }
-          await updateCount({
-            userId: variable.userId,
-            count: count,
+        if (planName === "Integrated") {
+          count = subscriptionData.queries;
+        }
+        await updateCount({
+          userId: userId,
+          count: count,
+        });
+      }
+    } else if (url_responses.length > 0) {
+      const { questions } = url_responses[0];
+      const { difficulty, prompt, promptUrl, qCount, qType } = formValues;
+      setRefetchQuestions(false);
+      await saveQBank({
+        jobId: refId,
+        difficulty: difficulty,
+        userId: userId,
+        qCount: qCount,
+        qKeyword: prompt[0],
+        qType: qType,
+        questions: { questions: questions },
+        qUrl: promptUrl,
+        withAnswer: withAnswer,
+      });
+      if (subscriptionData && subscriptionData.queries) {
+        let count = subscriptionData.queries - 1;
+        const { planName } = subscriptionData;
+
+        if (planName === "Integrated") {
+          count = subscriptionData.queries;
+        }
+        await updateCount({
+          userId: userId,
+          count: count,
+        });
+      }
+    }
+  }
+
+  const { mutate: fetchQuestions, isLoading: fetchingQuestion } =
+    useMutation({
+      mutationFn: async ({
+        refId,
+      }: {
+        refId: string;
+        userId: string;
+        values: GenerateQBankPayload;
+        candidateName: string | null;
+        resumeContent: boolean;
+      }) => {
+        return fetchGeneratedQuestions(refId);
+      },
+      retry: (_, error: Error) => {
+        if (error.message === "DATA_VALIDATION_FAILED") {
+          return true;
+        }
+        return false;
+      },
+      retryDelay: 2000,
+      onSuccess: async (data, variable) => {
+        const {
+          values: { difficulty, prompt, promptUrl, qCount, qType },
+          resumeContent,
+          candidateName,
+        } = variable;
+        if (resumeContent) {
+          storeQuestionBank(data, variable.refId, variable.userId, {
+            difficulty: difficulty,
+            prompt: candidateName ? [candidateName] : [],
+            promptUrl: promptUrl,
+            qCount: qCount,
+            qType: qType,
+          });
+        } else {
+          storeQuestionBank(data, variable.refId, variable.userId, {
+            difficulty: difficulty,
+            prompt: prompt,
+            promptUrl: promptUrl,
+            qCount: qCount,
+            qType: qType,
           });
         }
-        await fetchSavedQuestions();
-        await fetchSubscriptionDetails(variable.userId);
-      }
-    },
-  });
-
-  useEffect(() => {
-    if (user && !subscriptionData && !storedQuestions) {
-      (async () => {
-        await Promise.all([
-          fetchSavedQuestions(),
-          fetchSubscriptionDetails(user.id),
-        ]);
-      })();
-    }
-  }, [
-    fetchSubscriptionDetails,
-    subscriptionData,
-    user,
-    fetchSavedQuestions,
-    storedQuestions,
-  ]);
+      },
+    });
 
   async function generateQuestions(
-    values: FormObjectType,
-    qType: "GWA" | "GWOA"
+    values: GenerateQBankPayload,
+    qType: "GWA" | "GWOA",
+    candidateName: string | null,
+    resumeContent: boolean
   ) {
-    const data = await generateQBank({ ...values });
+    const data = await generateQBank({
+      ...values,
+      prompt: values.prompt ?? [],
+    });
     if (user) {
-      await saveResult({
+      fetchQuestions({
         refId: data.reference_id,
         userId: user.id,
         values: values,
+        candidateName,
+        resumeContent,
       });
     }
     setWithAnswer(qType);
@@ -180,21 +210,16 @@ export default function ChatContainer() {
       >
         <CriteriaForm
           generateQuestions={generateQuestions}
-          isLoading={savingResult}
+          isLoading={generatingQBank || savingQBank || fetchingQuestion}
           subscription={subscriptionData}
           printResult={(flag) => setPrint(flag)}
         />
         <QuestionContainer
-          questions={questionRecs}
+          isLoading={generatingQBank || savingQBank || fetchingQuestion}
+          questions={questionList}
           subscription={subscriptionData}
-          isLoading={
-            (fetchingStoredQuestions || fetchingSubs) &&
-            !generatingQBank &&
-            !refetchQuestions
-          }
           print={print}
           setPrint={setPrint}
-          generatingQuestions={generatingQBank || refetchQuestions}
         />
       </Flex>
     </ThemeWrapper>

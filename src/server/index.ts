@@ -1,11 +1,12 @@
 import { db } from "@/db";
 import {
   questionbank,
+  SelectQuestionBank,
   SelectSubscription,
   subscription,
   userProfile,
 } from "@/db/schema";
-import { questionSchema } from "@/utllities/apiFunctions";
+import { QuestionSchema, questionSchema } from "@/utllities/apiFunctions";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 import z from "zod";
@@ -30,7 +31,7 @@ export const appRouter = router({
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const questions = await db
+        const questions: SelectQuestionBank[] = await db
           .select({
             id: questionbank.id,
             createdAt: questionbank.createdAt,
@@ -149,15 +150,21 @@ export const appRouter = router({
         questions: z.object({
           questions: z.array(questionSchema),
         }),
-        qType: z.enum(["mcq"]),
-        difficulty: z.enum(["easy"]),
+        qType: z.enum([
+          "mcq",
+          "mcq_similar",
+          "fill_blank",
+          "true_false",
+          "open_ended",
+        ]),
+        difficulty: z.enum(["easy", "medium", "hard"]),
         qCount: z.number().min(0).max(30),
         qUrl: z.string().nullable(),
-        qKeyword: z.string().nullable(),
+        qKeyword: z.string(),
         withAnswer: z.enum(["GWA", "GWOA"]),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const {
         createdAt,
         difficulty,
@@ -184,7 +191,25 @@ export const appRouter = router({
           questionType: qType,
           withAnswer: withAnswer === "GWA" ? true : false,
         });
-        return "Inserted";
+        const records = await db
+          .select({
+            id: questionbank.id,
+            createdAt: questionbank.createdAt,
+            userId: questionbank.userId,
+            jobId: questionbank.jobId,
+            questions: questionbank.questions,
+            difficultyLevel: questionbank.difficultyLevel,
+            questionsCount: questionbank.questionsCount,
+            prompt: questionbank.prompt,
+            questionType: questionbank.questionType,
+            promptUrl: questionbank.promptUrl,
+            withAnswer: questionbank.withAnswer,
+          })
+          .from(questionbank)
+          .where(eq(questionbank.id, jobId));
+        if (records.length > 0) {
+          return records[0];
+        }
       } catch (err) {
         console.log(err);
         throw new Error("Insert failed");
@@ -265,6 +290,80 @@ export const appRouter = router({
       } catch (err) {
         console.error("USER_NOT_FOUND: ", err);
         throw new Error("USER_NOT_FOUND");
+      }
+    }),
+  updateQuestions: procedure
+    .input(
+      z.object({
+        questionId: z.string(),
+        question: questionSchema,
+        index: z.number(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { index, question, questionId } = input;
+      try {
+        const questRec = await db
+          .select()
+          .from(questionbank)
+          .where(eq(questionbank.id, questionId));
+
+        if (questRec.length > 0) {
+          const rec = { ...questRec[0] };
+          const updatedQuestions = rec.questions as QuestionSchema[];
+          updatedQuestions[index] = { ...question };
+          const updateRes = await db
+            .update(questionbank)
+            .set({ questions: updatedQuestions })
+            .where(eq(questionbank.id, questionId));
+
+          if (updateRes.rowsAffected === 0) {
+            throw new Error("QUEST_UPDATE_ERROR");
+          }
+          return { code: "ROW_UPDATED" };
+        }
+        throw new Error("QUEST_REC_NOT_FOUND");
+      } catch (err) {
+        console.error("QUEST_UPDATE_ERROR: ", err);
+        throw err;
+      }
+    }),
+  addQuestion: procedure
+    .input(
+      z.object({
+        questionId: z.string(),
+        question: questionSchema,
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { question, questionId } = input;
+      try {
+        const qBankRec = await db
+          .select()
+          .from(questionbank)
+          .where(eq(questionbank.id, questionId));
+
+        if (qBankRec.length > 0) {
+          const rec = { ...qBankRec[0] };
+          const { questionsCount } = rec;
+          const updatedQuestions = rec.questions as QuestionSchema[];
+          updatedQuestions.push(question);
+          if (questionsCount) {
+            const { rowsAffected } = await db.update(questionbank).set({
+              questions: updatedQuestions,
+              questionsCount: questionsCount + 1,
+            });
+
+            if (rowsAffected === 0) {
+              throw new Error("QUEST_ADD_ERROR");
+            }
+
+            return { code: "QUEST_ADDED" };
+          }
+        }
+        throw new Error("QUEST_REC_NOT_FOUND");
+      } catch (err) {
+        throw err;
       }
     }),
 });

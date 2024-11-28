@@ -1,5 +1,6 @@
 "use client";
 
+import { initialState, useAppStore } from "@/app/_store/app-store";
 import { trpc } from "@/app/_trpc/client";
 import { SelectSubscription } from "@/db/schema";
 import {
@@ -50,7 +51,11 @@ function AppHeader({ subscriptionDetail }: AppHeaderProps) {
       }
     }
 
+    
     if (user && isSignedIn && isLoaded) saveUser();
+    if (!isSignedIn) {
+      useAppStore.setState({ ...initialState });
+    }
   }, [user, isSignedIn, isLoaded, saveUserDetails, userData]);
 
   useEffect(() => {
