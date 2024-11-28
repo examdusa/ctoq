@@ -110,14 +110,6 @@ function AddQuestion({ open, close, questionId }: Props) {
     );
   }
 
-  useEffect(() => {
-    return () => {
-      form.reset();
-    };
-  }, [form]);
-
-  const { answer } = form.values;
-
   return (
     <Modal
       opened={open}

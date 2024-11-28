@@ -265,24 +265,24 @@ function RenderQuestionRecrod({ record, planName }: RenderQuestionRecordProps) {
             );
           })}
         </Grid>
+        <AlertModal
+          close={close}
+          open={opened}
+          message="This feature is available only in Integrated and premium plan. Do you want to Upgrade?"
+          showCloseButton={false}
+          title="Alert"
+          footer={
+            <>
+              <Button variant="filled" size="sm" onClick={close}>
+                No
+              </Button>
+              <Button variant="filled" size="sm" onClick={handleRedirect}>
+                Yes
+              </Button>
+            </>
+          }
+        />
       </Flex>
-      <AlertModal
-        close={close}
-        open={opened}
-        message="This feature is available only in Integrated and premium plan. Do you want to Upgrade?"
-        showCloseButton={false}
-        title="Alert"
-        footer={
-          <>
-            <Button variant="filled" size="sm" onClick={close}>
-              No
-            </Button>
-            <Button variant="filled" size="sm" onClick={handleRedirect}>
-              Yes
-            </Button>
-          </>
-        }
-      />
       <AddQuestion
         open={showAddModal}
         close={closeAddModal}
