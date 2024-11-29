@@ -15,6 +15,13 @@
       "when": 1730712333797,
       "tag": "0001_melodic_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1732852597788,
+      "tag": "0002_melted_morlun",
+      "breakpoints": true
     }
   ]
 }

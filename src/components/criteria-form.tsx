@@ -241,9 +241,7 @@ function CriteriaForm({
       w={"100%"}
       direction={"column"}
       gap={"sm"}
-      maw={{ md: "25%", lg: "30%", xl: "30%" }}
-      className="rounded-md"
-      pos={"sticky"}
+      maw={{ xs: '30%', md: "20%" }}
       my={"xs"}
       p={0}
       styles={{
@@ -255,7 +253,7 @@ function CriteriaForm({
           }`,
           boxShadow: theme.shadows.md,
           padding: 10,
-          flexGrow: 1,
+          borderRadius: theme.radius.md
         },
       }}
     >
@@ -556,7 +554,6 @@ function CriteriaForm({
           title={!subscription.queries ? "Note" : "All set"}
           icon={<IconInfoCircle />}
           mt={"auto"}
-          radius={"md"}
         >
           <Flex direction={"column"} w={"auto"} align={"start"} gap={"xs"}>
             <Text size="sm">

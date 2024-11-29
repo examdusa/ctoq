@@ -44,6 +44,7 @@ export const appRouter = router({
             questionType: questionbank.questionType,
             promptUrl: questionbank.promptUrl,
             withAnswer: questionbank.withAnswer,
+            googleQuizLink: questionbank.googleQuizLink,
           })
           .from(questionbank)
           .innerJoin(userProfile, eq(questionbank.userId, userProfile.id))
@@ -349,10 +350,13 @@ export const appRouter = router({
           const updatedQuestions = rec.questions as QuestionSchema[];
           updatedQuestions.push(question);
           if (questionsCount) {
-            const { rowsAffected } = await db.update(questionbank).set({
-              questions: updatedQuestions,
-              questionsCount: questionsCount + 1,
-            });
+            const { rowsAffected } = await db
+              .update(questionbank)
+              .set({
+                questions: updatedQuestions,
+                questionsCount: questionsCount + 1,
+              })
+              .where(eq(questionbank.id, questionId));
 
             if (rowsAffected === 0) {
               throw new Error("QUEST_ADD_ERROR");
@@ -362,6 +366,30 @@ export const appRouter = router({
           }
         }
         throw new Error("QUEST_REC_NOT_FOUND");
+      } catch (err) {
+        throw err;
+      }
+    }),
+  addGoogleQuizLinkToRec: procedure
+    .input(
+      z.object({
+        recId: z.string(),
+        gQuizLink: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { recId, gQuizLink } = input;
+
+      try {
+        const { rowsAffected } = await db
+          .update(questionbank)
+          .set({ googleQuizLink: gQuizLink })
+          .where(eq(questionbank.id, recId));
+
+        if (rowsAffected === 0) {
+          throw new Error("QUEST_REC_NOT_FOUND");
+        }
+        return { code: "GQUIZLINK_ADDED" };
       } catch (err) {
         throw err;
       }

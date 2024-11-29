@@ -40,6 +40,7 @@ export const questionbank = sqliteTable("questionbank", {
   questionType: text("questionType"),
   promptUrl: text("promptUrl"),
   withAnswer: integer('withAnswer', {mode: "boolean"}),
+  googleQuizLink: text("googleQuizLink").default('')
 });
 
 export const questionbankRelation = relations(questionbank, ({ many }) => ({

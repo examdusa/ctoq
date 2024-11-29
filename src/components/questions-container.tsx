@@ -1,5 +1,6 @@
 "use client";
 
+import { useAppStore } from "@/app/_store/app-store";
 import { SelectQuestionBank, SelectSubscription } from "@/db/schema";
 import { QuestionSchema } from "@/utllities/apiFunctions";
 import {
@@ -26,23 +27,27 @@ import { Dispatch, SetStateAction, useEffect, useMemo, useRef } from "react";
 import { AddQuestion } from "./modals/add-question-modal";
 import { AlertModal } from "./modals/alert-modal";
 import { EditQuestionModal } from "./modals/edit-question-modal";
+import { GoogleQuizModal } from "./modals/google-quiz-modal";
 import { OverlayModal } from "./modals/loader";
+import { NoQuestion } from "./no-question";
 import { Pricing } from "./pricing";
 
 dayjs.extend(tz);
 dayjs.extend(utc);
 
 interface Props {
-  questions: Record<string, SelectQuestionBank>;
+  questions: SelectQuestionBank | undefined;
   subscription: SelectSubscription | undefined;
   print: boolean;
   setPrint: Dispatch<SetStateAction<boolean>>;
   isLoading: boolean;
+  userEmail: string | undefined;
 }
 
 interface RenderQuestionRecordProps {
   record: SelectQuestionBank;
   planName: string;
+  userEmail: string;
 }
 
 interface RenderQuestionProps {
@@ -113,8 +118,14 @@ function RenderQuestion({
   );
 }
 
-function RenderQuestionRecrod({ record, planName }: RenderQuestionRecordProps) {
+function RenderQuestionRecrod({
+  record,
+  planName,
+  userEmail,
+}: RenderQuestionRecordProps) {
   const [opened, { close, open }] = useDisclosure();
+  const [gquizOpened, { close: closeGQuizModal, open: openGQuizModal }] =
+    useDisclosure(false);
   const [showAddModal, { close: closeAddModal, open: openAddModal }] =
     useDisclosure();
 
@@ -136,6 +147,10 @@ function RenderQuestionRecrod({ record, planName }: RenderQuestionRecordProps) {
     if (planName === "Starter") {
       open();
       return;
+    } else if (!record.googleQuizLink) {
+      openGQuizModal();
+    } else {
+      window.open(record.googleQuizLink, "_blank");
     }
   }
 
@@ -288,6 +303,14 @@ function RenderQuestionRecrod({ record, planName }: RenderQuestionRecordProps) {
         close={closeAddModal}
         questionId={record.id}
       />
+      {gquizOpened && (
+        <GoogleQuizModal
+          close={closeGQuizModal}
+          open={gquizOpened}
+          record={record}
+          userEmail={userEmail}
+        />
+      )}
     </Paper>
   );
 }
@@ -298,15 +321,17 @@ function QuestionContainer({
   print,
   setPrint,
   isLoading,
+  userEmail,
 }: Props) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const storedQuestions = useAppStore((state) => state.questions);
 
   useEffect(() => {
     if (viewportRef && viewportRef.current) {
       viewportRef.current.scrollTo({
         behavior: "smooth",
-        top: viewportRef.current.scrollHeight,
+        top: 0,
       });
     }
   }, [questions]);
@@ -353,6 +378,25 @@ function QuestionContainer({
     setPrint(false);
   }, [print, setPrint]);
 
+  if (!questions) {
+    return (
+      <Flex
+        direction={"column"}
+        w={"100%"}
+        styles={{
+          root: {
+            flexGrow: 1,
+          },
+        }}
+        align={"center"}
+        gap={10}
+        justify={"center"}
+      >
+        <NoQuestion />
+      </Flex>
+    );
+  }
+
   if (!subscription) {
     return (
       <ScrollArea
@@ -378,28 +422,9 @@ function QuestionContainer({
     );
   }
 
-  if (Object.keys(questions).length === 0) {
-    return (
-      <Flex
-        direction={"column"}
-        w={"100%"}
-        styles={{
-          root: {
-            flexGrow: 1,
-          },
-        }}
-        align={"center"}
-        gap={10}
-        justify={"center"}
-      >
-        <Text>It&apos;s lonely here...</Text>
-      </Flex>
-    );
-  }
-
   return (
     <ScrollArea
-      style={{ height: "calc(100vh - 64px)", width: "100%" }}
+      style={{ height: "calc(100vh - 8vh)", width: "100%" }}
       offsetScrollbars={"x"}
       my={"xs"}
       p={3}
@@ -423,13 +448,13 @@ function QuestionContainer({
         gap={10}
       >
         <OverlayModal opened={isLoading} width={80} height={80} />
-        {Object.values(questions).map((rec, i) => (
+        {userEmail && (
           <RenderQuestionRecrod
-            record={rec}
-            key={i}
+            record={questions}
             planName={subscription.planName ?? ""}
+            userEmail={userEmail}
           />
-        ))}
+        )}
       </Flex>
     </ScrollArea>
   );

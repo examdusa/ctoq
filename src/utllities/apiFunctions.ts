@@ -1,4 +1,4 @@
-import { FormObjectType } from "@/components/criteria-form";
+import { GoogleQuizPayloadSchema } from "@/components/modals/google-quiz-modal";
 import z from "zod";
 
 export const questionSchema = z.object({
@@ -34,28 +34,6 @@ export const GeneratedQuestionsResponse = z.object({
   session: z.string(),
   id: z.string(),
 });
-
-// const uploadResponseSchema = z
-//   .object({
-//     call_back_url: z.string().url(),
-//     difficulty_level: z.string(),
-//     number_of_questions: z.number().int(),
-//     prompts: z.array(z.string()),
-//     quiz_type: z.string(),
-//     skills_and_experience: z.object({
-//       experience_details: z.array(z.string()),
-//       experience_level: z.string(),
-//       skills: z.array(z.string()),
-//     }),
-//     urls: z.array(z.string().url()),
-//   })
-//   .and(
-//     z
-//       .object({
-//         candidate_name: z.string(),
-//       })
-//       .partial()
-//   );
 
 const skillsExperienceSchema = z.object({
   experience_details: z.array(z.string()).or(z.string()),
@@ -211,9 +189,31 @@ async function uploadResume(
   }
 }
 
+async function createGoogleQuizForm(payload: GoogleQuizPayloadSchema):Promise<string> {
+  try {
+    const response = await fetch(
+      "https://autoproctor.com/canvaslms/api/v1/google-form/create",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+      }
+    );
+    const parsedRes = await response.text();
+    return parsedRes;
+  } catch (err) {
+    throw err;
+  }
+}
+
 export {
   createCheckoutSession,
+  createGoogleQuizForm,
   fetchGeneratedQuestions,
   generateQuestionBank,
-  uploadResume,
+  uploadResume
 };
+

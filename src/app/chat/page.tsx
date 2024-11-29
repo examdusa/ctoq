@@ -2,6 +2,7 @@
 
 import { ThemeWrapper } from "@/components/app-layout";
 import { CriteriaForm } from "@/components/criteria-form";
+import { QBankCreateHistory } from "@/components/qbank-create-history";
 import { QuestionContainer } from "@/components/questions-container";
 import {
   fetchGeneratedQuestions,
@@ -22,15 +23,14 @@ export default function ChatContainer() {
   const subscriptionData = useAppStore((state) => state.subscription);
   const questionList = useAppStore((state) => state.questions);
   const { mutateAsync: updateCount } = trpc.updateQueryCount.useMutation();
-  const [refetchQuestions, setRefetchQuestions] = useState(false);
   const [print, setPrint] = useState(false);
+  const [recId, setRecId] = useState<string | undefined>(undefined);
   const { mutateAsync: saveQBank, isLoading: savingQBank } =
     trpc.saveQBank.useMutation();
 
   const { mutateAsync: generateQBank, isLoading: generatingQBank } =
     useMutation({
       mutationFn: (values: GenerateQBankPayload) => {
-        setRefetchQuestions(true);
         return generateQuestionBank({
           difficulty: values.difficulty,
           prompt: values.prompt ?? [],
@@ -54,7 +54,6 @@ export default function ChatContainer() {
     if (prompt_responses.length > 0) {
       const { questions } = prompt_responses[0];
       const { difficulty, prompt, promptUrl, qCount, qType } = formValues;
-      setRefetchQuestions(false);
       await saveQBank(
         {
           jobId: refId,
@@ -76,6 +75,7 @@ export default function ChatContainer() {
                   ...data,
                   createdAt: data.createdAt ? new Date(data.createdAt) : null,
                   questions: data.questions,
+                  googleQuizLink: "",
                 },
               };
               useAppStore.setState({ questions: { ...updatedList } });
@@ -98,7 +98,6 @@ export default function ChatContainer() {
     } else if (url_responses.length > 0) {
       const { questions } = url_responses[0];
       const { difficulty, prompt, promptUrl, qCount, qType } = formValues;
-      setRefetchQuestions(false);
       await saveQBank({
         jobId: refId,
         difficulty: difficulty,
@@ -125,51 +124,50 @@ export default function ChatContainer() {
     }
   }
 
-  const { mutate: fetchQuestions, isLoading: fetchingQuestion } =
-    useMutation({
-      mutationFn: async ({
-        refId,
-      }: {
-        refId: string;
-        userId: string;
-        values: GenerateQBankPayload;
-        candidateName: string | null;
-        resumeContent: boolean;
-      }) => {
-        return fetchGeneratedQuestions(refId);
-      },
-      retry: (_, error: Error) => {
-        if (error.message === "DATA_VALIDATION_FAILED") {
-          return true;
-        }
-        return false;
-      },
-      retryDelay: 2000,
-      onSuccess: async (data, variable) => {
-        const {
-          values: { difficulty, prompt, promptUrl, qCount, qType },
-          resumeContent,
-          candidateName,
-        } = variable;
-        if (resumeContent) {
-          storeQuestionBank(data, variable.refId, variable.userId, {
-            difficulty: difficulty,
-            prompt: candidateName ? [candidateName] : [],
-            promptUrl: promptUrl,
-            qCount: qCount,
-            qType: qType,
-          });
-        } else {
-          storeQuestionBank(data, variable.refId, variable.userId, {
-            difficulty: difficulty,
-            prompt: prompt,
-            promptUrl: promptUrl,
-            qCount: qCount,
-            qType: qType,
-          });
-        }
-      },
-    });
+  const { mutate: fetchQuestions, isLoading: fetchingQuestion } = useMutation({
+    mutationFn: async ({
+      refId,
+    }: {
+      refId: string;
+      userId: string;
+      values: GenerateQBankPayload;
+      candidateName: string | null;
+      resumeContent: boolean;
+    }) => {
+      return fetchGeneratedQuestions(refId);
+    },
+    retry: (_, error: Error) => {
+      if (error.message === "DATA_VALIDATION_FAILED") {
+        return true;
+      }
+      return false;
+    },
+    retryDelay: 2000,
+    onSuccess: async (data, variable) => {
+      const {
+        values: { difficulty, prompt, promptUrl, qCount, qType },
+        resumeContent,
+        candidateName,
+      } = variable;
+      if (resumeContent) {
+        storeQuestionBank(data, variable.refId, variable.userId, {
+          difficulty: difficulty,
+          prompt: candidateName ? [candidateName] : [],
+          promptUrl: promptUrl,
+          qCount: qCount,
+          qType: qType,
+        });
+      } else {
+        storeQuestionBank(data, variable.refId, variable.userId, {
+          difficulty: difficulty,
+          prompt: prompt,
+          promptUrl: promptUrl,
+          qCount: qCount,
+          qType: qType,
+        });
+      }
+    },
+  });
 
   async function generateQuestions(
     values: GenerateQBankPayload,
@@ -216,11 +214,13 @@ export default function ChatContainer() {
         />
         <QuestionContainer
           isLoading={generatingQBank || savingQBank || fetchingQuestion}
-          questions={questionList}
+          questions={recId ? questionList[recId] : undefined}
           subscription={subscriptionData}
           print={print}
           setPrint={setPrint}
+          userEmail={user?.primaryEmailAddress?.emailAddress}
         />
+        <QBankCreateHistory questions={questionList} showRecord={setRecId} />
       </Flex>
     </ThemeWrapper>
   );

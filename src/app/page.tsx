@@ -30,7 +30,6 @@ export default function Home() {
       !subscriptionData &&
       !storedQuestions
     ) {
-      console.log("here 33");
       (async () => {
         const [subsData, questions] = await Promise.all([
           getSubscriptionDetails({ userId: user.id }),
@@ -48,7 +47,6 @@ export default function Home() {
           });
           setQuestions(formattedData);
         }
-        redirect("/chat");
       })();
     }
   }, [

@@ -1,6 +1,6 @@
 import { SelectQuestionBank, SelectSubscription } from "@/db/schema";
 import { create } from "zustand";
-import { createJSONStorage, devtools, persist } from "zustand/middleware";
+import { devtools, persist } from "zustand/middleware";
 
 interface State {
   questions: Record<string, SelectQuestionBank>;
@@ -17,9 +17,11 @@ export const initialState: State = {
   subscription: undefined,
 };
 
+export type Store = State & Actions;
+
 export const useAppStore = create(
   devtools(
-    persist<State & Actions>(
+    persist<Store>(
       (set) => ({
         ...initialState,
         setQuestions: (questions) => set({ questions }),
@@ -27,7 +29,6 @@ export const useAppStore = create(
       }),
       {
         name: "app-store",
-        storage: createJSONStorage(() => localStorage),
       }
     )
   )
