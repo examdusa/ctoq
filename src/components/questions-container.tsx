@@ -147,6 +147,9 @@ function RenderQuestionRecrod({
     useDisclosure();
   const { questionType } = record;
 
+  const enableGoogleQuizBtn =
+    questionType === "mcq" || questionType === "open_ended";
+
   const questions = useMemo(() => {
     if (questionType === "mcq") {
       return record.questions as MCQQuestionSchema[];
@@ -272,23 +275,34 @@ function RenderQuestionRecrod({
                 <IconPlus />
               </ActionIcon>
             </Tooltip>
-            {questionType === "mcq" ||
-              (questionType === "open_ended" && (
-                <Tooltip label="Google Quiz">
-                  <UnstyledButton
-                    onClick={(e) => {
-                      handleGoogleQuiz();
-                    }}
-                  >
-                    <Image
-                      src={"/images/google_quiz.png"}
-                      width={30}
-                      height={30}
-                      alt="google-quiz"
-                    />
-                  </UnstyledButton>
-                </Tooltip>
-              ))}
+
+            <Tooltip
+              label={
+                enableGoogleQuizBtn
+                  ? "Google Quiz"
+                  : "Only available for MCQ and Open ended question types"
+              }
+            >
+              <UnstyledButton
+                disabled={!enableGoogleQuizBtn}
+                styles={{
+                  root: {
+                    cursor: enableGoogleQuizBtn ? "pointer" : "not-allowed",
+                  },
+                }}
+                onClick={(e) => {
+                  handleGoogleQuiz();
+                }}
+              >
+                <Image
+                  src={"/images/google_quiz.png"}
+                  width={30}
+                  height={30}
+                  alt="google-quiz"
+                />
+              </UnstyledButton>
+            </Tooltip>
+
             <Tooltip label="Print">
               <UnstyledButton
                 onClick={(e) => {
