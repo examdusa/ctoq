@@ -55,9 +55,7 @@ export default function ChatContainer() {
   }, [user, fetchUserData]);
 
   return (
-    <ThemeWrapper
-      subscriptionDetails={subscription ? subscription[0] : undefined}
-    >
+    <ThemeWrapper>
       <Flex
         className="border-y-0"
         direction={"row"}
