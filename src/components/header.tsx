@@ -1,8 +1,8 @@
 "use client";
 
-import { initialState, useAppStore } from "@/app/_store/app-store";
 import { trpc } from "@/app/_trpc/client";
 import { SelectSubscription } from "@/db/schema";
+import { useAppStore } from "@/store/app-store";
 import {
   SignedIn,
   SignedOut,
@@ -32,6 +32,8 @@ function AppHeader({ subscriptionDetail }: AppHeaderProps) {
     isLoading: generatingLink,
     isError: generateLinkError,
   } = trpc.generateBillingPortalLink.useMutation();
+  const setQuestions = useAppStore((state) => state.setQuestions);
+  const setSubscription = useAppStore((state) => state.setSubscription);
   const pathname = usePathname();
   const isChatRoute = pathname.includes("/chat");
   const [opened, { open, close }] = useDisclosure();
@@ -51,12 +53,8 @@ function AppHeader({ subscriptionDetail }: AppHeaderProps) {
       }
     }
 
-    
     if (user && isSignedIn && isLoaded) saveUser();
-    if (!isSignedIn) {
-      useAppStore.setState({ ...initialState });
-    }
-  }, [user, isSignedIn, isLoaded, saveUserDetails, userData]);
+  }, [user, isSignedIn, isLoaded, saveUserDetails, userData, setQuestions, setSubscription]);
 
   useEffect(() => {
     if (generateLinkError || generatingLink) {

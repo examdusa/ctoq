@@ -1,5 +1,17 @@
 import { GoogleQuizPayloadSchema } from "@/components/modals/google-quiz-modal";
 import z from "zod";
+import {
+  fillBlankQuizResponseSchema,
+  FillBlankQuizResponseSchema,
+  mcqQuizresponseSchema,
+  MCQQuizResponseSchema,
+  MCQSimilarQuizResponseSchema,
+  mcqSimilarQuizResponseSchema,
+  OpenEndedQuizresponseSchema,
+  openEndedQuizresponseSchema,
+  TrueFalseQuizResponseSchema,
+  trueFalseQuizResponseSchema,
+} from "./zod-schemas-types";
 
 export const questionSchema = z.object({
   question: z.string(),
@@ -106,8 +118,15 @@ async function generateQuestionBank({
 }
 
 async function fetchGeneratedQuestions(
-  refId: string
-): Promise<GeneratedQuestionsResponse> {
+  refId: string,
+  qType: "mcq" | "mcq_similar" | "fill_blank" | "true_false" | "open_ended"
+): Promise<
+  | MCQQuizResponseSchema
+  | FillBlankQuizResponseSchema
+  | MCQSimilarQuizResponseSchema
+  | OpenEndedQuizresponseSchema
+  | TrueFalseQuizResponseSchema
+> {
   try {
     const respStr = await fetch(
       `https://examd.us/llmreader/api/questions/getresponse/${refId}`,
@@ -121,12 +140,54 @@ async function fetchGeneratedQuestions(
     const response = await respStr.json();
     const { data } = response;
     const parsedData = JSON.parse(data);
-    const structuredData = { ...response, data: parsedData };
-    const { data: validatedData, success } =
-      GeneratedQuestionsResponse.safeParse(structuredData);
-
-    if (success) {
-      return validatedData;
+    switch (qType) {
+      case "fill_blank": {
+        const {
+          data: validatedData,
+          success,
+          error,
+        } = fillBlankQuizResponseSchema.safeParse(parsedData);
+        if (success) {
+          return validatedData as FillBlankQuizResponseSchema;
+        }
+      }
+      case "mcq_similar": {
+        const { data: validatedData, success } =
+          mcqSimilarQuizResponseSchema.safeParse(parsedData);
+        if (success) {
+          return validatedData as MCQSimilarQuizResponseSchema;
+        }
+        break;
+      }
+      case "open_ended": {
+        const { data: validatedData, success } =
+          openEndedQuizresponseSchema.safeParse(parsedData);
+        if (success) {
+          return validatedData as OpenEndedQuizresponseSchema;
+        }
+        break;
+      }
+      case "true_false": {
+        const {
+          data: validatedData,
+          success,
+          error,
+        } = trueFalseQuizResponseSchema.safeParse(parsedData);
+        if (success) {
+          return validatedData as TrueFalseQuizResponseSchema;
+        }
+        if (error) {
+          console.log("fetch questions [error]: ", error);
+        }
+        break;
+      }
+      case "mcq": {
+        const { data: validatedData, success } =
+          mcqQuizresponseSchema.safeParse(parsedData);
+        if (success) {
+          return validatedData as MCQQuizResponseSchema;
+        }
+      }
     }
 
     throw new Error("DATA_VALIDATION_FAILED");
@@ -189,7 +250,9 @@ async function uploadResume(
   }
 }
 
-async function createGoogleQuizForm(payload: GoogleQuizPayloadSchema):Promise<string> {
+async function createGoogleQuizForm(
+  payload: GoogleQuizPayloadSchema
+): Promise<string> {
   try {
     const response = await fetch(
       "https://autoproctor.com/canvaslms/api/v1/google-form/create",
@@ -214,6 +277,5 @@ export {
   createGoogleQuizForm,
   fetchGeneratedQuestions,
   generateQuestionBank,
-  uploadResume
+  uploadResume,
 };
-

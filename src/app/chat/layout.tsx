@@ -2,7 +2,6 @@ import { MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
 import type { Metadata } from "next";
 import Provider from "../_trpc/provider";
-import "../globals.css";
 
 export const metadata: Metadata = {
   title: "Content2Quiz",

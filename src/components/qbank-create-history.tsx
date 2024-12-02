@@ -1,6 +1,6 @@
 "use client";
 
-import { SelectQuestionBank } from "@/db/schema";
+import { useAppStore } from "@/store/app-store";
 import { dateFormatter } from "@/utllities/helpers";
 import {
   Card,
@@ -11,22 +11,26 @@ import {
   Tooltip,
   useMantineTheme,
 } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
 interface Props {
-  questions: Record<string, SelectQuestionBank>;
-  showRecord: (id: string) => void;
+  loading: boolean;
 }
 
-function QBankCreateHistory({ questions, showRecord }: Props) {
+function QBankCreateHistory({ loading }: Props) {
+  const questions = useAppStore((state) => state.questions);
   const theme = useMantineTheme();
-  const [id, setId] = useState("");
+  const renderQIdx = useAppStore((state) => state.renderQIdx);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (id) {
-      showRecord(id);
+    if (viewportRef.current) {
+      viewportRef.current.scrollTo({
+        top: viewportRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
-  }, [id, showRecord]);
+  }, [questions]);
 
   return (
     <Flex
@@ -46,6 +50,7 @@ function QBankCreateHistory({ questions, showRecord }: Props) {
       }}
     >
       <ScrollArea
+        ref={viewportRef}
         style={{ height: "calc(100vh - 10vh)", width: "100%" }}
         offsetScrollbars
       >
@@ -77,19 +82,21 @@ function QBankCreateHistory({ questions, showRecord }: Props) {
                       cursor: "pointer",
                       padding: theme.spacing.xs,
                       background:
-                        id === value.id
+                        renderQIdx && renderQIdx === value.id
                           ? "linear-gradient(346deg, rgba(15,128,136,1) 36%, rgba(26,128,198,1) 83%)"
                           : "white",
                     },
                   }}
-                  onClick={() => setId(value.id)}
+                  onClick={() => {
+                    useAppStore.setState({ renderQIdx: value.id });
+                  }}
                 >
                   <Text
                     size="md"
                     fw={"bolder"}
                     lineClamp={2}
                     variant={"text"}
-                    c={id === value.id ? "white" : "black"}
+                    c={renderQIdx === value.id ? "white" : "black"}
                   >
                     {value.prompt}
                   </Text>
@@ -101,7 +108,7 @@ function QBankCreateHistory({ questions, showRecord }: Props) {
                       lh={"sm"}
                       pt={"sm"}
                       variant={"text"}
-                      c={id === value.id ? "white" : "black"}
+                      c={renderQIdx === value.id ? "white" : "black"}
                     >
                       Created at: {dateFormatter(value.createdAt)}
                     </Text>

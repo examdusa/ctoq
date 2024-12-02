@@ -6,7 +6,18 @@ import {
   subscription,
   userProfile,
 } from "@/db/schema";
-import { QuestionSchema, questionSchema } from "@/utllities/apiFunctions";
+import { questionSchema } from "@/utllities/apiFunctions";
+import {
+  FillBlankQuestionSchema,
+  fillBlankQuestionSchema,
+  MCQQuestionSchema,
+  McqSimilarQuestionScheam,
+  mcqSimilarQuestionSchema,
+  OpenendedQuestionSchema,
+  openEndedQuestionSchema,
+  trueFalseQuestionSchema,
+  TrueFalseQuestionsScheam,
+} from "@/utllities/zod-schemas-types";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 import z from "zod";
@@ -67,13 +78,13 @@ export const appRouter = router({
         userId: z.string(),
       })
     )
-    .query(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { userId } = input;
       try {
         const res: SelectSubscription[] = await db
           .select()
           .from(subscription)
-          .where(eq(subscription.id, userId));
+          .where(eq(subscription.userId, userId));
         return res;
       } catch (err) {
         console.log("get subscription by user error: ", err);
@@ -149,7 +160,15 @@ export const appRouter = router({
         userId: z.string(),
         jobId: z.string(),
         questions: z.object({
-          questions: z.array(questionSchema),
+          questions: z.array(
+            z.union([
+              questionSchema,
+              mcqSimilarQuestionSchema,
+              trueFalseQuestionSchema,
+              openEndedQuestionSchema,
+              fillBlankQuestionSchema,
+            ])
+          ),
         }),
         qType: z.enum([
           "mcq",
@@ -297,12 +316,19 @@ export const appRouter = router({
     .input(
       z.object({
         questionId: z.string(),
-        question: questionSchema,
+        question: z.union([
+          questionSchema,
+          mcqSimilarQuestionSchema,
+          trueFalseQuestionSchema,
+          openEndedQuestionSchema,
+          fillBlankQuestionSchema,
+        ]),
         index: z.number(),
+        questionType: z.string(),
       })
     )
     .mutation(async ({ input }) => {
-      const { index, question, questionId } = input;
+      const { index, question, questionId, questionType } = input;
       try {
         const questRec = await db
           .select()
@@ -311,7 +337,31 @@ export const appRouter = router({
 
         if (questRec.length > 0) {
           const rec = { ...questRec[0] };
-          const updatedQuestions = rec.questions as QuestionSchema[];
+          let updatedQuestions:
+            | MCQQuestionSchema[]
+            | FillBlankQuestionSchema[]
+            | TrueFalseQuestionsScheam[]
+            | OpenendedQuestionSchema[]
+            | McqSimilarQuestionScheam[] = [];
+          switch (questionType) {
+            case "mcq":
+              updatedQuestions = rec.questions as MCQQuestionSchema[];
+              break;
+            case "mcq_similar":
+              updatedQuestions = rec.questions as McqSimilarQuestionScheam[];
+              break;
+            case "true_false":
+              updatedQuestions = rec.questions as TrueFalseQuestionsScheam[];
+              break;
+            case "fill_blank":
+              updatedQuestions = rec.questions as FillBlankQuestionSchema[];
+              break;
+            case "open_ended":
+              updatedQuestions = rec.questions as OpenendedQuestionSchema[];
+              break;
+            default:
+              throw new Error("Invalid question type");
+          }
           updatedQuestions[index] = { ...question };
           const updateRes = await db
             .update(questionbank)
@@ -333,11 +383,18 @@ export const appRouter = router({
     .input(
       z.object({
         questionId: z.string(),
-        question: questionSchema,
+        question: z.union([
+          questionSchema,
+          mcqSimilarQuestionSchema,
+          trueFalseQuestionSchema,
+          openEndedQuestionSchema,
+          fillBlankQuestionSchema,
+        ]),
+        questionType: z.string(),
       })
     )
     .mutation(async ({ input }) => {
-      const { question, questionId } = input;
+      const { question, questionId, questionType } = input;
       try {
         const qBankRec = await db
           .select()
@@ -346,9 +403,30 @@ export const appRouter = router({
 
         if (qBankRec.length > 0) {
           const rec = { ...qBankRec[0] };
+          let updatedQuestions:
+            | MCQQuestionSchema[]
+            | FillBlankQuestionSchema[]
+            | TrueFalseQuestionsScheam[]
+            | OpenendedQuestionSchema[]
+            | McqSimilarQuestionScheam[] = [];
+          if (questionType === "mcq") {
+            updatedQuestions = rec.questions as MCQQuestionSchema[];
+            updatedQuestions.push(question as MCQQuestionSchema);
+          } else if (questionType === "mcq_similar") {
+            updatedQuestions = rec.questions as McqSimilarQuestionScheam[];
+            updatedQuestions.push(question as McqSimilarQuestionScheam);
+          } else if (questionType === "true_false") {
+            updatedQuestions = rec.questions as TrueFalseQuestionsScheam[];
+            updatedQuestions.push(question as TrueFalseQuestionsScheam);
+          } else if (questionType === "fill_blank") {
+            updatedQuestions = rec.questions as FillBlankQuestionSchema[];
+            updatedQuestions.push(question as FillBlankQuestionSchema);
+          } else if (questionType === "open_ended") {
+            updatedQuestions = rec.questions as OpenendedQuestionSchema[];
+            updatedQuestions.push(question as OpenendedQuestionSchema);
+          }
+
           const { questionsCount } = rec;
-          const updatedQuestions = rec.questions as QuestionSchema[];
-          updatedQuestions.push(question);
           if (questionsCount) {
             const { rowsAffected } = await db
               .update(questionbank)

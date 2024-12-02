@@ -2,9 +2,9 @@
 
 import { SelectSubscription } from "@/db/schema";
 import { useUser } from "@clerk/nextjs";
-import { AppShell, MantineStyleProps, StyleProp } from "@mantine/core";
+import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { ReactNode, useEffect, useMemo } from "react";
+import { ReactNode, useEffect } from "react";
 import { AppHeader } from "./header";
 
 interface Props {

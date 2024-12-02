@@ -14,7 +14,7 @@ function OverlayModal({
   opened,
   width = 50,
   height = 50,
-  message = "Generating questions...",
+  message,
 }: Props) {
   return (
     <LoadingOverlay

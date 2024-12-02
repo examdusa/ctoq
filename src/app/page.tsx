@@ -3,12 +3,12 @@ import { ThemeWrapper } from "@/components/app-layout";
 import { Faq } from "@/components/faq";
 import Footer from "@/components/footer";
 import { SelectQuestionBank } from "@/db/schema";
+import { useAppStore } from "@/store/app-store";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { Button, Flex, ScrollArea, Text, Title } from "@mantine/core";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { useEffect } from "react";
-import { useAppStore } from "./_store/app-store";
 import { trpc } from "./_trpc/client";
 
 export default function Home() {
@@ -65,7 +65,7 @@ export default function Home() {
     if (!user) {
       openSignIn();
     } else {
-      redirect("/chat");
+      redirect(`/chat`);
     }
   }
 

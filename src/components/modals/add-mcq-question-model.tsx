@@ -1,5 +1,9 @@
 import { trpc } from "@/app/_trpc/client";
-import { QuestionSchema } from "@/utllities/apiFunctions";
+import { useAppStore } from "@/store/app-store";
+import {
+  mcqQuestionSchema,
+  MCQQuestionSchema,
+} from "@/utllities/zod-schemas-types";
 import {
   Avatar,
   Box,
@@ -14,9 +18,7 @@ import {
 } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
 import { CSSProperties, useMemo } from "react";
-import { z } from "zod";
 import { OverlayModal } from "./loader";
-import { useAppStore } from "@/store/app-store";
 
 interface Props {
   open: boolean;
@@ -24,20 +26,7 @@ interface Props {
   questionId: string;
 }
 
-const formSchema = z.object({
-  question: z.string().min(1, "Enter question"),
-  options: z.object({
-    A: z.string().min(1, "Enter value"),
-    B: z.string().min(1, "Enter value"),
-    C: z.string().min(1, "Enter value"),
-    D: z.string().min(1, "Enter value"),
-  }),
-  answer: z.string().min(1, "Select an answer"),
-});
-
-type FormSchema = z.infer<typeof formSchema>;
-
-function AddQuestion({ open, close, questionId }: Props) {
+export default function AddMcqQuestion({ open, close, questionId }: Props) {
   const {
     mutateAsync: addQuestion,
     isLoading: addingQuestion,
@@ -70,10 +59,10 @@ function AddQuestion({ open, close, questionId }: Props) {
     return props;
   }, [additionError, additionSuccess]);
 
-  const form = useForm<FormSchema>({
+  const form = useForm<MCQQuestionSchema>({
     mode: "controlled",
+    validate: zodResolver(mcqQuestionSchema),
     initialValues: {
-      question: "",
       answer: "",
       options: {
         A: "",
@@ -81,25 +70,25 @@ function AddQuestion({ open, close, questionId }: Props) {
         C: "",
         D: "",
       },
+      question: "",
     },
-    validate: zodResolver(formSchema),
   });
 
-  async function handleFormSubmit(values: FormSchema) {
+  async function handleFormSubmit(values: MCQQuestionSchema) {
     const { answer, options, question } = values;
 
-    const payload: QuestionSchema = {
+    const payload: MCQQuestionSchema = {
       answer: answer as "A" | "B" | "C" | "D",
       options: options,
       question: question,
     };
 
     await addQuestion(
-      { question: payload, questionId: questionId },
+      { question: payload, questionId: questionId, questionType: "mcq" },
       {
         onSuccess: () => {
           const questionRec = { ...questions[questionId] };
-          const questionList = questionRec.questions as QuestionSchema[];
+          const questionList = questionRec.questions as MCQQuestionSchema[];
           questionList.push(payload);
           questionRec.questions = [...questionList];
 
@@ -219,5 +208,3 @@ function AddQuestion({ open, close, questionId }: Props) {
     </Modal>
   );
 }
-
-export { AddQuestion };

@@ -1,8 +1,8 @@
 "use client";
 
-import { useAppStore } from "@/app/_store/app-store";
 import { trpc } from "@/app/_trpc/client";
 import { SelectQuestionBank } from "@/db/schema";
+import { useAppStore } from "@/store/app-store";
 import { createGoogleQuizForm, QuestionSchema } from "@/utllities/apiFunctions";
 import { Button, Flex, Group, Loader, Modal, Text } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
@@ -62,14 +62,15 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
     isSuccess: addedToRec,
   } = trpc.addGoogleQuizLinkToRec.useMutation();
   const questions = useAppStore((state) => state.questions);
+  const setQuestions = useAppStore((state) => state.setQuestions);
 
   const updateQuestionRecord = useCallback(
     (quizLink: string) => {
       const updatedQuestionsList = { ...questions };
       updatedQuestionsList[record.id].googleQuizLink = quizLink;
-      useAppStore.setState({ questions: { ...updatedQuestionsList } });
+      setQuestions({ ...updatedQuestionsList });
     },
-    [questions, record.id]
+    [questions, record.id, setQuestions]
   );
 
   const handleCreateQuiz = useCallback(async () => {
