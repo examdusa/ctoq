@@ -269,7 +269,7 @@ export default function Pricing() {
   }, [pathName]);
 
   return (
-    <ThemeWrapper subscriptionDetails={undefined}>
+    <ThemeWrapper>
       <Flex
         direction={"column"}
         w={"100%"}
