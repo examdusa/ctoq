@@ -9,10 +9,9 @@ import { AppHeader } from "./header";
 
 interface Props {
   children: ReactNode;
-  subscriptionDetails: SelectSubscription | undefined;
 }
 
-function AppLayout({ children, subscriptionDetails }: Props) {
+function AppLayout({ children }: Props) {
   const [, { close, open }] = useDisclosure();
   const { isSignedIn } = useUser();
 
@@ -34,7 +33,7 @@ function AppLayout({ children, subscriptionDetails }: Props) {
           }
         }}
       >
-        <AppHeader subscriptionDetail={subscriptionDetails} />
+        <AppHeader  />
       </AppShell.Header>
       <AppShell.Main
         mx={2}

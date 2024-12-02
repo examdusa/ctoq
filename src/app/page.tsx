@@ -2,64 +2,14 @@
 import { ThemeWrapper } from "@/components/app-layout";
 import { Faq } from "@/components/faq";
 import Footer from "@/components/footer";
-import { SelectQuestionBank } from "@/db/schema";
-import { useAppStore } from "@/store/app-store";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { Button, Flex, ScrollArea, Text, Title } from "@mantine/core";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { useEffect } from "react";
-import { trpc } from "./_trpc/client";
 
 export default function Home() {
-  const { user, isSignedIn, isLoaded } = useUser();
+  const { user } = useUser();
   const { openSignIn } = useClerk();
-  const setSubscription = useAppStore((state) => state.setSubscription);
-  const setQuestions = useAppStore((state) => state.setQuestions);
-
-  const { mutateAsync: getSubscriptionDetails, data: subscriptionData } =
-    trpc.getSubscriptionDetails.useMutation();
-  const { mutateAsync: getStoredQuestions, data: storedQuestions } =
-    trpc.getQuestions.useMutation();
-
-  useEffect(() => {
-    if (
-      user &&
-      isSignedIn &&
-      isLoaded &&
-      !subscriptionData &&
-      !storedQuestions
-    ) {
-      (async () => {
-        const [subsData, questions] = await Promise.all([
-          getSubscriptionDetails({ userId: user.id }),
-          getStoredQuestions({ userId: user.id }),
-        ]);
-        setSubscription(subsData);
-        if (questions) {
-          const formattedData: Record<string, SelectQuestionBank> = {};
-          questions.forEach((item) => {
-            formattedData[item.id] = {
-              ...item,
-              createdAt: item.createdAt ? new Date(item.createdAt) : null,
-              questions: item.questions,
-            };
-          });
-          setQuestions(formattedData);
-        }
-      })();
-    }
-  }, [
-    user,
-    isSignedIn,
-    isLoaded,
-    getSubscriptionDetails,
-    subscriptionData,
-    setSubscription,
-    storedQuestions,
-    getStoredQuestions,
-    setQuestions,
-  ]);
 
   function handleSignIn() {
     if (!user) {
@@ -70,7 +20,7 @@ export default function Home() {
   }
 
   return (
-    <ThemeWrapper subscriptionDetails={subscriptionData}>
+    <ThemeWrapper>
       <ScrollArea
         styles={{
           root: {

@@ -4,6 +4,7 @@ import { trpc } from "@/app/_trpc/client";
 import { SelectQuestionBank } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import { createGoogleQuizForm, QuestionSchema } from "@/utllities/apiFunctions";
+import { OpenendedQuestionSchema } from "@/utllities/zod-schemas-types";
 import { Button, Flex, Group, Loader, Modal, Text } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo } from "react";
@@ -74,28 +75,55 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
   );
 
   const handleCreateQuiz = useCallback(async () => {
-    const formattedQuestions: GoogleQuizQuestionsSchema[] = (
-      record.questions as QuestionSchema[]
-    ).map((question) => {
-      let qType: (typeof questionTypeMapping)[keyof typeof questionTypeMapping] =
-        "MULTIPLE_CHOICE";
+    const { questionType } = record;
+    let formattedQuestions: GoogleQuizQuestionsSchema[] = [];
+    if (questionType === "open_ended") {
+      formattedQuestions = (record.questions as OpenendedQuestionSchema[]).map(
+        (question) => {
+          let qType: (typeof questionTypeMapping)[keyof typeof questionTypeMapping] =
+            "MULTIPLE_CHOICE";
+          if (
+            typeof record.questionType === "string" &&
+            record.questionType in questionTypeMapping
+          ) {
+            qType = questionTypeMapping[record.questionType];
+          }
+          return {
+            answer: question.answer,
+            options: [],
+            points: 1,
+            questionText: question.question,
+            questionType: qType,
 
-      if (
-        typeof record.questionType === "string" &&
-        record.questionType in questionTypeMapping
-      ) {
-        qType = questionTypeMapping[record.questionType];
-      }
-      return {
-        answer: question.options[question.answer],
-        options: Object.values(question.options),
-        points: 1,
-        questionText: question.question,
-        questionType: qType,
+            required: true,
+          };
+        }
+      );
+    } else {
+      formattedQuestions = (record.questions as QuestionSchema[]).map(
+        (question) => {
+          let qType: (typeof questionTypeMapping)[keyof typeof questionTypeMapping] =
+            "MULTIPLE_CHOICE";
 
-        required: true,
-      };
-    });
+          if (
+            typeof record.questionType === "string" &&
+            record.questionType in questionTypeMapping
+          ) {
+            qType = questionTypeMapping[record.questionType];
+          }
+
+          return {
+            answer: question.options[question.answer],
+            options: Object.values(question.options),
+            points: 1,
+            questionText: question.question,
+            questionType: qType,
+
+            required: true,
+          };
+        }
+      );
+    }
 
     const payload: GoogleQuizPayloadSchema = {
       questions: formattedQuestions,

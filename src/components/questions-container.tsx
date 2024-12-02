@@ -272,20 +272,23 @@ function RenderQuestionRecrod({
                 <IconPlus />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Google Quiz">
-              <UnstyledButton
-                onClick={(e) => {
-                  handleGoogleQuiz();
-                }}
-              >
-                <Image
-                  src={"/images/google_quiz.png"}
-                  width={30}
-                  height={30}
-                  alt="google-quiz"
-                />
-              </UnstyledButton>
-            </Tooltip>
+            {questionType === "mcq" ||
+              (questionType === "open_ended" && (
+                <Tooltip label="Google Quiz">
+                  <UnstyledButton
+                    onClick={(e) => {
+                      handleGoogleQuiz();
+                    }}
+                  >
+                    <Image
+                      src={"/images/google_quiz.png"}
+                      width={30}
+                      height={30}
+                      alt="google-quiz"
+                    />
+                  </UnstyledButton>
+                </Tooltip>
+              ))}
             <Tooltip label="Print">
               <UnstyledButton
                 onClick={(e) => {
@@ -538,7 +541,7 @@ function QuestionContainer({ subscription, isLoading }: Props) {
           <RenderQuestionRecrod
             record={question}
             planName={subscription.planName ?? ""}
-            userEmail={user.primaryEmailAddressId ?? ""}
+            userEmail={user.primaryEmailAddress?.emailAddress ?? ""}
           />
         )}
       </Flex>

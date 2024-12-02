@@ -19,11 +19,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { AlertModal } from "./modals/alert-modal";
 
-interface AppHeaderProps {
-  subscriptionDetail: SelectSubscription | undefined;
-}
-
-function AppHeader({ subscriptionDetail }: AppHeaderProps) {
+function AppHeader() {
   const { isSignedIn, user, isLoaded } = useUser();
   const { mutateAsync: saveUserDetails, data: userData } =
     trpc.saveUserDetails.useMutation();
@@ -32,8 +28,7 @@ function AppHeader({ subscriptionDetail }: AppHeaderProps) {
     isLoading: generatingLink,
     isError: generateLinkError,
   } = trpc.generateBillingPortalLink.useMutation();
-  const setQuestions = useAppStore((state) => state.setQuestions);
-  const setSubscription = useAppStore((state) => state.setSubscription);
+  const subscriptionDetail = useAppStore((state) => state.subscription)
   const pathname = usePathname();
   const isChatRoute = pathname.includes("/chat");
   const [opened, { open, close }] = useDisclosure();
@@ -54,7 +49,13 @@ function AppHeader({ subscriptionDetail }: AppHeaderProps) {
     }
 
     if (user && isSignedIn && isLoaded) saveUser();
-  }, [user, isSignedIn, isLoaded, saveUserDetails, userData, setQuestions, setSubscription]);
+  }, [
+    user,
+    isSignedIn,
+    isLoaded,
+    saveUserDetails,
+    userData,
+  ]);
 
   useEffect(() => {
     if (generateLinkError || generatingLink) {
