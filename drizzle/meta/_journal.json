@@ -22,6 +22,13 @@
       "when": 1732852597788,
       "tag": "0002_melted_morlun",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1733236797046,
+      "tag": "0003_thankful_fallen_one",
+      "breakpoints": true
     }
   ]
 }

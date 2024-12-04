@@ -56,6 +56,7 @@ export const appRouter = router({
             promptUrl: questionbank.promptUrl,
             withAnswer: questionbank.withAnswer,
             googleQuizLink: questionbank.googleQuizLink,
+            instituteName: questionbank.instituteName,
           })
           .from(questionbank)
           .innerJoin(userProfile, eq(questionbank.userId, userProfile.id))
@@ -224,6 +225,7 @@ export const appRouter = router({
             questionType: questionbank.questionType,
             promptUrl: questionbank.promptUrl,
             withAnswer: questionbank.withAnswer,
+            instituteName: questionbank.instituteName,
           })
           .from(questionbank)
           .where(eq(questionbank.id, jobId));
@@ -469,6 +471,28 @@ export const appRouter = router({
         }
         return { code: "GQUIZLINK_ADDED" };
       } catch (err) {
+        throw err;
+      }
+    }),
+  deleteQBank: procedure
+    .input(
+      z.object({
+        questionId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { questionId } = input;
+      try {
+        const { rowsAffected } = await db
+          .delete(questionbank)
+          .where(eq(questionbank.id, questionId));
+
+        if (rowsAffected === 1) {
+          return { code: "QBANK_DELETED" };
+        }
+        throw new Error("QB_REC_NOT_FOUND");
+      } catch (err) {
+        console.error("deleteQBank error:: ", err);
         throw err;
       }
     }),

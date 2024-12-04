@@ -22,6 +22,7 @@ import {
   Flex,
   List,
   Text,
+  TextInput,
   useMantineColorScheme,
   useMantineTheme,
 } from "@mantine/core";
@@ -73,22 +74,26 @@ function CriteriaForm({ subscription }: Props) {
   const colorScheme = useMantineColorScheme();
   const theme = useMantineTheme();
   const [withAnswer, setWithAnswer] = useState<"GWA" | "GWOA">("GWA");
-  const { mutateAsync: saveQBank, isLoading: savingQBank } =
-    trpc.saveQBank.useMutation();
+  const {
+    mutateAsync: saveQBank,
+    isLoading: savingQBank,
+    isSuccess: savedQBank,
+    isError: saveQBankError,
+  } = trpc.saveQBank.useMutation();
   const questionList = useAppStore((state) => state.questions);
   const setQuestions = useAppStore((state) => state.setQuestions);
-  const { mutateAsync: generateQBank, isLoading: generatingQBank } =
-    useMutation({
-      mutationFn: (values: GenerateQBankPayload) => {
-        return generateQuestionBank({
-          difficulty: values.difficulty,
-          prompt: values.prompt,
-          promptUrl: values.promptUrl,
-          qCount: values.qCount,
-          qType: values.qType,
-        });
-      },
-    });
+  const [instituteName, setInstituteName] = useState("Content To Quiz");
+  const { mutateAsync: generateQBank } = useMutation({
+    mutationFn: (values: GenerateQBankPayload) => {
+      return generateQuestionBank({
+        difficulty: values.difficulty,
+        prompt: values.prompt,
+        promptUrl: values.promptUrl,
+        qCount: values.qCount,
+        qType: values.qType,
+      });
+    },
+  });
   const { mutateAsync: updateCount } = trpc.updateQueryCount.useMutation();
   async function storeQuestionBank(
     questions:
@@ -132,9 +137,16 @@ function CriteriaForm({ subscription }: Props) {
                   createdAt: data.createdAt ? new Date(data.createdAt) : null,
                   questions: data.questions,
                   googleQuizLink: "",
+                  instituteName:
+                    instituteName.length === 0
+                      ? "Content To Quiz"
+                      : instituteName,
                 },
               };
               setQuestions(updatedList);
+              if (instituteName !== "Content To Quiz") {
+                setInstituteName("Content To Quiz");
+              }
             }
           },
         }
@@ -176,9 +188,16 @@ function CriteriaForm({ subscription }: Props) {
                   createdAt: data.createdAt ? new Date(data.createdAt) : null,
                   questions: data.questions,
                   googleQuizLink: "",
+                  instituteName:
+                    instituteName.length === 0
+                      ? "Content To Quiz"
+                      : instituteName,
                 },
               };
               setQuestions(updatedList);
+              if (instituteName !== "Content To Quiz") {
+                setInstituteName("Content To Quiz");
+              }
             }
           },
         }
@@ -290,7 +309,7 @@ function CriteriaForm({ subscription }: Props) {
     <Flex
       w={"100%"}
       direction={"column"}
-      gap={"sm"}
+      gap={"xs"}
       maw={{ xs: "30%", md: "20%" }}
       my={"xs"}
       p={0}
@@ -307,12 +326,20 @@ function CriteriaForm({ subscription }: Props) {
         },
       }}
     >
+      <TextInput
+        value={instituteName}
+        onChange={(e) => setInstituteName(e.target.value)}
+        label="Brought to you by"
+        px={"xs"}
+        disabled={!subscription}
+      />
       <Form
         generateQuestions={generateQuestions}
         priceDetails={priceList}
         subscription={subscription}
         isLoading={savingQBank || fetchingQuestion}
         printResult={(flag) => {}}
+        queryFinished={savedQBank || saveQBankError}
       />
       {disableFields && (
         <Alert

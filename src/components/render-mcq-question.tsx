@@ -19,17 +19,17 @@ import { OverlayModal } from "./modals/loader";
 interface Props {
   index: number;
   question: MCQQuestionSchema;
-  withAnswer: boolean;
   questionId: string;
   questionType: string;
+  showAnswer: boolean;
 }
 
 function RenderMcqQuestion({
   index,
   question,
-  withAnswer,
   questionId,
   questionType,
+  showAnswer,
 }: Props) {
   const [opened, { open: openEditModal, close: closeEditModal }] =
     useDisclosure();
@@ -122,7 +122,7 @@ function RenderMcqQuestion({
               })}
             </List>
             <Badge
-              hidden={!withAnswer}
+              hidden={!!showAnswer}
               variant="outline"
               bg="teal"
               color="white"

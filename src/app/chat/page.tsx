@@ -3,6 +3,7 @@
 import { trpc } from "@/app/_trpc/client";
 import { ThemeWrapper } from "@/components/app-layout";
 import { CriteriaForm } from "@/components/criteria-form";
+import DashboardLoader from "@/components/modals/loader/dashboard-loader";
 import { QBankCreateHistory } from "@/components/qbank-create-history";
 import { QuestionContainer } from "@/components/questions-container";
 import { SelectQuestionBank } from "@/db/schema";
@@ -54,22 +55,20 @@ export default function ChatContainer() {
     }
   }, [user, fetchUserData]);
 
+  if (fetchingSubscription || fetchingQuestions || !user) {
+    return <DashboardLoader />;
+  }
+
   return (
     <ThemeWrapper>
       <Flex
-        className="border-y-0"
         direction={"row"}
         w={"100%"}
-        h={"100%"}
+        h={'100%'}
         justify={"center"}
-        styles={{
-          root: {
-            flexGrow: 1,
-          },
-        }}
         gap={10}
       >
-        <QBankCreateHistory loading={fetchingQuestions} />
+        <QBankCreateHistory />
         <QuestionContainer
           isLoading={fetchingQuestions || fetchingSubscription}
           subscription={subscription ? subscription[0] : undefined}

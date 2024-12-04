@@ -39,8 +39,9 @@ export const questionbank = sqliteTable("questionbank", {
   prompt: text("prompt"),
   questionType: text("questionType"),
   promptUrl: text("promptUrl"),
-  withAnswer: integer('withAnswer', {mode: "boolean"}),
-  googleQuizLink: text("googleQuizLink").default('')
+  withAnswer: integer("withAnswer", { mode: "boolean" }),
+  googleQuizLink: text("googleQuizLink").default(""),
+  instituteName: text("instituteName").default("Content To Quiz"),
 });
 
 export const questionbankRelation = relations(questionbank, ({ many }) => ({
@@ -64,7 +65,7 @@ export const subscription = sqliteTable("subscription", {
   invoiceUrl: text("invoiceUrl"),
   invoicePdfUrl: text("invoicePdfUrl"),
   currency: text("currency", { length: 36 }),
-  customerId: text('customerId')
+  customerId: text("customerId"),
 });
 
 export const subscriptionTableRelation = relations(subscription, ({ one }) => ({

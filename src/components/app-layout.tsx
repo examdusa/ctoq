@@ -1,11 +1,10 @@
 "use client";
 
-import { SelectSubscription } from "@/db/schema";
 import { useUser } from "@clerk/nextjs";
 import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { ReactNode, useEffect } from "react";
-import { AppHeader } from "./header";
+import { AppHeader } from "./app-header/header";
 
 interface Props {
   children: ReactNode;
@@ -24,7 +23,17 @@ function AppLayout({ children }: Props) {
   }, [isSignedIn, close, open]);
 
   return (
-    <AppShell header={{ height: 60, offset: true }}>
+    <AppShell
+      header={{ height: 60, offset: true }}
+      styles={{
+        root: {
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          width: "100%",
+        },
+      }}
+    >
       <AppShell.Header
         className="flex w-full"
         onResize={(event) => {
@@ -33,7 +42,7 @@ function AppLayout({ children }: Props) {
           }
         }}
       >
-        <AppHeader  />
+        <AppHeader />
       </AppShell.Header>
       <AppShell.Main
         mx={2}
@@ -42,7 +51,6 @@ function AppLayout({ children }: Props) {
             display: "flex",
             flexDirection: "column",
             flexGrow: 1,
-            // height: "100%",
             width: "100%",
           },
         }}

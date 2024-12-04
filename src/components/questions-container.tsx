@@ -1,5 +1,6 @@
 "use client";
 
+import { trpc } from "@/app/_trpc/client";
 import { SelectQuestionBank, SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import {
@@ -20,18 +21,22 @@ import {
   Paper,
   ScrollArea,
   Text,
-  ThemeIcon,
   Tooltip,
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconCheck, IconPlus, IconX } from "@tabler/icons-react";
+import {
+  IconEye,
+  IconEyeClosed,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react";
 import dayjs from "dayjs";
 import tz from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AddFillBlankQuestion from "./modals/add-fillblank-question-modal";
 import AddMcqQuestion from "./modals/add-mcq-question-model";
 import AddMcqSimilarQuestion from "./modals/add-mcqsimilar-question-modal";
@@ -60,6 +65,9 @@ interface RenderQuestionRecordProps {
   record: SelectQuestionBank;
   planName: string;
   userEmail: string;
+  instituteName: string;
+  deleteQuestionBank: (questionId: string) => void;
+  deletingQBank: boolean;
 }
 
 interface RenderQuestionProps {
@@ -73,6 +81,7 @@ interface RenderQuestionProps {
   withAnswer: boolean;
   questionId: string;
   questionType: string;
+  showAnswer: boolean;
 }
 
 function RenderQuestion({
@@ -81,6 +90,7 @@ function RenderQuestion({
   withAnswer,
   questionId,
   questionType,
+  showAnswer,
 }: RenderQuestionProps) {
   if (questionType === "mcq") {
     return (
@@ -88,8 +98,8 @@ function RenderQuestion({
         question={question as MCQQuestionSchema}
         index={index}
         questionId={questionId}
-        withAnswer={withAnswer}
         questionType={questionType}
+        showAnswer={showAnswer}
       />
     );
   } else if (questionType === "mcq_similar") {
@@ -98,8 +108,8 @@ function RenderQuestion({
         question={question as McqSimilarQuestionScheam}
         index={index}
         questionId={questionId}
-        withAnswer={withAnswer}
         questionType={questionType}
+        showAnswer={showAnswer}
       />
     );
   } else if (questionType === "true_false") {
@@ -107,9 +117,9 @@ function RenderQuestion({
       <RenderTrueFalseQuestion
         index={index}
         questionId={questionId}
-        withAnswer={withAnswer}
         question={question as TrueFalseQuestionsScheam}
         questionType={questionType}
+        showAnswer={showAnswer}
       />
     );
   } else if (questionType === "fill_blank") {
@@ -118,8 +128,8 @@ function RenderQuestion({
         question={question as FillBlankQuestionSchema}
         index={index}
         questionId={questionId}
-        withAnswer={withAnswer}
         questionType={questionType}
+        showAnswer={showAnswer}
       />
     );
   }
@@ -129,8 +139,8 @@ function RenderQuestion({
       question={question as OpenendedQuestionSchema}
       index={index}
       questionId={questionId}
-      withAnswer={withAnswer}
       questionType={questionType}
+      showAnswer={showAnswer}
     />
   );
 }
@@ -139,12 +149,16 @@ function RenderQuestionRecrod({
   record,
   planName,
   userEmail,
+  instituteName,
+  deleteQuestionBank,
+  deletingQBank,
 }: RenderQuestionRecordProps) {
   const [opened, { close, open }] = useDisclosure();
   const [gquizOpened, { close: closeGQuizModal, open: openGQuizModal }] =
     useDisclosure(false);
   const [showAddModal, { close: closeAddModal, open: openAddModal }] =
     useDisclosure();
+  const [showAnswers, setShowAnswers] = useState(true);
   const { questionType } = record;
 
   const enableGoogleQuizBtn =
@@ -241,30 +255,33 @@ function RenderQuestionRecrod({
           justify={"space-between"}
         >
           <Flex direction={"column"} h="auto" w={"100%"} maw={"80%"} gap={5}>
-            <Text size="xl" fw={"bold"} w={"100%"} lh={"xs"}>
+            <Text size={"xl"} fw={"bold"} w={"100%"} lh={"xs"}>
               {questionBankLabel}
             </Text>
             <Badge
-              size="md"
-              autoCapitalize="characters"
-              autoContrast
-              variant="light"
-              leftSection={
-                record.withAnswer ? (
-                  <ThemeIcon color="teal" size={"xs"} radius={"xl"}>
-                    <IconCheck />
-                  </ThemeIcon>
-                ) : (
-                  <ThemeIcon color="red" size={"xs"} radius={"xl"}>
-                    <IconX />
-                  </ThemeIcon>
-                )
-              }
+              size="lg"
+              variant="gradient"
+              gradient={{ from: "blue", to: "cyan", deg: 248 }}
+              styles={{
+                label: {
+                  textTransform: "none",
+                },
+              }}
             >
-              {record.withAnswer ? "With answers" : "Without answers"}
+              Brought to you by ~ {instituteName}
             </Badge>
           </Flex>
           <Flex direction={"row"} w={"auto"} gap={"sm"} align={"center"}>
+            <Tooltip label={!showAnswers ? "Hide answers" : "Show answers"}>
+              <ActionIcon
+                variant="default"
+                onClick={() => {
+                  setShowAnswers(!showAnswers);
+                }}
+              >
+                {showAnswers ? <IconEyeClosed /> : <IconEye />}
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label="Add new question">
               <ActionIcon
                 variant="default"
@@ -302,7 +319,6 @@ function RenderQuestionRecrod({
                 />
               </UnstyledButton>
             </Tooltip>
-
             <Tooltip label="Print">
               <UnstyledButton
                 onClick={(e) => {
@@ -327,6 +343,17 @@ function RenderQuestionRecrod({
                 </svg>
               </UnstyledButton>
             </Tooltip>
+            <Tooltip label="Delete question bank">
+              <ActionIcon
+                variant="transparent"
+                loading={deletingQBank}
+                onClick={() => {
+                  deleteQuestionBank(record.id);
+                }}
+              >
+                <IconTrash width={24} height={24} />
+              </ActionIcon>
+            </Tooltip>
           </Flex>
         </Flex>
         <Divider />
@@ -345,6 +372,7 @@ function RenderQuestionRecrod({
                     index={i + 1}
                     withAnswer={record.withAnswer as boolean}
                     questionId={record.id}
+                    showAnswer={showAnswers}
                   />
                 </Grid.Col>
               );
@@ -422,6 +450,12 @@ function QuestionContainer({ subscription, isLoading }: Props) {
   const questions = useAppStore((state) => state.questions);
   const renderQIdx = useAppStore((state) => state.renderQIdx);
 
+  const {
+    mutateAsync: deleteQuestionBank,
+    isLoading: deletingQBank,
+    isError: deleteQBankError,
+  } = trpc.deleteQBank.useMutation();
+
   const question = useMemo(() => {
     if (renderQIdx.length > 0 && questions) {
       return questions[renderQIdx];
@@ -437,6 +471,22 @@ function QuestionContainer({ subscription, isLoading }: Props) {
       });
     }
   }, [questions]);
+
+  async function handleDeleteQBank(questId: string) {
+    await deleteQuestionBank(
+      { questionId: questId },
+      {
+        onSuccess: (_, variable) => {
+          const updatedList = Object.fromEntries(
+            Object.entries(questions).filter(
+              ([key, _]) => variable.questionId !== key
+            )
+          );
+          useAppStore.setState({ questions: { ...updatedList } });
+        },
+      }
+    );
+  }
 
   // useEffect(() => {
   //   if (containerRef && containerRef.current) {
@@ -479,6 +529,15 @@ function QuestionContainer({ subscription, isLoading }: Props) {
   //   }
   // }, []);
 
+  if (!subscription) {
+    return (
+      <Flex direction={"column"} w={"100%"} my={"xs"} align={"center"} gap={10}>
+        <OverlayModal opened={isLoading} width={80} height={80} />
+        <Pricing subscriptionDetails={subscription} />
+      </Flex>
+    );
+  }
+
   if (!question) {
     return (
       <Flex
@@ -496,32 +555,6 @@ function QuestionContainer({ subscription, isLoading }: Props) {
         <OverlayModal opened={isLoading} width={80} height={80} />
         <NoQuestion />
       </Flex>
-    );
-  }
-
-  if (!subscription) {
-    return (
-      <ScrollArea
-        style={{ height: "calc(100vh - 64px)", width: "100%" }}
-        offsetScrollbars
-        viewportRef={viewportRef}
-      >
-        <Flex
-          direction={"column"}
-          w={"100%"}
-          styles={{
-            root: {
-              flexGrow: 1,
-            },
-          }}
-          align={"center"}
-          gap={10}
-          justify={"center"}
-        >
-          <OverlayModal opened={isLoading} width={80} height={80} />
-          <Pricing subscriptionDetails={subscription} />
-        </Flex>
-      </ScrollArea>
     );
   }
 
@@ -556,6 +589,9 @@ function QuestionContainer({ subscription, isLoading }: Props) {
             record={question}
             planName={subscription.planName ?? ""}
             userEmail={user.primaryEmailAddress?.emailAddress ?? ""}
+            instituteName={question.instituteName ?? ""}
+            deleteQuestionBank={handleDeleteQBank}
+            deletingQBank={deletingQBank}
           />
         )}
       </Flex>

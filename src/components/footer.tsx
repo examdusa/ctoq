@@ -11,7 +11,7 @@ export default function Footer() {
         px={"sm"}
         align={"center"}
       >
-        <Title order={5} fw={"lighter"} c={"#acaaaa"}>&copy; Content To Code, {dayjs().year()}</Title>
+        <Title order={5} fw={"lighter"} c={"#acaaaa"}>&copy; ContentToQuiz, {dayjs().year()}</Title>
       </Flex>
     </div>
   );

@@ -5,7 +5,6 @@ import {
   Button,
   FileInput,
   Grid,
-  LoadingOverlay,
   NumberInput,
   rem,
   Select,
@@ -15,17 +14,12 @@ import {
 } from "@mantine/core";
 import "@mantine/dropzone/styles.css";
 import { useForm } from "@mantine/form";
-import { IconFile3d, IconLockAccess, IconX } from "@tabler/icons-react";
+import { IconFile3d, IconX } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import z from "zod";
 import { PriceDetail } from "./criteria-form";
-import {
-  PrintIcon,
-  ResetIcon,
-  WithAnswersIcon,
-  WithoutAnswersIcon,
-} from "./icons";
+import { PrintIcon, ResetIcon, WithAnswersIcon } from "./icons";
 
 const formObject = z
   .object({
@@ -61,6 +55,7 @@ interface CriteriaFormProps {
   priceDetails: PriceDetail;
   subscription: SelectSubscription | undefined;
   printResult: (flag: boolean) => void;
+  queryFinished: boolean;
 }
 
 function Form({
@@ -69,6 +64,7 @@ function Form({
   subscription,
   printResult,
   priceDetails,
+  queryFinished,
 }: CriteriaFormProps) {
   const [queryType, setQueryType] = useState<"GWA" | "GWOA">("GWA");
   const [contentType, setContentType] = useState<"Resume" | "URL" | "Keyword">(
@@ -156,6 +152,8 @@ function Form({
     if (subscription) {
       return subscription.queries === 0;
     }
+
+    if (!subscription) return true;
     return false;
   }, [subscription]);
 
@@ -197,17 +195,19 @@ function Form({
     }
   }
 
+  useEffect(() => {
+    if (queryFinished) {
+      form.reset();
+    }
+  }, [queryFinished, form]);
+
   return (
     <form
       onSubmit={form.onSubmit((values) => handleSubmit(values))}
       className="w-full"
     >
-      <LoadingOverlay
-        visible={!subscription && !isLoading}
-        loaderProps={{ children: <IconLockAccess width={50} height={50} /> }}
-      />
-      <Grid p={"xs"}>
-        <Grid.Col span={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
+      <Grid p={"xs"} py={0}>
+        <Grid.Col span={12}>
           <Select
             label="Content Type"
             placeholder="Pick a type"
@@ -225,11 +225,10 @@ function Form({
             ]}
           />
         </Grid.Col>
-        <Grid.Col span={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
+        <Grid.Col span={12}>
           <Select
             label="Question Type"
             placeholder="Pick a type"
-            key={form.key("qType")}
             disabled={disableFields}
             data={[
               { label: "Multiple Choice", value: "mcq" },
@@ -241,13 +240,12 @@ function Form({
             {...form.getInputProps("qType")}
           />
         </Grid.Col>
-        <Grid.Col span={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
+        <Grid.Col span={12}>
           <Select
             size="xs"
             label="Difficulty"
             disabled={disableFields}
             placeholder="Pick a difficulty level"
-            key={form.key("difficulty")}
             data={[
               { label: "Easy", value: "easy" },
               { label: "Medium", value: "medium" },
@@ -256,11 +254,10 @@ function Form({
             {...form.getInputProps("difficulty")}
           />
         </Grid.Col>
-        <Grid.Col span={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
+        <Grid.Col span={12}>
           <NumberInput
             size="xs"
             label="# of Questions"
-            key={form.key("qCount")}
             disabled={disableFields}
             placeholder="eg: 10"
             {...form.getInputProps("qCount")}
@@ -282,7 +279,6 @@ function Form({
               rows={4}
               disabled={disableFields}
               {...form.getInputProps("promptUrl")}
-              key={form.key("promptUrl")}
               pt={5}
             />
           </Grid.Col>
@@ -295,7 +291,6 @@ function Form({
               disabled={disableFields}
               rows={4}
               {...form.getInputProps("prompt")}
-              key={form.key("prompt")}
             />
           </Grid.Col>
         )}
@@ -314,7 +309,6 @@ function Form({
               <FileInput
                 label="Resume file"
                 multiple={false}
-                key={form.key("resumeFile")}
                 placeholder="Click to select file"
                 leftSection={
                   <IconFile3d
@@ -353,7 +347,7 @@ function Form({
             </Grid.Col>
           </>
         )}
-        <Grid.Col span={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
+        <Grid.Col span={12}>
           <Button
             loading={(isLoading && queryType === "GWA") || uploadingResume}
             disabled={disableActionButton}
@@ -362,22 +356,10 @@ function Form({
             type="submit"
             leftSection={<WithAnswersIcon />}
           >
-            Generate w/ Answers
+            Generate questions
           </Button>
         </Grid.Col>
-        <Grid.Col span={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
-          <Button
-            fullWidth
-            loading={(isLoading && queryType === "GWOA") || uploadingResume}
-            disabled={disableActionButton}
-            onClick={() => setQueryType("GWOA")}
-            type="submit"
-            leftSection={<WithoutAnswersIcon />}
-          >
-            Generate w/o Answers
-          </Button>
-        </Grid.Col>
-        <Grid.Col span={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
+        <Grid.Col span={12}>
           <Button
             fullWidth
             disabled={disableActionButton}
@@ -387,7 +369,7 @@ function Form({
             Print all questions
           </Button>
         </Grid.Col>
-        <Grid.Col span={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
+        <Grid.Col span={12}>
           <Button
             fullWidth
             type="reset"

@@ -3,6 +3,7 @@
 import { ThemeWrapper } from "@/components/app-layout";
 import Footer from "@/components/footer";
 import { SelectSubscription } from "@/db/schema";
+import { useAppStore } from "@/store/app-store";
 import { createCheckoutSession } from "@/utllities/apiFunctions";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -231,24 +232,33 @@ export default function Pricing() {
   const theme = useMantineTheme();
   const pathName = usePathname();
   const { user } = useUser();
+  const setSubscription = useAppStore((state) => state.setSubscription);
+  const subscription = useAppStore((state) => state.subscription);
   const {
     mutateAsync: fetchSubsDetails,
     data: subscriptionData,
     isLoading: fetchingSubsDetails,
-  } = trpc.getSubscriptionDetails.useMutation();
+  } = trpc.getUserSubscriptionDetails.useMutation();
 
   const fetchSubscriptionDetails = useCallback(
     async (userId: string) => {
-      await fetchSubsDetails({ userId });
+      await fetchSubsDetails(
+        { userId },
+        {
+          onSuccess: (data) => {
+            setSubscription(data[0]);
+          },
+        }
+      );
     },
-    [fetchSubsDetails]
+    [fetchSubsDetails, setSubscription]
   );
 
   useEffect(() => {
-    if (user && !subscriptionData) {
+    if (user && !subscriptionData && !subscription) {
       fetchSubscriptionDetails(user.id);
     }
-  }, [fetchSubscriptionDetails, subscriptionData, user]);
+  }, [fetchSubscriptionDetails, subscriptionData, user, subscription]);
 
   const title = useMemo(() => {
     if (pathName.includes("/chat")) {
@@ -279,12 +289,12 @@ export default function Pricing() {
         styles={{
           root: {
             padding: `${theme.spacing.lg}`,
-            flexGrow: 1
+            flexGrow: 1,
           },
         }}
       >
         {title}
-        <ScrollArea style={{ height: "calc(100vh-200px)", width: "100%" }}>
+        <ScrollArea style={{ height: "calc(100vh- 20vh)", width: "100%" }}>
           <Flex
             direction={{ xs: "column", md: "row" }}
             w={"100%"}
@@ -297,7 +307,7 @@ export default function Pricing() {
               <RenderPriceItem
                 key={index}
                 item={item}
-                subscriptionDetails={subscriptionData}
+                subscriptionDetails={subscription}
                 loading={fetchingSubsDetails}
               />
             ))}

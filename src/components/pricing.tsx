@@ -130,7 +130,6 @@ function RenderPriceItem({ item, subscriptionDetails }: PriceItemProps) {
       p="xs"
       w={"100%"}
       maw={{ xs: "100%", md: "30%" }}
-      h={"100%"}
       radius={"md"}
       withBorder
     >
@@ -140,11 +139,6 @@ function RenderPriceItem({ item, subscriptionDetails }: PriceItemProps) {
         p={"xs"}
         align={"center"}
         gap={"md"}
-        styles={{
-          root: {
-            flexGrow: 1,
-          },
-        }}
       >
         {!isSignedIn && (
           <Chip
@@ -234,17 +228,16 @@ function Pricing({ subscriptionDetails }: Props) {
           align={"center"}
         >
           <Title order={2}>You&apos;re just a subscription away</Title>
-          <Title order={3}>Our Pricing</Title>
+          <Title order={3}>Monthly Pricing</Title>
         </Flex>
       );
     }
-    return <Title order={2}>Our Pricing</Title>;
+    return <Title order={2}>Monthly Pricing</Title>;
   }, [pathName]);
 
   return (
     <Flex
       direction={"column"}
-      h={"auto"}
       w={"100%"}
       my={{ xl: pathName.includes("/chat") ? 0 : "5%" }}
       align={"center"}
@@ -255,6 +248,7 @@ function Pricing({ subscriptionDetails }: Props) {
             colorScheme === "dark" ? theme.colors.gray[7] : theme.colors.gray[3]
           }`,
           padding: `${theme.spacing.lg}`,
+          flexGrow: 1,
         },
       }}
     >
@@ -263,7 +257,6 @@ function Pricing({ subscriptionDetails }: Props) {
         direction={{ xs: "column", md: "row" }}
         w={"100%"}
         gap={{ xs: "xs", md: "lg" }}
-        h={"100%"}
         p={{ xs: "xs", md: "lg" }}
         justify={"space-around"}
       >

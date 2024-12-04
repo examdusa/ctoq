@@ -5,9 +5,20 @@ import { SelectQuestionBank } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import { createGoogleQuizForm, QuestionSchema } from "@/utllities/apiFunctions";
 import { OpenendedQuestionSchema } from "@/utllities/zod-schemas-types";
-import { Button, Flex, Group, Loader, Modal, Text } from "@mantine/core";
+import {
+  Button,
+  Center,
+  Flex,
+  Group,
+  Loader,
+  Modal,
+  Text,
+  TextInput,
+  useMantineTheme,
+} from "@mantine/core";
+import { useForm, zodResolver } from "@mantine/form";
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { z } from "zod";
 
 interface Props {
@@ -44,6 +55,18 @@ const googleQuizPayloadSchema = z.object({
   shareWithInvite: z.boolean(),
 });
 
+const formSchema = z.object({
+  email: z
+    .string()
+    .email({
+      message: "Invalid email",
+    })
+    .optional()
+    .or(z.literal("")),
+});
+
+type FormSchema = z.infer<typeof formSchema>;
+
 export type GoogleQuizPayloadSchema = z.infer<typeof googleQuizPayloadSchema>;
 export type GoogleQuizQuestionsSchema = z.infer<typeof googleQuizQuestions>;
 
@@ -64,6 +87,15 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
   } = trpc.addGoogleQuizLinkToRec.useMutation();
   const questions = useAppStore((state) => state.questions);
   const setQuestions = useAppStore((state) => state.setQuestions);
+  const theme = useMantineTheme();
+
+  const form = useForm<FormSchema>({
+    mode: "controlled",
+    validate: zodResolver(formSchema),
+    initialValues: {
+      email: "",
+    },
+  });
 
   const updateQuestionRecord = useCallback(
     (quizLink: string) => {
@@ -74,12 +106,14 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
     [questions, record.id, setQuestions]
   );
 
-  const handleCreateQuiz = useCallback(async () => {
-    const { questionType } = record;
-    let formattedQuestions: GoogleQuizQuestionsSchema[] = [];
-    if (questionType === "open_ended") {
-      formattedQuestions = (record.questions as OpenendedQuestionSchema[]).map(
-        (question) => {
+  const handleCreateQuiz = useCallback(
+    async (email: string | undefined) => {
+      const { questionType } = record;
+      let formattedQuestions: GoogleQuizQuestionsSchema[] = [];
+      if (questionType === "open_ended") {
+        formattedQuestions = (
+          record.questions as OpenendedQuestionSchema[]
+        ).map((question) => {
           let qType: (typeof questionTypeMapping)[keyof typeof questionTypeMapping] =
             "MULTIPLE_CHOICE";
           if (
@@ -97,51 +131,52 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
 
             required: true,
           };
-        }
-      );
-    } else {
-      formattedQuestions = (record.questions as QuestionSchema[]).map(
-        (question) => {
-          let qType: (typeof questionTypeMapping)[keyof typeof questionTypeMapping] =
-            "MULTIPLE_CHOICE";
+        });
+      } else {
+        formattedQuestions = (record.questions as QuestionSchema[]).map(
+          (question) => {
+            let qType: (typeof questionTypeMapping)[keyof typeof questionTypeMapping] =
+              "MULTIPLE_CHOICE";
 
-          if (
-            typeof record.questionType === "string" &&
-            record.questionType in questionTypeMapping
-          ) {
-            qType = questionTypeMapping[record.questionType];
+            if (
+              typeof record.questionType === "string" &&
+              record.questionType in questionTypeMapping
+            ) {
+              qType = questionTypeMapping[record.questionType];
+            }
+
+            return {
+              answer: question.options[question.answer],
+              options: Object.values(question.options),
+              points: 1,
+              questionText: question.question,
+              questionType: qType,
+
+              required: true,
+            };
           }
+        );
+      }
 
-          return {
-            answer: question.options[question.answer],
-            options: Object.values(question.options),
-            points: 1,
-            questionText: question.question,
-            questionType: qType,
-
-            required: true,
-          };
-        }
-      );
-    }
-
-    const payload: GoogleQuizPayloadSchema = {
-      questions: formattedQuestions,
-      formTitle: record.prompt ?? "",
-      ownerEmail: userEmail,
-      studentEmail: userEmail,
-      shareWithInvite: true,
-    };
-    const quizLink = await createGQuiz(payload);
-    await addGoogleQuizLinkToRec({ recId: record.id, gQuizLink: quizLink });
-    updateQuestionRecord(quizLink);
-  }, [
-    createGQuiz,
-    record,
-    addGoogleQuizLinkToRec,
-    userEmail,
-    updateQuestionRecord,
-  ]);
+      const payload: GoogleQuizPayloadSchema = {
+        questions: formattedQuestions,
+        formTitle: record.prompt ?? "",
+        ownerEmail: userEmail,
+        studentEmail: !email ? userEmail : email,
+        shareWithInvite: true,
+      };
+      const quizLink = await createGQuiz(payload);
+      await addGoogleQuizLinkToRec({ recId: record.id, gQuizLink: quizLink });
+      updateQuestionRecord(quizLink);
+    },
+    [
+      createGQuiz,
+      record,
+      addGoogleQuizLinkToRec,
+      userEmail,
+      updateQuestionRecord,
+    ]
+  );
 
   function openGoogleQuizLink() {
     if (quizLink) {
@@ -149,10 +184,6 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
       close();
     }
   }
-
-  useEffect(() => {
-    if (!quizLink) handleCreateQuiz();
-  }, [handleCreateQuiz, quizLink]);
 
   const modalConent = useMemo(() => {
     if (quizCreated && addedToRec) {
@@ -168,14 +199,10 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
         </Text>
       );
     }
-
     return (
-      <>
+      <Center w={"100%"} h={"100%"}>
         <Loader color="orange" size="lg" type="bars" />
-        <Text size="md" fw={900} variant="text">
-          Preparing...
-        </Text>
-      </>
+      </Center>
     );
   }, [createQuizError, quizCreated, addToRecError, addedToRec]);
 
@@ -210,26 +237,57 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
           },
         }}
       >
-        {modalConent}
+        {!creatingQuiz && !createQuizError && !quizCreated ? (
+          <form
+            onSubmit={form.onSubmit((values) => {
+              handleCreateQuiz(values.email);
+            })}
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              flexGrow: 1,
+            }}
+          >
+            <TextInput
+              {...form.getInputProps("email")}
+              onChange={(e) => form.setFieldValue("email", e.target.value)}
+              label="Send to the student's email ?"
+              placeholder="Enter student's email"
+              styles={{
+                label: {
+                  fontSize: theme.fontSizes.md,
+                },
+              }}
+            />
+            <Button variant="filled" ml={"auto"} mt={"auto"} type="submit">
+              Create
+            </Button>
+          </form>
+        ) : (
+          modalConent
+        )}
       </Flex>
-      <Group justify="end" w={"100%"} pt={"sm"}>
-        <Button
-          variant="filled"
-          onClick={close}
-          disabled={creatingQuiz}
-          loading={creatingQuiz}
-        >
-          No
-        </Button>
-        <Button
-          variant="filled"
-          onClick={openGoogleQuizLink}
-          disabled={creatingQuiz}
-          loading={creatingQuiz}
-        >
-          Open
-        </Button>
-      </Group>
+      {quizCreated && (
+        <Group justify="end" w={"100%"} pt={"sm"}>
+          <Button
+            variant="filled"
+            onClick={close}
+            disabled={creatingQuiz}
+            loading={creatingQuiz}
+          >
+            No
+          </Button>
+          <Button
+            variant="filled"
+            onClick={openGoogleQuizLink}
+            disabled={creatingQuiz}
+            loading={creatingQuiz}
+          >
+            Open
+          </Button>
+        </Group>
+      )}
     </Modal>
   );
 }

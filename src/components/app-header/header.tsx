@@ -1,7 +1,6 @@
 "use client";
 
 import { trpc } from "@/app/_trpc/client";
-import { SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import {
   SignedIn,
@@ -10,14 +9,22 @@ import {
   UserButton,
   useUser,
 } from "@clerk/nextjs";
-import { Flex, Menu, rem, Text, UnstyledButton } from "@mantine/core";
+import {
+  Burger,
+  Flex,
+  Group,
+  Menu,
+  rem,
+  Text,
+  UnstyledButton,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconDownload, IconEye, IconSettings } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { AlertModal } from "./modals/alert-modal";
+import { AlertModal } from "../modals/alert-modal";
 
 function AppHeader() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -28,10 +35,11 @@ function AppHeader() {
     isLoading: generatingLink,
     isError: generateLinkError,
   } = trpc.generateBillingPortalLink.useMutation();
-  const subscriptionDetail = useAppStore((state) => state.subscription)
+  const subscriptionDetail = useAppStore((state) => state.subscription);
   const pathname = usePathname();
   const isChatRoute = pathname.includes("/chat");
   const [opened, { open, close }] = useDisclosure();
+  const [burgerOpened, { toggle }] = useDisclosure(false);
 
   useEffect(() => {
     async function saveUser() {
@@ -49,13 +57,7 @@ function AppHeader() {
     }
 
     if (user && isSignedIn && isLoaded) saveUser();
-  }, [
-    user,
-    isSignedIn,
-    isLoaded,
-    saveUserDetails,
-    userData,
-  ]);
+  }, [user, isSignedIn, isLoaded, saveUserDetails, userData]);
 
   useEffect(() => {
     if (generateLinkError || generatingLink) {
@@ -111,11 +113,9 @@ function AppHeader() {
           <Link href={"/pricing"}>Pricing</Link>
           <Text>About us</Text>
           <Text>Support</Text>
-          {pathname.includes("/pricing") && (
-            <SignedOut>
-              <SignInButton mode="modal" forceRedirectUrl={"/pricing"} />
-            </SignedOut>
-          )}
+          <SignedOut>
+            <SignInButton mode="modal" forceRedirectUrl={"/pricing"} />
+          </SignedOut>
         </Flex>
       </Flex>
     );
@@ -155,47 +155,55 @@ function AppHeader() {
         gap={"md"}
         align={"center"}
       >
-        {!isChatRoute && <Link href={"/chat"}>Generate Questions</Link>}
-        <Menu shadow="md" width={200}>
-          <Menu.Target>
-            <UnstyledButton>Subscription</UnstyledButton>
-          </Menu.Target>
+        <Group visibleFrom="md" gap={"sm"}>
+          {!isChatRoute && <Link href={"/chat"}>Dashboard</Link>}
+          <Menu shadow="md" width={200}>
+            <Menu.Target>
+              <UnstyledButton>Subscription</UnstyledButton>
+            </Menu.Target>
 
-          <Menu.Dropdown>
-            <Menu.Item
-              leftSection={
-                <IconEye style={{ width: rem(14), height: rem(14) }} />
-              }
-            >
-              <Link href={"/pricing"}>See plans</Link>
-            </Menu.Item>
-            <Menu.Item
-              disabled={!subscriptionDetail}
-              leftSection={
-                <IconSettings style={{ width: rem(14), height: rem(14) }} />
-              }
-              onClick={handleManageSubs}
-            >
-              Manage
-            </Menu.Item>
-            <Menu.Item
-              disabled={!subscriptionDetail}
-              leftSection={
-                <IconDownload style={{ width: rem(14), height: rem(14) }} />
-              }
-              onClick={() => {
-                if (subscriptionDetail) {
-                  window.open(
-                    subscriptionDetail.invoicePdfUrl as string,
-                    "_blank"
-                  );
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={
+                  <IconEye style={{ width: rem(14), height: rem(14) }} />
                 }
-              }}
-            >
-              Invoice
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
+              >
+                <Link href={"/pricing"}>See plans</Link>
+              </Menu.Item>
+              <Menu.Item
+                disabled={!subscriptionDetail}
+                leftSection={
+                  <IconSettings style={{ width: rem(14), height: rem(14) }} />
+                }
+                onClick={handleManageSubs}
+              >
+                Manage
+              </Menu.Item>
+              <Menu.Item
+                disabled={!subscriptionDetail}
+                leftSection={
+                  <IconDownload style={{ width: rem(14), height: rem(14) }} />
+                }
+                onClick={() => {
+                  if (subscriptionDetail) {
+                    window.open(
+                      subscriptionDetail.invoicePdfUrl as string,
+                      "_blank"
+                    );
+                  }
+                }}
+              >
+                Invoice
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
+        <Burger
+          opened={burgerOpened}
+          onClick={toggle}
+          hiddenFrom="md"
+          size="sm"
+        />
         <SignedIn>
           <UserButton />
         </SignedIn>

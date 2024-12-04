@@ -17,17 +17,17 @@ import { OverlayModal } from "./modals/loader";
 interface Props {
   index: number;
   question: OpenendedQuestionSchema;
-  withAnswer: boolean;
   questionId: string;
   questionType: string;
+  showAnswer: boolean;
 }
 
 function RenderOpenEndedQuestion({
   index,
   question,
-  withAnswer,
   questionId,
   questionType,
+  showAnswer,
 }: Props) {
   const [opened, { open: openEditModal, close: closeEditModal }] =
     useDisclosure();
@@ -94,7 +94,13 @@ function RenderOpenEndedQuestion({
             <Text fw={"bold"} c={theme.colors.gray[7]} size="sm">
               Answer
             </Text>
-            <Text fw={"bold"} c={theme.colors.gray[7]} size="xs" pt={"xs"}>
+            <Text
+              fw={"bold"}
+              c={theme.colors.gray[7]}
+              size="xs"
+              pt={"xs"}
+              hidden={!!showAnswer}
+            >
               {question.answer}
             </Text>
           </Alert>
