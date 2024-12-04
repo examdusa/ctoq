@@ -114,7 +114,7 @@ function AppHeader() {
           <Text>About us</Text>
           <Text>Support</Text>
           <SignedOut>
-            <SignInButton mode="modal" forceRedirectUrl={"/pricing"} />
+            <SignInButton mode="modal" forceRedirectUrl={"/"} />
           </SignedOut>
         </Flex>
       </Flex>
