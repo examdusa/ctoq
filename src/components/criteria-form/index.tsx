@@ -77,8 +77,6 @@ function CriteriaForm({ subscription }: Props) {
   const {
     mutateAsync: saveQBank,
     isLoading: savingQBank,
-    isSuccess: savedQBank,
-    isError: saveQBankError,
   } = trpc.saveQBank.useMutation();
   const questionList = useAppStore((state) => state.questions);
   const setQuestions = useAppStore((state) => state.setQuestions);
@@ -339,7 +337,6 @@ function CriteriaForm({ subscription }: Props) {
         subscription={subscription}
         isLoading={savingQBank || fetchingQuestion}
         printResult={(flag) => {}}
-        queryFinished={savedQBank || saveQBankError}
       />
       {disableFields && (
         <Alert

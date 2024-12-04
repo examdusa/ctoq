@@ -55,7 +55,6 @@ interface CriteriaFormProps {
   priceDetails: PriceDetail;
   subscription: SelectSubscription | undefined;
   printResult: (flag: boolean) => void;
-  queryFinished: boolean;
 }
 
 function Form({
@@ -64,7 +63,6 @@ function Form({
   subscription,
   printResult,
   priceDetails,
-  queryFinished,
 }: CriteriaFormProps) {
   const [queryType, setQueryType] = useState<"GWA" | "GWOA">("GWA");
   const [contentType, setContentType] = useState<"Resume" | "URL" | "Keyword">(
@@ -119,6 +117,7 @@ function Form({
         return null;
       },
     },
+
   });
 
   const disableActionButton = useMemo(() => {
@@ -194,12 +193,6 @@ function Form({
       );
     }
   }
-
-  useEffect(() => {
-    if (queryFinished) {
-      form.reset();
-    }
-  }, [queryFinished, form]);
 
   return (
     <form

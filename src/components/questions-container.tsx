@@ -251,11 +251,11 @@ function RenderQuestionRecrod({
           direction={"row"}
           h={"auto"}
           w={"100%"}
-          align={"center"}
+          align={"start"}
           justify={"space-between"}
         >
           <Flex direction={"column"} h="auto" w={"100%"} maw={"80%"} gap={5}>
-            <Text size={"xl"} fw={"bold"} w={"100%"} lh={"xs"}>
+            <Text size={"xl"} fw={"bold"} w={"100%"} maw={'90%'} lineClamp={2}>
               {questionBankLabel}
             </Text>
             <Badge
