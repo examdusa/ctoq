@@ -56,7 +56,7 @@ export default function EditTrueFalseQuestion({
       ...storedQuestion,
       question: storedQuestion.question ?? undefined,
       statemen: storedQuestion.statemen ?? undefined,
-      suggested_lines: storedQuestion.suggested_lines ?? undefined,
+      Suggested_lines: storedQuestion.Suggested_lines ?? undefined,
     },
   });
 
@@ -148,7 +148,7 @@ export default function EditTrueFalseQuestion({
               label="Statement"
             />
           )}
-          {storedQuestion.suggested_lines && (
+          {storedQuestion.Suggested_lines && (
             <Textarea
               withAsterisk
               label="Suggested lines"
