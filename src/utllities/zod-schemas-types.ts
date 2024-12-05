@@ -41,7 +41,7 @@ const trueFalseQuestionSchema = z.object({
   options: z.record(z.string(), z.string()),
   answer: z.string(),
   statemen: z.string().optional(),
-  suggested_lines: z.string().optional(),
+  Suggested_lines: z.string().optional(),
 });
 
 const trueFalsePromptResponseSchema = z.object({

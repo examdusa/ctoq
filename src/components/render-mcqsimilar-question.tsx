@@ -65,7 +65,7 @@ function RenderMcqSimilarQuestion({
         justify={"start"}
       >
         <ActionIcon size={"sm"} variant="light">
-          {index}
+          {index + 1}
         </ActionIcon>
         <Flex
           direction={"column"}

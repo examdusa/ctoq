@@ -3,7 +3,6 @@
 import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
 import {
-  mcqSimilarQuestionSchema,
   openEndedQuestionSchema,
   OpenendedQuestionSchema,
 } from "@/utllities/zod-schemas-types";

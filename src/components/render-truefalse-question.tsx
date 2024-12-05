@@ -23,7 +23,7 @@ interface Props {
   question: TrueFalseQuestionsScheam;
   questionId: string;
   questionType: string;
-  showAnswer: boolean
+  showAnswer: boolean;
 }
 
 function RenderTrueFalseQuestion({
@@ -31,7 +31,7 @@ function RenderTrueFalseQuestion({
   question,
   questionId,
   questionType,
-  showAnswer
+  showAnswer,
 }: Props) {
   const [opened, { open: openEditModal, close: closeEditModal }] =
     useDisclosure();
@@ -45,17 +45,19 @@ function RenderTrueFalseQuestion({
           {question.question}
         </Text>
       );
-    } else if (question.statemen || question.suggested_lines) {
+    } else if (question.statemen || question.Suggested_lines) {
       return (
         <Flex direction={"column"} w={"100%"} h={"auto"} gap={"xs"}>
           <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]}>
             {question.statemen}
           </Text>
-          <Alert variant="light" color="green" radius={"md"}>
-            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} size="xs">
-              {question.suggested_lines}
-            </Text>
-          </Alert>
+          {question.Suggested_lines && (
+            <Alert variant="light" color="green" radius={"md"}>
+              <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} size="xs">
+                {question.Suggested_lines}
+              </Text>
+            </Alert>
+          )}
         </Flex>
       );
     }
@@ -91,7 +93,7 @@ function RenderTrueFalseQuestion({
         justify={"start"}
       >
         <ActionIcon size={"sm"} variant="light">
-          {index}
+          {index + 1}
         </ActionIcon>
         <Flex
           direction={"column"}

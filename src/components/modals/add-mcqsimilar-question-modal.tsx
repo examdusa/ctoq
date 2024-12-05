@@ -12,7 +12,7 @@ import {
   Grid,
   Group,
   Modal,
-  Select,
+  MultiSelect,
   Text,
   TextInput,
 } from "@mantine/core";
@@ -66,6 +66,16 @@ export default function AddMcqSimilarQuestion({
   const form = useForm<McqSimilarQuestionScheam>({
     mode: "controlled",
     validate: zodResolver(mcqSimilarQuestionSchema),
+    initialValues: {
+      question: "",
+      answer: [],
+      options: {
+        A: "",
+        B: "",
+        C: "",
+        D: "",
+      },
+    },
   });
 
   async function handleFormSubmit(values: McqSimilarQuestionScheam) {
@@ -178,10 +188,9 @@ export default function AddMcqSimilarQuestion({
                 </Grid.Col>
               </Grid>
             </Flex>
-            <Select
+            <MultiSelect
               label="Correct Answer"
-              multiple
-              placeholder="Pick one"
+              placeholder="Pick answer(s)"
               data={[
                 { value: "A", label: "A" },
                 { value: "B", label: "B" },

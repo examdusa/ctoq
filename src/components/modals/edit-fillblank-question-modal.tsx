@@ -5,7 +5,6 @@ import { useAppStore } from "@/store/app-store";
 import {
   fillBlankQuestionSchema,
   FillBlankQuestionSchema,
-  mcqSimilarQuestionSchema,
 } from "@/utllities/zod-schemas-types";
 import {
   Avatar,

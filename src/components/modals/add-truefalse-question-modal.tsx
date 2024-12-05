@@ -66,6 +66,14 @@ export default function AddTrueFalseQuestion({
   const form = useForm<TrueFalseQuestionsScheam>({
     mode: "controlled",
     validate: zodResolver(trueFalseQuestionSchema),
+    initialValues: {
+      answer: "",
+      options: {
+        A: "",
+        B: "",
+      },
+      question: "",
+    },
   });
 
   async function handleFormSubmit(values: TrueFalseQuestionsScheam) {

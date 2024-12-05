@@ -4,19 +4,22 @@ import { GenerateQBankPayload, uploadResume } from "@/utllities/apiFunctions";
 import {
   Button,
   FileInput,
+  Flex,
   Grid,
   NumberInput,
   rem,
   Select,
+  Text,
   Textarea,
   Tooltip,
   UnstyledButton,
+  useMantineTheme,
 } from "@mantine/core";
 import "@mantine/dropzone/styles.css";
 import { useForm } from "@mantine/form";
-import { IconFile3d, IconX } from "@tabler/icons-react";
+import { IconFile3d, IconInfoCircle, IconX } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import z from "zod";
 import { PriceDetail } from "./criteria-form";
 import { PrintIcon, ResetIcon, WithAnswersIcon } from "./icons";
@@ -74,6 +77,8 @@ function Form({
         await uploadResume(url, file),
     });
 
+  const theme = useMantineTheme();
+
   const form = useForm<FormObjectType>({
     mode: "controlled",
     initialValues: {
@@ -117,7 +122,6 @@ function Form({
         return null;
       },
     },
-
   });
 
   const disableActionButton = useMemo(() => {
@@ -165,13 +169,13 @@ function Form({
       });
 
       const {
-        skills_and_experience: { experience_details, skills, experience_level },
+        skills_and_experience: { skills },
         candidate_name,
       } = uploadRes;
       generateQuestions(
         {
           ...values,
-          prompt: [...experience_details, experience_level, ...skills],
+          prompt: [...skills],
         },
         queryType,
         candidate_name ?? null,
@@ -237,6 +241,11 @@ function Form({
           <Select
             size="xs"
             label="Difficulty"
+            styles={{
+              label: {
+                fontSize: theme.fontSizes.sm,
+              },
+            }}
             disabled={disableFields}
             placeholder="Pick a difficulty level"
             data={[
@@ -267,12 +276,27 @@ function Form({
         {contentType === "URL" && (
           <Grid.Col span={{ xs: 12, sm: 12, md: 12, lg: 12 }}>
             <Textarea
-              label="URL"
+              label={
+                <Flex direction={"row"} w={"100%"} gap={"sm"} align={"center"}>
+                  <Text size="sm">URL</Text>
+                  <Tooltip
+                    withArrow
+                    label="Can only access public URLs that don&apos;t require any login. If using a Google Doc, it must be unrestricted. If the document is larger that will take longer time."
+                  >
+                    <IconInfoCircle width={20} height={20} />
+                  </Tooltip>
+                </Flex>
+              }
               placeholder="Content url goes here"
               rows={4}
               disabled={disableFields}
               {...form.getInputProps("promptUrl")}
               pt={5}
+              styles={{
+                label: {
+                  fontSize: theme.fontSizes.xs,
+                },
+              }}
             />
           </Grid.Col>
         )}
@@ -291,11 +315,26 @@ function Form({
           <>
             <Grid.Col>
               <Textarea
-                label="Resume URL"
+                label={
+                  <Flex direction={"row"} w={"100%"} gap={"sm"} align={"center"}>
+                    <Text size="sm">URL</Text>
+                    <Tooltip
+                      withArrow
+                      label="Can only access public URLs that don&apos;t require any login. If using a Google Doc, it must be unrestricted. LinkedIn cannot be used. "
+                    >
+                      <IconInfoCircle width={20} height={20} />
+                    </Tooltip>
+                  </Flex>
+                }
                 placeholder="Enter resume url"
                 rows={2}
                 {...form.getInputProps("resumeUrl")}
                 key={form.key("resumeUrl")}
+                styles={{
+                  label: {
+                    fontSize: theme.fontSizes.xs,
+                  },
+                }}
               />
             </Grid.Col>
             <Grid.Col>

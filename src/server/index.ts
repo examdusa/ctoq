@@ -347,24 +347,44 @@ export const appRouter = router({
             | McqSimilarQuestionScheam[] = [];
           switch (questionType) {
             case "mcq":
-              updatedQuestions = rec.questions as MCQQuestionSchema[];
+              updatedQuestions = [...rec.questions as MCQQuestionSchema[]];
+              updatedQuestions.splice(index, 1, question as MCQQuestionSchema);
               break;
             case "mcq_similar":
-              updatedQuestions = rec.questions as McqSimilarQuestionScheam[];
+              updatedQuestions = [...rec.questions as McqSimilarQuestionScheam[]];
+              updatedQuestions.splice(
+                index,
+                1,
+                question as McqSimilarQuestionScheam
+              );
               break;
             case "true_false":
-              updatedQuestions = rec.questions as TrueFalseQuestionsScheam[];
+              updatedQuestions = [...rec.questions as TrueFalseQuestionsScheam[]];
+              updatedQuestions.splice(
+                index,
+                1,
+                question as TrueFalseQuestionsScheam
+              );
               break;
             case "fill_blank":
-              updatedQuestions = rec.questions as FillBlankQuestionSchema[];
+              updatedQuestions = [...rec.questions as FillBlankQuestionSchema[]];
+              updatedQuestions.splice(
+                index,
+                1,
+                question as FillBlankQuestionSchema
+              );
               break;
             case "open_ended":
-              updatedQuestions = rec.questions as OpenendedQuestionSchema[];
+              updatedQuestions = [...rec.questions as OpenendedQuestionSchema[]];
+              updatedQuestions.splice(
+                index,
+                1,
+                question as OpenendedQuestionSchema
+              );
               break;
             default:
               throw new Error("Invalid question type");
           }
-          updatedQuestions[index] = { ...question };
           const updateRes = await db
             .update(questionbank)
             .set({ questions: updatedQuestions })

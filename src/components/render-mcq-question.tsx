@@ -65,7 +65,7 @@ function RenderMcqQuestion({
         justify={"start"}
       >
         <ActionIcon size={"sm"} variant="light">
-          {index}
+          {index + 1}
         </ActionIcon>
         <Flex
           direction={"column"}
@@ -138,7 +138,7 @@ function RenderMcqQuestion({
       <EditMcqQuestion
         open={opened}
         close={closeEditModal}
-        index={index - 1}
+        index={index}
         question={question}
         questionId={questionId}
         questionType={questionType}

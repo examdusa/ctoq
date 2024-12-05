@@ -87,10 +87,7 @@ export default function EditMcqQuestion({
         questionType: questionType,
       },
       {
-        onSuccess: (_, variable) => {
-          const { questionType } = variable;
-          if (questionType === "mcq") {
-          }
+        onSuccess: () => {
           const quesRec = { ...questions[questionId] };
           const updatedList = quesRec.questions as MCQQuestionSchema[];
           updatedList[index] = values;
