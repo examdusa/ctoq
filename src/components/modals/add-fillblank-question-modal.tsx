@@ -66,6 +66,16 @@ export default function AddFillBlankQuestion({
   const form = useForm<FillBlankQuestionSchema>({
     mode: "controlled",
     validate: zodResolver(fillBlankQuestionSchema),
+    initialValues: {
+      question: "",
+      options: {
+        A: "",
+        B: "",
+        C: "",
+        D: "",
+      },
+      answer: "",
+    },
   });
 
   async function handleFormSubmit(values: FillBlankQuestionSchema) {

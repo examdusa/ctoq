@@ -13,6 +13,7 @@ import {
 import { useUser } from "@clerk/nextjs";
 import {
   ActionIcon,
+  Avatar,
   Badge,
   Button,
   Divider,
@@ -34,7 +35,6 @@ import {
 import dayjs from "dayjs";
 import tz from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AddFillBlankQuestion from "./modals/add-fillblank-question-modal";
@@ -255,7 +255,7 @@ function RenderQuestionRecrod({
           justify={"space-between"}
         >
           <Flex direction={"column"} h="auto" w={"100%"} maw={"80%"} gap={5}>
-            <Text size={"xl"} fw={"bold"} w={"100%"} maw={'90%'} lineClamp={2}>
+            <Text size={"xl"} fw={"bold"} w={"100%"} maw={"90%"} lineClamp={2}>
               {questionBankLabel}
             </Text>
             <Badge
@@ -311,11 +311,10 @@ function RenderQuestionRecrod({
                   handleGoogleQuiz();
                 }}
               >
-                <Image
+                <Avatar
                   src={"/images/google_quiz.png"}
-                  width={30}
-                  height={30}
-                  alt="google-quiz"
+                  alt="it's me"
+                  size={"sm"}
                 />
               </UnstyledButton>
             </Tooltip>
@@ -369,7 +368,7 @@ function RenderQuestionRecrod({
                   <RenderQuestion
                     question={question}
                     questionType={questionType}
-                    index={i + 1}
+                    index={i}
                     withAnswer={record.withAnswer as boolean}
                     questionId={record.id}
                     showAnswer={showAnswers}
