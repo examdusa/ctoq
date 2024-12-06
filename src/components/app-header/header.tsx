@@ -118,6 +118,9 @@ function AppHeader() {
         <Group visibleFrom="md" gap={"sm"}>
           <Link href={"/about"}>About us</Link>
           <Link href={"/support"}>Support</Link>
+          <SignedOut>
+            <Link href={"/pricing"}>See plans</Link>
+          </SignedOut>
           <SignedIn>
             {!isChatRoute && <Link href={"/chat"}>Dashboard</Link>}
             <Menu shadow="md" width={200}>
