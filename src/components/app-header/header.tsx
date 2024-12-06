@@ -81,46 +81,6 @@ function AppHeader() {
     }
   }
 
-  if (!isSignedIn) {
-    return (
-      <Flex w={"100%"} justify={"space-between"} align={"center"} px={"xs"}>
-        <Flex
-          direction={"row"}
-          w={"100%"}
-          gap={1}
-          align={"center"}
-          justify={"start"}
-        >
-          <Image
-            src={"/images/content2Quiz.png"}
-            width={60}
-            height={60}
-            alt="app_logo"
-          />
-          <Link href={"/"}>
-            <Text w={"100%"} c={"blue"} fw={700}>
-              Content2Quiz
-            </Text>
-          </Link>
-        </Flex>
-        <Flex
-          w={"100%"}
-          direction={"row"}
-          gap={"md"}
-          justify={"end"}
-          align={"center"}
-        >
-          <Link href={"/pricing"}>Pricing</Link>
-          <Text>About us</Text>
-          <Text>Support</Text>
-          <SignedOut>
-            <SignInButton mode="modal" forceRedirectUrl={"/"} />
-          </SignedOut>
-        </Flex>
-      </Flex>
-    );
-  }
-
   return (
     <Flex
       w={"100%"}
@@ -156,47 +116,50 @@ function AppHeader() {
         align={"center"}
       >
         <Group visibleFrom="md" gap={"sm"}>
-          {!isChatRoute && <Link href={"/chat"}>Dashboard</Link>}
-          <Menu shadow="md" width={200}>
-            <Menu.Target>
-              <UnstyledButton>Subscription</UnstyledButton>
-            </Menu.Target>
-
-            <Menu.Dropdown>
-              <Menu.Item
-                leftSection={
-                  <IconEye style={{ width: rem(14), height: rem(14) }} />
-                }
-              >
-                <Link href={"/pricing"}>See plans</Link>
-              </Menu.Item>
-              <Menu.Item
-                disabled={!subscriptionDetail}
-                leftSection={
-                  <IconSettings style={{ width: rem(14), height: rem(14) }} />
-                }
-                onClick={handleManageSubs}
-              >
-                Manage
-              </Menu.Item>
-              <Menu.Item
-                disabled={!subscriptionDetail}
-                leftSection={
-                  <IconDownload style={{ width: rem(14), height: rem(14) }} />
-                }
-                onClick={() => {
-                  if (subscriptionDetail) {
-                    window.open(
-                      subscriptionDetail.invoicePdfUrl as string,
-                      "_blank"
-                    );
+          <Link href={"/about"}>About us</Link>
+          <Link href={"/support"}>Support</Link>
+          <SignedIn>
+            {!isChatRoute && <Link href={"/chat"}>Dashboard</Link>}
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
+                <UnstyledButton>Subscription</UnstyledButton>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={
+                    <IconEye style={{ width: rem(14), height: rem(14) }} />
                   }
-                }}
-              >
-                Invoice
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
+                >
+                  <Link href={"/pricing"}>See plans</Link>
+                </Menu.Item>
+                <Menu.Item
+                  disabled={!subscriptionDetail}
+                  leftSection={
+                    <IconSettings style={{ width: rem(14), height: rem(14) }} />
+                  }
+                  onClick={handleManageSubs}
+                >
+                  Manage
+                </Menu.Item>
+                <Menu.Item
+                  disabled={!subscriptionDetail}
+                  leftSection={
+                    <IconDownload style={{ width: rem(14), height: rem(14) }} />
+                  }
+                  onClick={() => {
+                    if (subscriptionDetail) {
+                      window.open(
+                        subscriptionDetail.invoicePdfUrl as string,
+                        "_blank"
+                      );
+                    }
+                  }}
+                >
+                  Invoice
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </SignedIn>
         </Group>
         <Burger
           opened={burgerOpened}
@@ -207,6 +170,9 @@ function AppHeader() {
         <SignedIn>
           <UserButton />
         </SignedIn>
+        <SignedOut>
+          <SignInButton mode="modal" />
+        </SignedOut>
       </Flex>
       <AlertModal
         title="Please wait"
