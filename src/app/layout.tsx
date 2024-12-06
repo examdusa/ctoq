@@ -43,7 +43,7 @@ export default function RootLayout({
           </MantineProvider>
         </Provider>
       </body>
-      <Script>
+      <Script id="live-agent">
         {`
       var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
     (function(){

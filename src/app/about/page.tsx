@@ -128,7 +128,7 @@ export default function AboutUs() {
                   Customizable
                 </Title>
                 <Text mt={"md"}>
-                  Tailor quizzes to your specific needs. Whether it's
+                  Tailor quizzes to your specific needs. Whether it&apos;s
                   multiple-choice questions, true/false, or fill-in-the-blanks,
                   we offer a range of question formats to suit your content.
                 </Text>
