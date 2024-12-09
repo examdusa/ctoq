@@ -100,6 +100,46 @@ const mcqQuizresponseSchema = z.object({
   url_responses: z.array(mcqPromptResponseSchema),
 });
 
+const instituteSchema = z.object({
+  instituteId: z.number(),
+  invokeUrl: z.string(),
+  lmsName: z.string(),
+  instituteName: z.string(),
+  campusName: z.string().nullable(),
+  updatedBy: z.string().nullable(),
+  instituteType: z.string(),
+  instituteUrl: z.string(),
+  lmsVersion: z.string().nullable(),
+  accountId: z.string().nullable(),
+  launchUrl: z.string(),
+  developersKey: z.string().nullable(),
+  lmsToken: z.string().nullable(),
+  configurationKey: z.string().nullable(),
+  sharedSecret: z.string().nullable(),
+  ltiClientid: z.string().nullable(),
+  ltiXml: z.string().nullable(),
+  ltiXmlurl: z.string().nullable(),
+  status: z.number(),
+  firstName: z.string(),
+  contactLastname: z.string(),
+  contactPhone: z.string(),
+  fax: z.string().nullable(),
+  address1: z.string().nullable(),
+  address2: z.string().nullable(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  zip: z.string().nullable(),
+  country: z.string().nullable(),
+  lmsAccessurl: z.string(),
+  guid: z.string(),
+  createUser: z.string(),
+  createDate: z.string(),
+  modifyUser: z.string(),
+  modifyDate: z.string(),
+});
+
+const institutesListSchema = z.array(instituteSchema);
+
 type MCQSimilarQuizResponseSchema = z.infer<
   typeof mcqSimilarQuizResponseSchema
 >;
@@ -113,10 +153,14 @@ type FillBlankQuestionSchema = z.infer<typeof fillBlankQuestionSchema>;
 type OpenendedQuestionSchema = z.infer<typeof openEndedQuestionSchema>;
 type TrueFalseQuestionsScheam = z.infer<typeof trueFalseQuestionSchema>;
 type McqSimilarQuestionScheam = z.infer<typeof mcqSimilarQuestionSchema>;
+type Institute = z.infer<typeof instituteSchema>;
+type Institutes = z.infer<typeof institutesListSchema>;
 
 export {
   fillBlankQuestionSchema,
   fillBlankQuizResponseSchema,
+  instituteSchema,
+  institutesListSchema,
   mcqQuestionSchema,
   mcqQuizresponseSchema,
   mcqSimilarQuestionSchema,
@@ -129,6 +173,8 @@ export {
 export type {
   FillBlankQuestionSchema,
   FillBlankQuizResponseSchema,
+  Institute,
+  Institutes,
   MCQQuestionSchema,
   MCQQuizResponseSchema,
   McqSimilarQuestionScheam,

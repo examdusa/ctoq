@@ -1,16 +1,18 @@
+import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
 import { OpenendedQuestionSchema } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
   Alert,
+  Button,
   Flex,
+  Group,
   Text,
   Tooltip,
-  UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconEdit } from "@tabler/icons-react";
+import { IconEdit, IconTrash } from "@tabler/icons-react";
 import EditOpenEndedQuestion from "./modals/edit-openended-question-modal";
 import { OverlayModal } from "./modals/loader";
 
@@ -33,6 +35,37 @@ function RenderOpenEndedQuestion({
     useDisclosure();
   const theme = useMantineTheme();
   const generatingQuestions = useAppStore((state) => state.generatingQuestions);
+  const questions = useAppStore((state) => state.questions);
+  const { mutateAsync: deleteQuestion, isLoading: deletingQuestion } =
+    trpc.deleteQuestion.useMutation();
+
+  async function deleteQuestionByIdx() {
+    await deleteQuestion(
+      { questionId, qIdx: index },
+      {
+        onSuccess: (data) => {
+          const { code } = data;
+
+          if (code === "QUESTION_DELETED") {
+            if (questions && questions[questionId]) {
+              const record = { ...questions[questionId] };
+              const newList = [
+                ...(record.questions as OpenendedQuestionSchema[]).filter(
+                  (_, id) => id !== index
+                ),
+              ];
+              useAppStore.setState({
+                questions: {
+                  ...questions,
+                  [questionId]: { ...record, questions: [...newList] },
+                },
+              });
+            }
+          }
+        },
+      }
+    );
+  }
 
   return (
     <Flex
@@ -79,16 +112,33 @@ function RenderOpenEndedQuestion({
             <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]}>
               {question.question}
             </Text>
-            <Tooltip label="Edit question">
-              <UnstyledButton
-                onClick={(e) => {
-                  openEditModal();
-                }}
-                ml={"auto"}
-              >
-                <IconEdit />
-              </UnstyledButton>
-            </Tooltip>
+            <Group gap={"xs"}>
+              <Tooltip label="Edit question">
+                <Button
+                  variant="transparent"
+                  size="xs"
+                  onClick={(e) => {
+                    openEditModal();
+                  }}
+                  ml={"auto"}
+                >
+                  <IconEdit />
+                </Button>
+              </Tooltip>
+              <Tooltip label="Delete questions">
+                <Button
+                  loading={deletingQuestion}
+                  variant="transparent"
+                  size="xs"
+                  onClick={(e) => {
+                    deleteQuestionByIdx();
+                  }}
+                  ml={"auto"}
+                >
+                  <IconTrash />
+                </Button>
+              </Tooltip>
+            </Group>
           </Flex>
           <Alert variant="light" color="green" radius={"md"}>
             <Text fw={"bold"} c={theme.colors.gray[7]} size="sm">

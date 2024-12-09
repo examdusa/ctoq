@@ -1,18 +1,20 @@
+import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
 import { MCQQuestionSchema } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
   Badge,
+  Button,
   Flex,
+  Group,
   List,
   Text,
   ThemeIcon,
   Tooltip,
-  UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconEdit } from "@tabler/icons-react";
+import { IconEdit, IconTrash } from "@tabler/icons-react";
 import EditMcqQuestion from "./modals/edit-mcq-question-model";
 import { OverlayModal } from "./modals/loader";
 
@@ -35,6 +37,37 @@ function RenderMcqQuestion({
     useDisclosure();
   const theme = useMantineTheme();
   const generatingQuestions = useAppStore((state) => state.generatingQuestions);
+  const { mutateAsync: deleteQuestion, isLoading: deletingQuestion } =
+    trpc.deleteQuestion.useMutation();
+  const questions = useAppStore((state) => state.questions);
+
+  async function deleteQuestionByIdx() {
+    await deleteQuestion(
+      { questionId, qIdx: index },
+      {
+        onSuccess: (data) => {
+          const { code } = data;
+
+          if (code === "QUESTION_DELETED") {
+            if (questions && questions[questionId]) {
+              const record = { ...questions[questionId] };
+              const newList = [
+                ...(record.questions as MCQQuestionSchema[]).filter(
+                  (_, id) => id !== index
+                ),
+              ];
+              useAppStore.setState({
+                questions: {
+                  ...questions,
+                  [questionId]: { ...record, questions: [...newList] },
+                },
+              });
+            }
+          }
+        },
+      }
+    );
+  }
 
   return (
     <Flex
@@ -77,20 +110,42 @@ function RenderMcqQuestion({
             },
           }}
         >
-          <Flex direction={"row"} w={"100%"} justify="space-between">
-            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]}>
+          <Flex
+            direction={"row"}
+            w={"100%"}
+            justify="space-between"
+            align={"start"}
+          >
+            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} maw={"85%"}>
               {question.question}
             </Text>
-            <Tooltip label="Edit question">
-              <UnstyledButton
-                onClick={(e) => {
-                  openEditModal();
-                }}
-                ml={"auto"}
-              >
-                <IconEdit />
-              </UnstyledButton>
-            </Tooltip>
+            <Group gap={"xs"}>
+              <Tooltip label="Edit question">
+                <Button
+                  variant="transparent"
+                  size="xs"
+                  onClick={(e) => {
+                    openEditModal();
+                  }}
+                  ml={"auto"}
+                >
+                  <IconEdit />
+                </Button>
+              </Tooltip>
+              <Tooltip label="Delete questions">
+                <Button
+                  loading={deletingQuestion}
+                  variant="transparent"
+                  size="xs"
+                  onClick={(e) => {
+                    deleteQuestionByIdx();
+                  }}
+                  ml={"auto"}
+                >
+                  <IconTrash />
+                </Button>
+              </Tooltip>
+            </Group>
           </Flex>
           <Flex
             direction={"column"}

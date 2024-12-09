@@ -347,11 +347,13 @@ export const appRouter = router({
             | McqSimilarQuestionScheam[] = [];
           switch (questionType) {
             case "mcq":
-              updatedQuestions = [...rec.questions as MCQQuestionSchema[]];
+              updatedQuestions = [...(rec.questions as MCQQuestionSchema[])];
               updatedQuestions.splice(index, 1, question as MCQQuestionSchema);
               break;
             case "mcq_similar":
-              updatedQuestions = [...rec.questions as McqSimilarQuestionScheam[]];
+              updatedQuestions = [
+                ...(rec.questions as McqSimilarQuestionScheam[]),
+              ];
               updatedQuestions.splice(
                 index,
                 1,
@@ -359,7 +361,9 @@ export const appRouter = router({
               );
               break;
             case "true_false":
-              updatedQuestions = [...rec.questions as TrueFalseQuestionsScheam[]];
+              updatedQuestions = [
+                ...(rec.questions as TrueFalseQuestionsScheam[]),
+              ];
               updatedQuestions.splice(
                 index,
                 1,
@@ -367,7 +371,9 @@ export const appRouter = router({
               );
               break;
             case "fill_blank":
-              updatedQuestions = [...rec.questions as FillBlankQuestionSchema[]];
+              updatedQuestions = [
+                ...(rec.questions as FillBlankQuestionSchema[]),
+              ];
               updatedQuestions.splice(
                 index,
                 1,
@@ -375,7 +381,9 @@ export const appRouter = router({
               );
               break;
             case "open_ended":
-              updatedQuestions = [...rec.questions as OpenendedQuestionSchema[]];
+              updatedQuestions = [
+                ...(rec.questions as OpenendedQuestionSchema[]),
+              ];
               updatedQuestions.splice(
                 index,
                 1,
@@ -513,6 +521,77 @@ export const appRouter = router({
         throw new Error("QB_REC_NOT_FOUND");
       } catch (err) {
         console.error("deleteQBank error:: ", err);
+        throw err;
+      }
+    }),
+  deleteQuestion: procedure
+    .input(
+      z.object({
+        questionId: z.string(),
+        qIdx: z.number(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { qIdx, questionId } = input;
+
+      try {
+        const records = await db
+          .select()
+          .from(questionbank)
+          .where(eq(questionbank.id, questionId));
+
+        if (records.length > 0) {
+          const record = records[0];
+          if (record.questions) {
+            const newList = [
+              ...(
+                record.questions as
+                  | MCQQuestionSchema[]
+                  | FillBlankQuestionSchema[]
+                  | TrueFalseQuestionsScheam[]
+                  | OpenendedQuestionSchema[]
+                  | McqSimilarQuestionScheam[]
+              ).filter((_, id) => id !== qIdx),
+            ];
+            const { rowsAffected } = await db
+              .update(questionbank)
+              .set({ questions: [...newList] })
+              .where(eq(questionbank.id, questionId));
+
+            if (rowsAffected === 0) {
+              throw new Error("QB_REC_NOT_FOUND");
+            }
+            return { code: "QUESTION_DELETED" };
+          }
+        }
+        throw new Error("QB_REC_NOT_FOUND");
+      } catch (err) {
+        console.log("DEL_QUESTION_ERROR: ", err);
+        throw err;
+      }
+    }),
+  updateQuestionBankHeading: procedure
+    .input(
+      z.object({
+        questionId: z.string(),
+        heading: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { questionId, heading } = input;
+
+      try {
+        const { rowsAffected } = await db
+          .update(questionbank)
+          .set({ prompt: heading })
+          .where(eq(questionbank.id, questionId));
+
+        if (rowsAffected === 0) {
+          throw new Error("QB_REC_NOT_FOUND");
+        }
+        return { code: "HEADING_UPDATED" };
+      } catch (err) {
+        console.log("UPDATE_HEADING_ERROR: ", err);
         throw err;
       }
     }),

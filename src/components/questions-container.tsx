@@ -24,9 +24,11 @@ import {
   Text,
   Tooltip,
   UnstyledButton,
+  useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
+  IconEditCircle,
   IconEye,
   IconEyeClosed,
   IconPlus,
@@ -43,6 +45,7 @@ import AddMcqSimilarQuestion from "./modals/add-mcqsimilar-question-modal";
 import AddOpenEndedQuestion from "./modals/add-openended-question-modal";
 import AddTrueFalseQuestion from "./modals/add-truefalse-question-modal";
 import { AlertModal } from "./modals/alert-modal";
+import EditQuestionLabelModal from "./modals/edit-question-label";
 import { GoogleQuizModal } from "./modals/google-quiz-modal";
 import { OverlayModal } from "./modals/loader";
 import { NoQuestion } from "./no-question";
@@ -78,7 +81,6 @@ interface RenderQuestionProps {
     | TrueFalseQuestionsScheam
     | McqSimilarQuestionScheam;
   index: number;
-  withAnswer: boolean;
   questionId: string;
   questionType: string;
   showAnswer: boolean;
@@ -87,7 +89,6 @@ interface RenderQuestionProps {
 function RenderQuestion({
   question,
   index,
-  withAnswer,
   questionId,
   questionType,
   showAnswer,
@@ -154,15 +155,17 @@ function RenderQuestionRecrod({
   deletingQBank,
 }: RenderQuestionRecordProps) {
   const [opened, { close, open }] = useDisclosure();
+  const [
+    headingModalOpened,
+    { close: closeHeadingModal, open: openHeadingModal },
+  ] = useDisclosure();
   const [gquizOpened, { close: closeGQuizModal, open: openGQuizModal }] =
     useDisclosure(false);
   const [showAddModal, { close: closeAddModal, open: openAddModal }] =
     useDisclosure();
   const [showAnswers, setShowAnswers] = useState(true);
   const { questionType } = record;
-
-  const enableGoogleQuizBtn =
-    questionType === "mcq" || questionType === "open_ended";
+  const theme = useMantineTheme();
 
   const questions = useMemo(() => {
     if (questionType === "mcq") {
@@ -255,9 +258,27 @@ function RenderQuestionRecrod({
           justify={"space-between"}
         >
           <Flex direction={"column"} h="auto" w={"100%"} maw={"80%"} gap={5}>
-            <Text size={"xl"} fw={"bold"} w={"100%"} maw={"90%"} lineClamp={2}>
-              {questionBankLabel}
-            </Text>
+            <Flex
+              direction={"row"}
+              w={"100%"}
+              maw={"90%"}
+              align={"center"}
+              gap={"sm"}
+            >
+              <Text size={"xl"} fw={"bold"} lineClamp={2}>
+                {questionBankLabel}
+              </Text>
+              <Tooltip label="Edit heading">
+                <ActionIcon
+                  variant="transparent"
+                  onClick={() => {
+                    openHeadingModal();
+                  }}
+                >
+                  <IconEditCircle color={theme.colors.blue[5]} />
+                </ActionIcon>
+              </Tooltip>
+            </Flex>
             <Badge
               size="lg"
               variant="gradient"
@@ -274,39 +295,31 @@ function RenderQuestionRecrod({
           <Flex direction={"row"} w={"auto"} gap={"sm"} align={"center"}>
             <Tooltip label={!showAnswers ? "Hide answers" : "Show answers"}>
               <ActionIcon
-                variant="default"
+                variant="transparent"
                 onClick={() => {
                   setShowAnswers(!showAnswers);
                 }}
               >
-                {showAnswers ? <IconEyeClosed /> : <IconEye />}
+                {showAnswers ? (
+                  <IconEyeClosed color={theme.colors.blue[5]} />
+                ) : (
+                  <IconEye color={theme.colors.blue[5]} />
+                )}
               </ActionIcon>
             </Tooltip>
             <Tooltip label="Add new question">
               <ActionIcon
-                variant="default"
+                variant="transparent"
                 onClick={() => {
                   openAddModal();
                 }}
               >
-                <IconPlus />
+                <IconPlus fill={theme.colors.blue[5]} />
               </ActionIcon>
             </Tooltip>
 
-            <Tooltip
-              label={
-                enableGoogleQuizBtn
-                  ? "Google Quiz"
-                  : "Only available for MCQ and Open ended question types"
-              }
-            >
+            <Tooltip label={"Google Quiz"}>
               <UnstyledButton
-                disabled={!enableGoogleQuizBtn}
-                styles={{
-                  root: {
-                    cursor: enableGoogleQuizBtn ? "pointer" : "not-allowed",
-                  },
-                }}
                 onClick={(e) => {
                   handleGoogleQuiz();
                 }}
@@ -369,7 +382,6 @@ function RenderQuestionRecrod({
                     question={question}
                     questionType={questionType}
                     index={i}
-                    withAnswer={record.withAnswer as boolean}
                     questionId={record.id}
                     showAnswer={showAnswers}
                   />
@@ -395,6 +407,13 @@ function RenderQuestionRecrod({
           }
         />
       </Flex>
+      {headingModalOpened && (
+        <EditQuestionLabelModal
+          open={headingModalOpened}
+          close={closeHeadingModal}
+          record={record}
+        />
+      )}
       {questionType === "open_ended" && (
         <AddOpenEndedQuestion
           open={showAddModal}
@@ -449,11 +468,8 @@ function QuestionContainer({ subscription, isLoading }: Props) {
   const questions = useAppStore((state) => state.questions);
   const renderQIdx = useAppStore((state) => state.renderQIdx);
 
-  const {
-    mutateAsync: deleteQuestionBank,
-    isLoading: deletingQBank,
-    isError: deleteQBankError,
-  } = trpc.deleteQBank.useMutation();
+  const { mutateAsync: deleteQuestionBank, isLoading: deletingQBank } =
+    trpc.deleteQBank.useMutation();
 
   const question = useMemo(() => {
     if (renderQIdx.length > 0 && questions) {

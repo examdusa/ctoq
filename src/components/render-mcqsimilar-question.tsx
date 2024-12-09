@@ -1,18 +1,20 @@
+import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
 import { McqSimilarQuestionScheam } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
   Badge,
+  Button,
   Flex,
+  Group,
   List,
   Text,
   ThemeIcon,
   Tooltip,
-  UnstyledButton,
-  useMantineTheme,
+  useMantineTheme
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconEdit } from "@tabler/icons-react";
+import { IconEdit, IconTrash } from "@tabler/icons-react";
 import EditMcqSimilarQuestion from "./modals/edit-mcqsimilar-question-modal";
 import { OverlayModal } from "./modals/loader";
 
@@ -21,7 +23,7 @@ interface Props {
   question: McqSimilarQuestionScheam;
   questionId: string;
   questionType: string;
-  showAnswer: boolean
+  showAnswer: boolean;
 }
 
 function RenderMcqSimilarQuestion({
@@ -29,12 +31,43 @@ function RenderMcqSimilarQuestion({
   question,
   questionId,
   questionType,
-  showAnswer
+  showAnswer,
 }: Props) {
   const [opened, { open: openEditModal, close: closeEditModal }] =
     useDisclosure();
   const theme = useMantineTheme();
   const generatingQuestions = useAppStore((state) => state.generatingQuestions);
+  const questions = useAppStore((state) => state.questions);
+  const { mutateAsync: deleteQuestion, isLoading: deletingQuestion } =
+    trpc.deleteQuestion.useMutation();
+
+  async function deleteQuestionByIdx() {
+    await deleteQuestion(
+      { questionId, qIdx: index },
+      {
+        onSuccess: (data) => {
+          const { code } = data;
+
+          if (code === "QUESTION_DELETED") {
+            if (questions && questions[questionId]) {
+              const record = { ...questions[questionId] };
+              const newList = [
+                ...(record.questions as McqSimilarQuestionScheam[]).filter(
+                  (_, id) => id !== index
+                ),
+              ];
+              useAppStore.setState({
+                questions: {
+                  ...questions,
+                  [questionId]: { ...record, questions: [...newList] },
+                },
+              });
+            }
+          }
+        },
+      }
+    );
+  }
 
   return (
     <Flex
@@ -78,19 +111,36 @@ function RenderMcqSimilarQuestion({
           }}
         >
           <Flex direction={"row"} w={"100%"} justify="space-between">
-            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]}>
+            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} maw={'85%'}>
               {question.question}
             </Text>
-            <Tooltip label="Edit question">
-              <UnstyledButton
-                onClick={(e) => {
-                  openEditModal();
-                }}
-                ml={"auto"}
-              >
-                <IconEdit />
-              </UnstyledButton>
-            </Tooltip>
+            <Group gap={"xs"}>
+              <Tooltip label="Edit question">
+                <Button
+                  variant="transparent"
+                  size="xs"
+                  onClick={(e) => {
+                    openEditModal();
+                  }}
+                  ml={"auto"}
+                >
+                  <IconEdit />
+                </Button>
+              </Tooltip>
+              <Tooltip label="Delete questions">
+                <Button
+                  loading={deletingQuestion}
+                  variant="transparent"
+                  size="xs"
+                  onClick={(e) => {
+                    deleteQuestionByIdx();
+                  }}
+                  ml={"auto"}
+                >
+                  <IconTrash />
+                </Button>
+              </Tooltip>
+            </Group>
           </Flex>
           <Flex
             direction={"column"}
