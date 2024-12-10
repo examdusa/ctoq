@@ -12,8 +12,12 @@ import {
   UnifiedSchema,
 } from "@/utllities/apiFunctions";
 import {
+  FillBlankQuestionSchema,
   Institute,
+  MCQQuestionSchema,
+  McqSimilarQuestionScheam,
   OpenendedQuestionSchema,
+  TrueFalseQuestionsScheam,
 } from "@/utllities/zod-schemas-types";
 import {
   Button,
@@ -68,7 +72,6 @@ const proctoredTestForm = z.object({
     .trim()
     .min(1, { message: "Email cannot be empty" })
     .email({ message: "Enter a valid email address" }),
-  userName: z.string().trim().min(1, { message: "Username cannot be empty" }),
   instituteName: z
     .string()
     .nullable()
@@ -81,13 +84,13 @@ const proctoredTestForm = z.object({
     .min(1, { message: "Course name cannot be empty" }),
   quizType: z.string().trim().min(1, { message: "Select a quiz type" }),
   quizName: z.string().trim().min(1, { message: "Quiz name cannot be empty" }),
-  questionCount: z
+  quizDuration: z
     .number({
-      invalid_type_error: "Question count must be a number",
+      invalid_type_error: "Duration must be a number",
     })
-    .positive({ message: "Question count must be a positive number" })
-    .int({ message: "Question count must be an integer" })
-    .min(1, { message: "Enter a valid question count" }),
+    .positive({ message: "Duration must be a positive number" })
+    .int({ message: "Duration must be an integer" })
+    .min(1, { message: "Enter a valid value" }),
   instructorId: z
     .number({
       invalid_type_error: "Instructor ID must be a number",
@@ -171,12 +174,11 @@ export default function RenderProctoredTestForm({
       courseName: "",
       instituteName: "",
       instructorId: 0,
-      questionCount: 10,
       quizName: "",
       userEmail: "",
       userFirstName: "",
       userLastName: "",
-      userName: "",
+      quizDuration: 30,
       quizType: "Written AI Exam",
     },
     mode: "controlled",
@@ -258,14 +260,13 @@ export default function RenderProctoredTestForm({
     const {
       userEmail,
       instituteName,
-      userName,
       userFirstName,
       userLastName,
       courseName,
       instructorId,
-      questionCount,
       quizName,
       quizType,
+      quizDuration,
     } = values;
     const quizLink = await handleCreateQuiz(userEmail);
     if (!instituteName || !institutesById[instituteName]) return;
@@ -274,7 +275,7 @@ export default function RenderProctoredTestForm({
       userEmail: userEmail,
       userFirstName: userFirstName,
       userLastName: userLastName,
-      userName: userName,
+      userName: userEmail,
       courseName: courseName,
       quizName: quizName,
       instructorId: "" + instructorId,
@@ -283,8 +284,15 @@ export default function RenderProctoredTestForm({
       quizDetails: {
         quizType: quizType,
         quizContentFile: quizLink,
-        quizTime: 30,
-        quizQuestionCount: questionCount,
+        quizTime: quizDuration,
+        quizQuestionCount: (
+          record.questions as
+            | MCQQuestionSchema[]
+            | FillBlankQuestionSchema[]
+            | TrueFalseQuestionsScheam[]
+            | OpenendedQuestionSchema[]
+            | McqSimilarQuestionScheam[]
+        ).length,
       },
       assignmentDetails: {
         assignId: "",
@@ -404,13 +412,6 @@ export default function RenderProctoredTestForm({
         <Grid>
           <Grid.Col span={{ xs: 12, md: 4 }}>
             <TextInput
-              label="Username"
-              placeholder="Enter username"
-              {...form.getInputProps("userName")}
-            />
-          </Grid.Col>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <TextInput
               label="First name"
               placeholder="Enter first name"
               {...form.getInputProps("userFirstName")}
@@ -498,9 +499,9 @@ export default function RenderProctoredTestForm({
           </Grid.Col>
           <Grid.Col span={{ xs: 12, md: 4 }}>
             <NumberInput
-              label="Question count"
-              {...form.getInputProps("questionCount")}
-              placeholder="Enter count"
+              {...form.getInputProps("quizDuration")}
+              label="Quiz duration (in mins)"
+              placeholder="Enter quiz duration"
             />
           </Grid.Col>
         </Grid>
