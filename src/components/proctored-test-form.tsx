@@ -320,6 +320,7 @@ export default function RenderProctoredTestForm({
   const getProfileDetails = useDebouncedCallback(
     async (guid: string, id: string) => {
       const response = await getProfileDetailsByGuidUserId(guid, id);
+      console.log(response);
 
       if (!response) {
         form.setFieldError("instructorId", "Invalid Instructor Id");
@@ -453,8 +454,10 @@ export default function RenderProctoredTestForm({
               onChange={(value) => {
                 if (typeof value === "string") {
                   handleInstructorIdInput(value);
+                  form.setFieldValue("instructorId", Number(value));
                 } else {
                   handleInstructorIdInput("" + value);
+                  form.setFieldValue("instructorId", value);
                 }
               }}
               label={

@@ -228,7 +228,7 @@ export default function NonProctoredGoogleQuiz({ record, userEmail, close }: Pro
   if (creatingQuiz || addingToRecord) {
     return (
       <Center w={"100%"} h={"100%"} display={"flex"} flex={1}>
-        <Loader color="orange" size="lg" type="bars" />
+        <Loader color="orange" size="lg" type="dots" />
       </Center>
     );
   }
