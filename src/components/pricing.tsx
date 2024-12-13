@@ -2,6 +2,7 @@
 
 import { SelectSubscription } from "@/db/schema";
 import { createCheckoutSession } from "@/utllities/apiFunctions";
+import { PRICE_LIST, PriceDetail } from "@/utllities/constants";
 import { useUser } from "@clerk/nextjs";
 import {
   Button,
@@ -23,15 +24,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-export interface PriceDetail {
-  priceId: string;
-  amount: number;
-  label: string;
-  description: React.ReactNode;
-  features: string[];
-  imageUrl: string;
-  regularPrice: number | null;
-}
 
 interface PriceItemProps {
   item: PriceDetail;
@@ -41,36 +33,6 @@ interface PriceItemProps {
 interface Props {
   subscriptionDetails: SelectSubscription | undefined;
 }
-
-const priceList: PriceDetail[] = [
-  {
-    priceId: "price_1QGNbZBpYrMQUMR14RX1iZVQ",
-    amount: 500,
-    label: "Starter",
-    description: <div></div>,
-    imageUrl: "/images/base-sub.png",
-    features: ["Generate 4 question set of 10 question each per month"],
-    regularPrice: null,
-  },
-  {
-    priceId: "price_1QGNbZBpYrMQUMR14RX1iZVQ",
-    amount: 4999,
-    label: "Premium",
-    description: <div></div>,
-    features: ["200 sets of question for up to 30 questions per month"],
-    regularPrice: 99,
-    imageUrl: "/images/premium-sub.png",
-  },
-  {
-    priceId: "price_1QGNbZBpYrMQUMR14RX1iZVQ",
-    amount: 19900,
-    label: "Integrated",
-    description: <div></div>,
-    features: ["Generate unlimited sets of question each month"],
-    regularPrice: 399,
-    imageUrl: "/images/integrated-sub.png",
-  },
-];
 
 function RenderPriceItem({ item, subscriptionDetails }: PriceItemProps) {
   const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
@@ -260,7 +222,7 @@ function Pricing({ subscriptionDetails }: Props) {
         p={{ xs: "xs", md: "lg" }}
         justify={"space-around"}
       >
-        {priceList.map((item, index) => (
+        {PRICE_LIST.map((item, index) => (
           <RenderPriceItem
             key={index}
             item={item}
