@@ -2,7 +2,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
 import {
   trueFalseQuestionSchema,
-  TrueFalseQuestionsScheam,
+  TrueFalseQuestionScheam,
 } from "@/utllities/zod-schemas-types";
 import {
   Box,
@@ -60,7 +60,7 @@ export default function AddTrueFalseQuestion({
     return props;
   }, [additionError, additionSuccess]);
 
-  const form = useForm<TrueFalseQuestionsScheam>({
+  const form = useForm<TrueFalseQuestionScheam>({
     mode: "controlled",
     validate: zodResolver(trueFalseQuestionSchema),
     initialValues: {
@@ -70,10 +70,10 @@ export default function AddTrueFalseQuestion({
     },
   });
 
-  async function handleFormSubmit(values: TrueFalseQuestionsScheam) {
+  async function handleFormSubmit(values: TrueFalseQuestionScheam) {
     const { answer, question, difficulty } = values;
 
-    const payload: TrueFalseQuestionsScheam = {
+    const payload: TrueFalseQuestionScheam = {
       answer: answer,
       difficulty,
       question: question,
@@ -85,7 +85,7 @@ export default function AddTrueFalseQuestion({
         onSuccess: () => {
           const questionRec = { ...questions[questionId] };
           const questionList =
-            questionRec.questions as TrueFalseQuestionsScheam[];
+            questionRec.questions as TrueFalseQuestionScheam[];
           questionList.push(payload);
           questionRec.questions = [...questionList];
 
