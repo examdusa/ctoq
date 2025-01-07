@@ -2,18 +2,9 @@
 
 import { SelectQuestionBank } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
-import {
-  Checkbox,
-  Flex,
-  Group,
-  Modal,
-  Title,
-  Tooltip,
-  useMantineTheme,
-} from "@mantine/core";
-import { useMemo, useState } from "react";
+import { Flex, Group, Modal, Title, useMantineTheme } from "@mantine/core";
+import { useMemo } from "react";
 import { z } from "zod";
-import NonProctoredGoogleQuiz from "../non-proctored-google-quiz";
 import RenderProctoredTestForm from "../proctored-test-form";
 
 interface Props {
@@ -60,13 +51,10 @@ const formSchema = z.object({
     .or(z.literal("")),
 });
 
-type FormSchema = z.infer<typeof formSchema>;
-
 export type GoogleQuizPayloadSchema = z.infer<typeof googleQuizPayloadSchema>;
 export type GoogleQuizQuestionsSchema = z.infer<typeof googleQuizQuestions>;
 
 function GoogleQuizModal({ open, close, record, userEmail }: Props) {
-  const [proctored, setProctored] = useState(false);
   const subscription = useAppStore((state) => state.subscription);
   const theme = useMantineTheme();
 
@@ -74,20 +62,6 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
     let content = (
       <Group gap={"xl"} w={"100%"} justify="start" align="center">
         <Title order={5}>Google Quiz</Title>
-        <Tooltip label="Only available in Integrated plan">
-          <Checkbox
-            label="Proctored Test"
-            size="sm"
-            disabled
-            checked={proctored}
-            onChange={(e) => setProctored(e.target.checked)}
-            styles={{
-              label: {
-                fontSize: theme.fontSizes.md,
-              },
-            }}
-          />
-        </Tooltip>
       </Group>
     );
 
@@ -98,23 +72,12 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
         content = (
           <Group gap={"xl"} w={"100%"} justify="start" align="center">
             <Title order={5}>Google Quiz</Title>
-            <Checkbox
-              label="Proctored Test"
-              size="sm"
-              checked={proctored}
-              onChange={(e) => setProctored(e.target.checked)}
-              styles={{
-                label: {
-                  fontSize: theme.fontSizes.md,
-                },
-              }}
-            />
           </Group>
         );
       }
     }
     return content;
-  }, [subscription, proctored, setProctored, theme.fontSizes.md]);
+  }, [subscription]);
 
   return (
     <Modal
@@ -147,18 +110,15 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
           },
         }}
       >
-        {proctored ? (
-          <RenderProctoredTestForm
-            record={record}
-            close={close}
-            userEmail={userEmail}
-          />
-        ) : (
-          <NonProctoredGoogleQuiz record={record} userEmail={userEmail} close={close}/>
-        )}
+        <RenderProctoredTestForm
+          record={record}
+          close={close}
+          userEmail={userEmail}
+        />
       </Flex>
     </Modal>
   );
 }
 
 export { GoogleQuizModal };
+

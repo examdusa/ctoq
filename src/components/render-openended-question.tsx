@@ -140,17 +140,16 @@ function RenderOpenEndedQuestion({
               </Tooltip>
             </Group>
           </Flex>
-          <Alert variant="light" color="green" radius={"md"}>
+          <Alert
+            variant="light"
+            color="green"
+            radius={"md"}
+            hidden={!!showAnswer}
+          >
             <Text fw={"bold"} c={theme.colors.gray[7]} size="sm">
               Answer
             </Text>
-            <Text
-              fw={"bold"}
-              c={theme.colors.gray[7]}
-              size="xs"
-              pt={"xs"}
-              hidden={!!showAnswer}
-            >
+            <Text fw={"bold"} c={theme.colors.gray[7]} size="xs" pt={"xs"}>
               {question.answer}
             </Text>
           </Alert>
@@ -169,3 +168,4 @@ function RenderOpenEndedQuestion({
 }
 
 export { RenderOpenEndedQuestion };
+

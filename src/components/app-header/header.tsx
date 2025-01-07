@@ -19,10 +19,15 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconDownload, IconEye, IconSettings } from "@tabler/icons-react";
+import {
+  IconDownload,
+  IconEye,
+  IconSettings,
+  IconTool,
+} from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AlertModal } from "../modals/alert-modal";
 
@@ -36,10 +41,13 @@ function AppHeader() {
     isError: generateLinkError,
   } = trpc.generateBillingPortalLink.useMutation();
   const subscriptionDetail = useAppStore((state) => state.subscription);
-  const pathname = usePathname();
-  const isChatRoute = pathname.includes("/chat");
+  const userProfile = useAppStore((state) => state.userProfile);
+  const setUserProfile = useAppStore((state) => state.setUserProfile);
   const [opened, { open, close }] = useDisclosure();
   const [burgerOpened, { toggle }] = useDisclosure(false);
+  const router = useRouter();
+  const { mutateAsync: getProfileDetails } =
+    trpc.getProfileDetails.useMutation();
 
   useEffect(() => {
     async function saveUser() {
@@ -52,12 +60,45 @@ function AppHeader() {
           googleid: "",
           id: user.id,
           lastname: user.lastName,
+          language: "english",
+          role: "instructor",
         });
       }
     }
 
-    if (user && isSignedIn && isLoaded) saveUser();
-  }, [user, isSignedIn, isLoaded, saveUserDetails, userData]);
+    if (user && isSignedIn && isLoaded && !userProfile) {
+      (async () => {
+        await getProfileDetails(
+          { userId: user.id },
+          {
+            onSuccess: async (data) => {
+              const { code, data: userProfile } = data;
+
+              if (code === "SUCCESS" && userProfile) {
+                setUserProfile({
+                  ...userProfile,
+                  createdAt: userProfile.createdAt
+                    ? new Date(userProfile.createdAt)
+                    : new Date(),
+                });
+              } else if (code === "NOT_FOUND") {
+                await saveUser();
+              }
+            },
+          }
+        );
+      })();
+    }
+  }, [
+    user,
+    isSignedIn,
+    isLoaded,
+    saveUserDetails,
+    userData,
+    getProfileDetails,
+    userProfile,
+    setUserProfile,
+  ]);
 
   useEffect(() => {
     if (generateLinkError || generatingLink) {
@@ -122,7 +163,10 @@ function AppHeader() {
             <Link href={"/pricing"}>See plans</Link>
           </SignedOut>
           <SignedIn>
-            {!isChatRoute && <Link href={"/chat"}>Dashboard</Link>}
+            {user && user.id && (
+              <Link href={`/shared-exams/${user.id}`}>Shared exams</Link>
+            )}
+            <Link href={"/chat"}>Dashboard</Link>
             <Menu shadow="md" width={200}>
               <Menu.Target>
                 <UnstyledButton>Subscription</UnstyledButton>
@@ -171,7 +215,17 @@ function AppHeader() {
           size="sm"
         />
         <SignedIn>
-          <UserButton />
+          <UserButton>
+            <UserButton.MenuItems>
+              <UserButton.Action
+                label="Edit profile"
+                onClick={() => {
+                  router.push(`/profile/${user?.id}`);
+                }}
+                labelIcon={<IconTool width={rem(1)} height={rem(1)} />}
+              />
+            </UserButton.MenuItems>
+          </UserButton>
         </SignedIn>
         <SignedOut>
           <SignInButton mode="modal" />

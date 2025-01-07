@@ -3,20 +3,25 @@ import {
   questionbank,
   SelectQuestionBank,
   SelectSubscription,
+  sharedExams,
   subscription,
   userProfile,
 } from "@/db/schema";
-import { questionSchema } from "@/utllities/apiFunctions";
 import {
+  baseResultSchema,
   FillBlankQuestionSchema,
   fillBlankQuestionSchema,
+  generateQuestionsResponseSchema,
+  mcqQuestionSchema,
   MCQQuestionSchema,
   McqSimilarQuestionScheam,
   mcqSimilarQuestionSchema,
   OpenendedQuestionSchema,
   openEndedQuestionSchema,
+  submitJobPayloadSchema,
+  TrueFalseQuestionScheam,
   trueFalseQuestionSchema,
-  TrueFalseQuestionsScheam,
+  userProfileSchema,
 } from "@/utllities/zod-schemas-types";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
@@ -57,6 +62,10 @@ export const appRouter = router({
             withAnswer: questionbank.withAnswer,
             googleQuizLink: questionbank.googleQuizLink,
             instituteName: questionbank.instituteName,
+            guidance: questionbank.guidance,
+            summary: questionbank.summary,
+            outputType: questionbank.outputType,
+            googleFormId: questionbank.googleFormId,
           })
           .from(questionbank)
           .innerJoin(userProfile, eq(questionbank.userId, userProfile.id))
@@ -70,9 +79,40 @@ export const appRouter = router({
         throw err;
       }
     }),
-  getProfileDetails: procedure.query(async () => {
-    return await db.select().from(userProfile);
-  }),
+  getProfileDetails: procedure
+    .input(
+      z.object({
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { userId } = input;
+      try {
+        const profiles = await db
+          .select()
+          .from(userProfile)
+          .where(eq(userProfile.id, userId));
+
+        if (profiles.length > 0) {
+          const { data, error } = userProfileSchema.safeParse(profiles[0]);
+
+          if (error) {
+            console.log("Profile data validation failed");
+          }
+          return { code: "SUCCESS", data };
+        }
+        return {
+          code: "NOT_FOUND",
+          data: null,
+        };
+      } catch (err) {
+        console.log("GetProfileDetails error: ", JSON.stringify(err, null, 2));
+        return {
+          code: "NOT_FOUND",
+          data: null,
+        };
+      }
+    }),
   getUserSubscriptionDetails: procedure
     .input(
       z.object({
@@ -125,11 +165,22 @@ export const appRouter = router({
         googleid: z.string().nullable(),
         appTheme: z.enum(["dark", "light"]),
         createdAt: z.date().default(new Date()),
+        language: z.string(),
+        role: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { email, appTheme, createdAt, firstname, googleid, id, lastname } =
-        input;
+      const {
+        email,
+        appTheme,
+        createdAt,
+        firstname,
+        googleid,
+        id,
+        lastname,
+        role,
+        language,
+      } = input;
       try {
         const user = await db
           .select()
@@ -144,6 +195,9 @@ export const appRouter = router({
             firstname: firstname ?? null,
             lastname: lastname ?? null,
             googleid: googleid ?? null,
+            language,
+            role,
+            instituteName: "Content To Quiz",
           });
           return "Inserted";
         } else {
@@ -154,89 +208,7 @@ export const appRouter = router({
         throw new Error("Insert failed");
       }
     }),
-  saveQBank: procedure
-    .input(
-      z.object({
-        createdAt: z.date().default(new Date()),
-        userId: z.string(),
-        jobId: z.string(),
-        questions: z.object({
-          questions: z.array(
-            z.union([
-              questionSchema,
-              mcqSimilarQuestionSchema,
-              trueFalseQuestionSchema,
-              openEndedQuestionSchema,
-              fillBlankQuestionSchema,
-            ])
-          ),
-        }),
-        qType: z.enum([
-          "mcq",
-          "mcq_similar",
-          "fill_blank",
-          "true_false",
-          "open_ended",
-        ]),
-        difficulty: z.enum(["easy", "medium", "hard"]),
-        qCount: z.number().min(0).max(30),
-        qUrl: z.string().nullable(),
-        qKeyword: z.string(),
-        withAnswer: z.enum(["GWA", "GWOA"]),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const {
-        createdAt,
-        difficulty,
-        jobId,
-        qCount,
-        qKeyword,
-        qType,
-        qUrl,
-        questions,
-        userId,
-        withAnswer,
-      } = input;
-      try {
-        await db.insert(questionbank).values({
-          id: jobId,
-          createdAt: createdAt,
-          jobId: jobId,
-          userId: userId,
-          difficultyLevel: difficulty,
-          prompt: qKeyword ?? "",
-          promptUrl: qUrl ?? "",
-          questions: questions.questions,
-          questionsCount: qCount,
-          questionType: qType,
-          withAnswer: withAnswer === "GWA" ? true : false,
-        });
-        const records = await db
-          .select({
-            id: questionbank.id,
-            createdAt: questionbank.createdAt,
-            userId: questionbank.userId,
-            jobId: questionbank.jobId,
-            questions: questionbank.questions,
-            difficultyLevel: questionbank.difficultyLevel,
-            questionsCount: questionbank.questionsCount,
-            prompt: questionbank.prompt,
-            questionType: questionbank.questionType,
-            promptUrl: questionbank.promptUrl,
-            withAnswer: questionbank.withAnswer,
-            instituteName: questionbank.instituteName,
-          })
-          .from(questionbank)
-          .where(eq(questionbank.id, jobId));
-        if (records.length > 0) {
-          return records[0];
-        }
-      } catch (err) {
-        console.log(err);
-        throw new Error("Insert failed");
-      }
-    }),
+
   getSubscriptionDetails: procedure
     .input(
       z.object({
@@ -319,7 +291,7 @@ export const appRouter = router({
       z.object({
         questionId: z.string(),
         question: z.union([
-          questionSchema,
+          mcqQuestionSchema,
           mcqSimilarQuestionSchema,
           trueFalseQuestionSchema,
           openEndedQuestionSchema,
@@ -342,7 +314,7 @@ export const appRouter = router({
           let updatedQuestions:
             | MCQQuestionSchema[]
             | FillBlankQuestionSchema[]
-            | TrueFalseQuestionsScheam[]
+            | TrueFalseQuestionScheam[]
             | OpenendedQuestionSchema[]
             | McqSimilarQuestionScheam[] = [];
           switch (questionType) {
@@ -362,12 +334,12 @@ export const appRouter = router({
               break;
             case "true_false":
               updatedQuestions = [
-                ...(rec.questions as TrueFalseQuestionsScheam[]),
+                ...(rec.questions as TrueFalseQuestionScheam[]),
               ];
               updatedQuestions.splice(
                 index,
                 1,
-                question as TrueFalseQuestionsScheam
+                question as TrueFalseQuestionScheam
               );
               break;
             case "fill_blank":
@@ -414,7 +386,7 @@ export const appRouter = router({
       z.object({
         questionId: z.string(),
         question: z.union([
-          questionSchema,
+          mcqQuestionSchema,
           mcqSimilarQuestionSchema,
           trueFalseQuestionSchema,
           openEndedQuestionSchema,
@@ -436,7 +408,7 @@ export const appRouter = router({
           let updatedQuestions:
             | MCQQuestionSchema[]
             | FillBlankQuestionSchema[]
-            | TrueFalseQuestionsScheam[]
+            | TrueFalseQuestionScheam[]
             | OpenendedQuestionSchema[]
             | McqSimilarQuestionScheam[] = [];
           if (questionType === "mcq") {
@@ -446,8 +418,8 @@ export const appRouter = router({
             updatedQuestions = rec.questions as McqSimilarQuestionScheam[];
             updatedQuestions.push(question as McqSimilarQuestionScheam);
           } else if (questionType === "true_false") {
-            updatedQuestions = rec.questions as TrueFalseQuestionsScheam[];
-            updatedQuestions.push(question as TrueFalseQuestionsScheam);
+            updatedQuestions = rec.questions as TrueFalseQuestionScheam[];
+            updatedQuestions.push(question as TrueFalseQuestionScheam);
           } else if (questionType === "fill_blank") {
             updatedQuestions = rec.questions as FillBlankQuestionSchema[];
             updatedQuestions.push(question as FillBlankQuestionSchema);
@@ -483,21 +455,26 @@ export const appRouter = router({
       z.object({
         recId: z.string(),
         gQuizLink: z.string(),
+        outputType: z.string(),
       })
     )
     .mutation(async ({ input }) => {
-      const { recId, gQuizLink } = input;
+      const { recId, gQuizLink, outputType } = input;
 
       try {
         const { rowsAffected } = await db
           .update(questionbank)
-          .set({ googleQuizLink: gQuizLink })
+          .set(
+            outputType === "question"
+              ? { googleQuizLink: gQuizLink }
+              : { googleFormId: gQuizLink }
+          )
           .where(eq(questionbank.id, recId));
 
         if (rowsAffected === 0) {
           throw new Error("QUEST_REC_NOT_FOUND");
         }
-        return { code: "GQUIZLINK_ADDED" };
+        return { code: "GQUIZID_ADDED" };
       } catch (err) {
         throw err;
       }
@@ -548,7 +525,7 @@ export const appRouter = router({
                 record.questions as
                   | MCQQuestionSchema[]
                   | FillBlankQuestionSchema[]
-                  | TrueFalseQuestionsScheam[]
+                  | TrueFalseQuestionScheam[]
                   | OpenendedQuestionSchema[]
                   | McqSimilarQuestionScheam[]
               ).filter((_, id) => id !== qIdx),
@@ -592,6 +569,293 @@ export const appRouter = router({
         return { code: "HEADING_UPDATED" };
       } catch (err) {
         console.log("UPDATE_HEADING_ERROR: ", err);
+        throw err;
+      }
+    }),
+  generateQuestions: procedure
+    .input(
+      z.object({
+        payload: submitJobPayloadSchema,
+        userId: z.string(),
+        contentType: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const response = await fetch(
+          "https://augmentbyai.com/response_generator/response_generator",
+          {
+            method: "POST",
+            body: JSON.stringify({ ...input.payload }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const jsonResp = await response.json();
+        const { error, data } =
+          generateQuestionsResponseSchema.safeParse(jsonResp);
+
+        if (error) {
+          throw new Error("Invalid response");
+        }
+        try {
+          const {
+            question_difficulty,
+            no_of_questions,
+            question_type,
+            output_type,
+            keywords,
+            courses,
+          } = input.payload;
+
+          let prompt = keywords;
+
+          if (input.contentType === "Courses") {
+            if (z.string().url().safeParse(courses).success) {
+              prompt = `Content as per ${courses}`;
+            } else {
+              prompt = "Content based on file";
+            }
+          }
+
+          if (input.contentType === "Resume") {
+            if (z.string().url().safeParse(courses).success) {
+              prompt = `Content as per ${courses}`;
+            } else {
+              prompt = "Content based on file";
+            }
+          }
+
+          const { rowsAffected } = await db.insert(questionbank).values({
+            id: data.job_id,
+            createdAt: new Date(),
+            jobId: data.job_id,
+            userId: input.userId,
+            difficultyLevel: question_difficulty,
+            prompt: prompt,
+            promptUrl: "",
+            questions: [],
+            questionsCount: no_of_questions,
+            questionType: question_type,
+            withAnswer: true,
+            guidance: "",
+            summary: "",
+            outputType: output_type,
+          });
+
+          if (rowsAffected > 0) {
+            return data;
+          }
+        } catch (err) {
+          throw err;
+        }
+        return data;
+      } catch (err) {
+        throw err;
+      }
+    }),
+  fetchGeneratedQuestions: procedure
+    .input(
+      z.object({
+        jobId: z.string(),
+        userId: z.string(),
+        questionType: z.enum([
+          "mcq",
+          "mcq_similar",
+          "fill_blank",
+          "true_false",
+          "open_ended",
+        ]),
+        qCount: z.number(),
+        keyword: z.string(),
+        difficulty: z.enum(["easy", "medium", "hard"]),
+        outputType: z.enum(["question", "summary", "guidance"]),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const {
+        jobId,
+        userId,
+        difficulty,
+        keyword,
+        qCount,
+        questionType,
+        outputType,
+      } = input;
+
+      try {
+        const response = await fetch(
+          `https://augmentbyai.com/job_status/job_status/${jobId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const jsonResp = await response.json();
+        if (typeof jsonResp === "string") {
+          return "pending";
+        }
+        const { error, data } = baseResultSchema.safeParse(jsonResp);
+        if (error) {
+          console.log("RESPONSE_VALIDATION_ERROR:: ", error);
+          throw error;
+        }
+        try {
+          const { guidance, summary } = data;
+          const { rowsAffected } = await db
+            .update(questionbank)
+            .set({
+              difficultyLevel: difficulty,
+              questions: data.questions,
+              questionsCount: qCount,
+              questionType: questionType,
+              withAnswer: true,
+              guidance: guidance,
+              summary: summary,
+              outputType: outputType,
+            })
+            .where(eq(questionbank.jobId, jobId));
+
+          if (rowsAffected === 0) {
+            throw new Error("Record insertion failed");
+          }
+          return data;
+        } catch (err) {
+          console.log(err);
+          throw new Error("Insert failed");
+        }
+      } catch (err) {
+        throw err;
+      }
+    }),
+  updateUserProfileDetails: procedure
+    .input(
+      z.object({
+        id: z.string(),
+        language: z.string(),
+        role: z.string(),
+        instituteName: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { id, instituteName, role, language } = input;
+      try {
+        const { rowsAffected } = await db
+          .update(userProfile)
+          .set({
+            instituteName,
+            role,
+            language,
+          })
+          .where(eq(userProfile.id, id));
+
+        if (rowsAffected > 0) {
+          return {
+            code: "SUCCESS",
+          };
+        }
+        return {
+          code: "UPDATE_FAILED",
+        };
+      } catch (err) {
+        console.log("Profile update error: ", err);
+        throw err;
+      }
+    }),
+  shareGoogleForm: procedure
+    .input(
+      z.object({
+        formId: z.string(),
+        email: z.string().email(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { formId, email } = input;
+      try {
+        await fetch(
+          `https://autoproctor.com/canvaslms/api/v1/google-form/share/${formId}/${email}`,
+          {
+            method: "POST",
+            headers: {
+              accept: "application/json",
+            },
+          }
+        );
+        return {
+          code: "SUCCESS",
+        };
+      } catch (err) {
+        console.log(JSON.stringify(err, null, 2));
+        throw err;
+      }
+    }),
+  shareGoogleDoc: procedure
+    .input(
+      z.object({
+        formId: z.string(),
+        email: z.string().email(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { formId, email } = input;
+      try {
+        await fetch(
+          `https://autoproctor.com/canvaslms/api/v1/google-doc/share/${formId}/${email}`,
+          {
+            method: "POST",
+            headers: {
+              accept: "application/json",
+            },
+          }
+        );
+        return {
+          code: "SUCCESS",
+        };
+      } catch (err) {
+        console.log(JSON.stringify(err, null, 2));
+        throw err;
+      }
+    }),
+  addSharedExamRecord: procedure
+    .input(
+      z.object({
+        userId: z.string(),
+        questionRecordId: z.string(),
+        formId: z.string(),
+        firstName: z.string().optional().default(""),
+        lastName: z.string().optional().default(""),
+        email: z.string().email(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const { email, firstName, formId, lastName, questionRecordId, userId } =
+          input;
+        const { rowsAffected } = await db.insert(sharedExams).values({
+          id: crypto.randomUUID(),
+          email,
+          questionRecord: questionRecordId,
+          userId,
+          firstName,
+          formId,
+          lastName,
+          shareDate: new Date(),
+        });
+
+        if (rowsAffected === 0) {
+          return {
+            code: "INSERT_FAILED",
+          };
+        }
+        return {
+          code: "SUCCESS",
+        };
+      } catch (err) {
+        console.log(JSON.stringify(err, null, 2));
         throw err;
       }
     }),

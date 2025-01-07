@@ -5,6 +5,17 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com',
+        // port: '',
+        // pathname: '/account123/**',
+        search: '',
+      }
+    ]
+  },
   reactStrictMode: false
 };
 

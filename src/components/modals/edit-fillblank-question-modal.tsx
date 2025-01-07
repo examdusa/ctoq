@@ -135,7 +135,7 @@ export default function EditFillBlankQuestion({
           <Input.Wrapper label={<Title order={5}>Question</Title>}>
             <Input {...editForm.getInputProps("question")} pt={"xs"} />
           </Input.Wrapper>
-          <Box>
+          {/* <Box>
             <Title order={5}>Options</Title>
             <Grid pt={"xs"} pl={"sm"}>
               {Object.entries(editForm.values.options).map(([key, value]) => {
@@ -154,12 +154,11 @@ export default function EditFillBlankQuestion({
                 );
               })}
             </Grid>
-          </Box>
-          <Select
+          </Box> */}
+          <TextInput
             label="Correct Answer"
             withAsterisk
             placeholder="Pick answer"
-            data={[...Object.keys(question.options)]}
             value={editForm.values.answer}
             checked={editForm.values.answer}
             {...editForm.getInputProps("answer")}

@@ -3,16 +3,16 @@ import z from "zod";
 import {
   fillBlankQuizResponseSchema,
   FillBlankQuizResponseSchema,
+  GoogleDocSchema,
   Institutes,
   institutesListSchema,
-  mcqQuizresponseSchema,
-  MCQQuizResponseSchema,
+  mcqQuestionsSchema,
+  MCQQuestionsSchema,
+  mcqSimilarQuestionSchema,
   MCQSimilarQuizResponseSchema,
-  mcqSimilarQuizResponseSchema,
-  OpenEndedQuizresponseSchema,
-  openEndedQuizresponseSchema,
-  TrueFalseQuizResponseSchema,
-  trueFalseQuizResponseSchema,
+  openEndedQuestionsSchema,
+  OpenEndedQuizResponseSchema,
+  TrueFalseQuestionsSchema,
 } from "./zod-schemas-types";
 
 export const questionSchema = z.object({
@@ -30,24 +30,24 @@ export const paymentIntentResponseSchema = z.object({
   sessionId: z.string(),
 });
 
-export const promptResponseSchema = z.object({
-  input: z.string(),
-  code: z.number(),
-  quiz_type: z.string(),
-  questions: z.array(questionSchema),
-});
+// export const promptResponseSchema = z.object({
+//   input: z.string(),
+//   code: z.number(),
+//   quiz_type: z.string(),
+//   questions: z.array(questionSchema),
+// });
 
-export const GeneratedQuestions = z.object({
-  prompt_responses: z.array(promptResponseSchema),
-  url_responses: z.array(promptResponseSchema),
-});
+// export const GeneratedQuestions = z.object({
+//   prompt_responses: z.array(promptResponseSchema),
+//   url_responses: z.array(promptResponseSchema),
+// });
 
-export const GeneratedQuestionsResponse = z.object({
-  data: GeneratedQuestions,
-  timestamp: z.string(),
-  session: z.string(),
-  id: z.string(),
-});
+// export const GeneratedQuestionsResponse = z.object({
+//   data: GeneratedQuestions,
+//   timestamp: z.string(),
+//   session: z.string(),
+//   id: z.string(),
+// });
 
 const skillsExperienceSchema = z.object({
   experience_details: z.array(z.string()).or(z.string()),
@@ -109,8 +109,14 @@ export const userAccessDetails = z.object({
   idAccess: z.string(),
   guid: z.string(),
   userId: z.string(),
-  instructorId: z.number().int().nonnegative({ message: "Must be a non-negative integer" }),
-  instituteId: z.number().int().nonnegative({ message: "Must be a non-negative integer" }),
+  instructorId: z
+    .number()
+    .int()
+    .nonnegative({ message: "Must be a non-negative integer" }),
+  instituteId: z
+    .number()
+    .int()
+    .nonnegative({ message: "Must be a non-negative integer" }),
   accessType: z.string(),
   status: z.string(),
   aiQuiz: z.string(),
@@ -124,52 +130,58 @@ export const userAccessDetails = z.object({
   userType: z.string(),
 });
 
-export const userAccessDetailsList = z.array(userAccessDetails)
+export const userAccessDetailsList = z.array(userAccessDetails);
 
 export interface GenerateQBankPayload {
   qType: "mcq" | "mcq_similar" | "fill_blank" | "true_false" | "open_ended";
   difficulty: "easy" | "medium" | "hard";
   qCount: number;
   promptUrl: string | null;
-  prompt: string[];
+  prompt: string;
 }
 
-export type UploadResponseSchema = z.infer<typeof uploadResumeResponse>;
+const generateQuestionsPayload = z.object({
+  language: z.string().default("English"),
+  actor: z.string(),
+  resume: z.string(),
+  courses: z.string(),
+  keywords: z.string(),
+  output_type: z.enum(["question", "summary", "guidance"]),
+  no_of_questions: z.number().int().min(0).default(0), // Ensure non-negative integer
+  question_type: z
+    .enum(["mcq", "mcq_similar", "fill_blank", "true_false", "open_ended"])
+    .or(z.string()),
+  question_difficulty: z.enum(["easy", "medium", "hard"]).or(z.string()),
+  instructions: z.string(),
+  career_goal: z.string(),
+  experience_level: z.string(),
+  geography: z.string(),
+  b_day: z.string(),
+});
 
+export type UploadResponseSchema = z.infer<typeof uploadResumeResponse>;
+export type GenerateQuestionsPayload = z.infer<typeof generateQuestionsPayload>;
 export type PaymentIntentResponseSchemaType = z.infer<
   typeof paymentIntentResponseSchema
 >;
-export type GeneratedQuestionsResponse = z.infer<
-  typeof GeneratedQuestionsResponse
->;
-export type GeneratedQuestionsSchema = z.infer<typeof promptResponseSchema>;
-export type QuestionSchema = z.infer<typeof questionSchema>;
+// export type GeneratedQuestionsResponse = z.infer<
+//   typeof GeneratedQuestionsResponse
+// >;
+// export type GeneratedQuestionsSchema = z.infer<typeof promptResponseSchema>;
+// export type QuestionSchema = z.infer<typeof questionSchema>;
 
 export type UploadResumeResponse = z.infer<typeof uploadResumeResponse>;
 export type UnifiedSchema = z.infer<typeof unifiedSchema>;
 export type UserAccessDetails = z.infer<typeof userAccessDetails>;
-export type UserAccessDetailsList = z.infer<typeof userAccessDetailsList>
+export type UserAccessDetailsList = z.infer<typeof userAccessDetailsList>;
 
-async function generateQuestionBank({
-  qCount,
-  difficulty,
-  prompt,
-  qType,
-  promptUrl,
-}: GenerateQBankPayload) {
+async function generateQuestionBank(payload: GenerateQuestionsPayload) {
   try {
     const respStr = await fetch(
-      "https://examd.us/llmreader/api/questions/callllm",
+      "https://augmentbyai.com/response_generator/response_generator",
       {
         method: "POST",
-        body: JSON.stringify({
-          quiz_type: qType,
-          difficulty_level: difficulty,
-          number_of_questions: qCount,
-          prompts: prompt,
-          urls: !promptUrl ? [] : [promptUrl],
-          call_back_url: "https://examd.us/llmreader/api/questions/post",
-        }),
+        body: JSON.stringify({ ...payload }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -186,15 +198,15 @@ async function fetchGeneratedQuestions(
   refId: string,
   qType: "mcq" | "mcq_similar" | "fill_blank" | "true_false" | "open_ended"
 ): Promise<
-  | MCQQuizResponseSchema
+  | MCQQuestionsSchema
   | FillBlankQuizResponseSchema
   | MCQSimilarQuizResponseSchema
-  | OpenEndedQuizresponseSchema
-  | TrueFalseQuizResponseSchema
+  | OpenEndedQuizResponseSchema
+  | TrueFalseQuestionsSchema
 > {
   try {
     const respStr = await fetch(
-      `https://examd.us/llmreader/api/questions/getresponse/${refId}`,
+      `https://augmentbyai.com/job_status/job_status/${refId}`,
       {
         method: "GET",
         headers: {
@@ -213,12 +225,12 @@ async function fetchGeneratedQuestions(
           error,
         } = fillBlankQuizResponseSchema.safeParse(parsedData);
         if (success) {
-          return validatedData as FillBlankQuizResponseSchema;
+          return validatedData;
         }
       }
       case "mcq_similar": {
         const { data: validatedData, success } =
-          mcqSimilarQuizResponseSchema.safeParse(parsedData);
+          mcqSimilarQuestionSchema.safeParse(parsedData);
         if (success) {
           return validatedData as MCQSimilarQuizResponseSchema;
         }
@@ -226,31 +238,31 @@ async function fetchGeneratedQuestions(
       }
       case "open_ended": {
         const { data: validatedData, success } =
-          openEndedQuizresponseSchema.safeParse(parsedData);
+          openEndedQuestionsSchema.safeParse(parsedData);
         if (success) {
-          return validatedData as OpenEndedQuizresponseSchema;
+          return validatedData;
         }
         break;
       }
-      case "true_false": {
-        const {
-          data: validatedData,
-          success,
-          error,
-        } = trueFalseQuizResponseSchema.safeParse(parsedData);
-        if (success) {
-          return validatedData as TrueFalseQuizResponseSchema;
-        }
-        if (error) {
-          console.log("fetch questions [error]: ", error);
-        }
-        break;
-      }
+      // case "true_false": {
+      //   const {
+      //     data: validatedData,
+      //     success,
+      //     error,
+      //   } = trueFalseQuestionsSchema.safeParse(parsedData);
+      //   if (error) {
+      //     console.log("fetch questions [error]: ", error);
+      //   }
+      //   if (success) {
+      //     return validatedData;
+      //   }
+      //   break;
+      // }
       case "mcq": {
         const { data: validatedData, success } =
-          mcqQuizresponseSchema.safeParse(parsedData);
+          mcqQuestionsSchema.safeParse(parsedData);
         if (success) {
-          return validatedData as MCQQuizResponseSchema;
+          return validatedData as MCQQuestionsSchema;
         }
       }
     }
@@ -337,6 +349,27 @@ async function createGoogleQuizForm(
   }
 }
 
+async function createGoogleDoc(payload: GoogleDocSchema): Promise<string> {
+  try {
+    const response = await fetch(
+      "https://autoproctor.com/canvaslms/api/v1/google-doc",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+      }
+    );
+    const parsedRes: { message: string; responseStatus: string; code: number } =
+      await response.json();
+    return parsedRes.message;
+  } catch (err) {
+    throw err;
+  }
+}
+
 async function getInstitutes(): Promise<Institutes> {
   try {
     const response = await fetch(
@@ -388,10 +421,10 @@ async function getProfileDetailsByGuidUserId(
         method: "GET",
       }
     );
-    const jsonRes:UserAccessDetailsList = await response.json();
+    const jsonRes: UserAccessDetailsList = await response.json();
 
     if (jsonRes.length === 0) {
-      return null
+      return null;
     }
 
     const { success } = userAccessDetailsList.safeParse(jsonRes);
@@ -407,11 +440,12 @@ async function getProfileDetailsByGuidUserId(
 
 export {
   createCheckoutSession,
+  createGoogleDoc,
   createGoogleQuizForm,
   fetchGeneratedQuestions,
   generateQuestionBank,
   getInstitutes,
+  getProfileDetailsByGuidUserId,
   postUnifiedData,
   uploadResume,
-  getProfileDetailsByGuidUserId
 };

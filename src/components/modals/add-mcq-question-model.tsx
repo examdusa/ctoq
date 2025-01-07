@@ -64,23 +64,20 @@ export default function AddMcqQuestion({ open, close, questionId }: Props) {
     validate: zodResolver(mcqQuestionSchema),
     initialValues: {
       answer: "",
-      options: {
-        A: "",
-        B: "",
-        C: "",
-        D: "",
-      },
+      options: ["", "", "", ""],
       question: "",
+      difficulty: "",
     },
   });
 
   async function handleFormSubmit(values: MCQQuestionSchema) {
-    const { answer, options, question } = values;
+    const { answer, options, question, difficulty } = values;
 
     const payload: MCQQuestionSchema = {
-      answer: answer as "A" | "B" | "C" | "D",
+      answer: options[parseInt(answer)],
       options: options,
       question: question,
+      difficulty,
     };
 
     await addQuestion(
@@ -137,61 +134,28 @@ export default function AddMcqQuestion({ open, close, questionId }: Props) {
             <Flex direction={"column"} w={"100%"} h={"auto"} gap={2}>
               <Text size="sm">Answers Options</Text>
               <Grid>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.A")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        A
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.B")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        B
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.C")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        C
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.D")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        D
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
+                {[...form.values.options].map((option, index) => (
+                  <Grid.Col span={{ xs: 12, md: 6 }} key={index}>
+                    <TextInput
+                      placeholder="Enter option value"
+                      {...form.getInputProps(`options.${index}`)}
+                      leftSection={
+                        <Avatar color="blue" radius={"sm"} size={"sm"}>
+                          {String.fromCharCode(index + 65)}
+                        </Avatar>
+                      }
+                    />
+                  </Grid.Col>
+                ))}
               </Grid>
             </Flex>
             <Select
               label="Correct Answer"
               placeholder="Pick one"
-              data={[
-                { value: "A", label: "A" },
-                { value: "B", label: "B" },
-                { value: "C", label: "C" },
-                { value: "D", label: "D" },
-              ]}
+              data={[...form.values.options].map((value, index) => ({
+                label: value,
+                value: "" + index,
+              }))}
               {...form.getInputProps("answer")}
             />
           </Flex>

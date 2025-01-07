@@ -55,14 +55,20 @@ export default function AddOpenEndedQuestion({
   const form = useForm<OpenendedQuestionSchema>({
     mode: "controlled",
     validate: zodResolver(openEndedQuestionSchema),
+    initialValues: {
+      answer: "",
+      difficulty: "easy",
+      question: "",
+    },
   });
 
   async function handleFormSubmit(values: OpenendedQuestionSchema) {
-    const { answer, question } = values;
+    const { answer, question, difficulty } = values;
 
     const payload: OpenendedQuestionSchema = {
       answer: answer,
       question: question,
+      difficulty: difficulty,
     };
 
     await addQuestion(

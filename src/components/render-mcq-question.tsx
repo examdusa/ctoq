@@ -16,7 +16,6 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
 import EditMcqQuestion from "./modals/edit-mcq-question-model";
-import { OverlayModal } from "./modals/loader";
 
 interface Props {
   index: number;
@@ -36,7 +35,7 @@ function RenderMcqQuestion({
   const [opened, { open: openEditModal, close: closeEditModal }] =
     useDisclosure();
   const theme = useMantineTheme();
-  const generatingQuestions = useAppStore((state) => state.generatingQuestions);
+  // const generatingQuestions = useAppStore((state) => state.generatingQuestions);
   const { mutateAsync: deleteQuestion, isLoading: deletingQuestion } =
     trpc.deleteQuestion.useMutation();
   const questions = useAppStore((state) => state.questions);
@@ -84,12 +83,12 @@ function RenderMcqQuestion({
         },
       }}
     >
-      <OverlayModal
+      {/* <OverlayModal
         opened={generatingQuestions}
         message="Generating questions..."
         width={80}
         height={80}
-      />
+      /> */}
       <Flex
         direction={"row"}
         w={"100%"}
@@ -159,13 +158,13 @@ function RenderMcqQuestion({
             }}
           >
             <List spacing="md" size="sm" center={true} mb={"sm"}>
-              {Object.entries(question.options).map(([key, value]) => {
+              {Object.entries(question.options).map(([key, value], index) => {
                 return (
                   <List.Item
                     key={key}
                     icon={
                       <ThemeIcon color="blue" size={"sm"} radius="xl">
-                        {key}
+                        {String.fromCharCode(65 + index)}
                       </ThemeIcon>
                     }
                   >

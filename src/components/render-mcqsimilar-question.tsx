@@ -1,6 +1,9 @@
 import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
-import { McqSimilarQuestionScheam } from "@/utllities/zod-schemas-types";
+import {
+  MCQQuestionSchema,
+  McqSimilarQuestionScheam,
+} from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
   Badge,
@@ -11,16 +14,15 @@ import {
   Text,
   ThemeIcon,
   Tooltip,
-  useMantineTheme
+  useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
 import EditMcqSimilarQuestion from "./modals/edit-mcqsimilar-question-modal";
-import { OverlayModal } from "./modals/loader";
 
 interface Props {
   index: number;
-  question: McqSimilarQuestionScheam;
+  question: MCQQuestionSchema;
   questionId: string;
   questionType: string;
   showAnswer: boolean;
@@ -36,7 +38,6 @@ function RenderMcqSimilarQuestion({
   const [opened, { open: openEditModal, close: closeEditModal }] =
     useDisclosure();
   const theme = useMantineTheme();
-  const generatingQuestions = useAppStore((state) => state.generatingQuestions);
   const questions = useAppStore((state) => state.questions);
   const { mutateAsync: deleteQuestion, isLoading: deletingQuestion } =
     trpc.deleteQuestion.useMutation();
@@ -84,12 +85,6 @@ function RenderMcqSimilarQuestion({
         },
       }}
     >
-      <OverlayModal
-        opened={generatingQuestions}
-        message="Generating questions..."
-        width={80}
-        height={80}
-      />
       <Flex
         direction={"row"}
         w={"100%"}
@@ -111,7 +106,7 @@ function RenderMcqSimilarQuestion({
           }}
         >
           <Flex direction={"row"} w={"100%"} justify="space-between">
-            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} maw={'85%'}>
+            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} maw={"85%"}>
               {question.question}
             </Text>
             <Group gap={"xs"}>
@@ -154,13 +149,13 @@ function RenderMcqSimilarQuestion({
             }}
           >
             <List spacing="md" size="sm" center={true} mb={"sm"}>
-              {Object.entries(question.options).map(([key, value]) => {
+              {question.options.map((value, index) => {
                 return (
                   <List.Item
-                    key={key}
+                    key={index}
                     icon={
                       <ThemeIcon color="blue" size={"sm"} radius="xl">
-                        {key}
+                        {String.fromCharCode(index + 65)}
                       </ThemeIcon>
                     }
                   >
@@ -180,7 +175,7 @@ function RenderMcqSimilarQuestion({
               radius="sm"
               mt={"auto"}
             >
-              Answer: {question.answer.join(", ")}
+              Answer: {question.answer}
             </Badge>
           </Flex>
         </Flex>

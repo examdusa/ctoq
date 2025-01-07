@@ -1,6 +1,8 @@
 import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
 import {
+  mcqQuestionSchema,
+  MCQQuestionSchema,
   McqSimilarQuestionScheam,
   mcqSimilarQuestionSchema,
 } from "@/utllities/zod-schemas-types";
@@ -13,6 +15,7 @@ import {
   Group,
   Modal,
   MultiSelect,
+  Select,
   Text,
   TextInput,
 } from "@mantine/core";
@@ -63,28 +66,25 @@ export default function AddMcqSimilarQuestion({
     return props;
   }, [additionError, additionSuccess]);
 
-  const form = useForm<McqSimilarQuestionScheam>({
+  const form = useForm<MCQQuestionSchema>({
     mode: "controlled",
-    validate: zodResolver(mcqSimilarQuestionSchema),
+    validate: zodResolver(mcqQuestionSchema),
     initialValues: {
       question: "",
-      answer: [],
-      options: {
-        A: "",
-        B: "",
-        C: "",
-        D: "",
-      },
+      answer: "",
+      options: ["", "", "", ""],
+      difficulty: "",
     },
   });
 
-  async function handleFormSubmit(values: McqSimilarQuestionScheam) {
-    const { answer, options, question } = values;
+  async function handleFormSubmit(values: MCQQuestionSchema) {
+    const { answer, options, question, difficulty } = values;
 
-    const payload: McqSimilarQuestionScheam = {
+    const payload: MCQQuestionSchema = {
       answer: answer,
       options: options,
       question: question,
+      difficulty,
     };
 
     await addQuestion(
@@ -92,8 +92,7 @@ export default function AddMcqSimilarQuestion({
       {
         onSuccess: () => {
           const questionRec = { ...questions[questionId] };
-          const questionList =
-            questionRec.questions as McqSimilarQuestionScheam[];
+          const questionList = questionRec.questions as MCQQuestionSchema[];
           questionList.push(payload);
           questionRec.questions = [...questionList];
 
@@ -142,61 +141,28 @@ export default function AddMcqSimilarQuestion({
             <Flex direction={"column"} w={"100%"} h={"auto"} gap={2}>
               <Text size="sm">Answers Options</Text>
               <Grid>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.A")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        A
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.B")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        B
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.C")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        C
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.D")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        D
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
+              {[...form.values.options].map((option, index) => (
+                  <Grid.Col span={{ xs: 12, md: 6 }} key={index}>
+                    <TextInput
+                      placeholder="Enter option value"
+                      {...form.getInputProps(`options.${index}`)}
+                      leftSection={
+                        <Avatar color="blue" radius={"sm"} size={"sm"}>
+                          {String.fromCharCode(index + 65)}
+                        </Avatar>
+                      }
+                    />
+                  </Grid.Col>
+                ))}
               </Grid>
             </Flex>
-            <MultiSelect
+            <Select
               label="Correct Answer"
-              placeholder="Pick answer(s)"
-              data={[
-                { value: "A", label: "A" },
-                { value: "B", label: "B" },
-                { value: "C", label: "C" },
-                { value: "D", label: "D" },
-              ]}
+              placeholder="Pick one"
+              data={[...form.values.options].map((value) => ({
+                label: value,
+                value: value,
+              }))}
               {...form.getInputProps("answer")}
             />
           </Flex>

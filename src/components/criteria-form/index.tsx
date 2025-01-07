@@ -1,28 +1,16 @@
 "use client";
 
-import { trpc } from "@/app/_trpc/client";
 import { SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import {
   fetchGeneratedQuestions,
   GenerateQBankPayload,
-  generateQuestionBank,
 } from "@/utllities/apiFunctions";
-import {
-  FillBlankQuizResponseSchema,
-  MCQQuizResponseSchema,
-  MCQSimilarQuizResponseSchema,
-  OpenEndedQuizresponseSchema,
-  TrueFalseQuizResponseSchema,
-} from "@/utllities/zod-schemas-types";
 import { useUser } from "@clerk/nextjs";
 import {
   Alert,
-  Badge,
   Flex,
-  List,
   Text,
-  TextInput,
   useMantineColorScheme,
   useMantineTheme,
 } from "@mantine/core";
@@ -70,150 +58,130 @@ const priceList: PriceDetail = {
 };
 
 function CriteriaForm({ subscription }: Props) {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const colorScheme = useMantineColorScheme();
   const theme = useMantineTheme();
-  const [withAnswer, setWithAnswer] = useState<"GWA" | "GWOA">("GWA");
-  const {
-    mutateAsync: saveQBank,
-    isLoading: savingQBank,
-  } = trpc.saveQBank.useMutation();
-  const questionList = useAppStore((state) => state.questions);
-  const setQuestions = useAppStore((state) => state.setQuestions);
-  const [instituteName, setInstituteName] = useState("Content To Quiz");
-  const { mutateAsync: generateQBank } = useMutation({
-    mutationFn: (values: GenerateQBankPayload) => {
-      return generateQuestionBank({
-        difficulty: values.difficulty,
-        prompt: values.prompt,
-        promptUrl: values.promptUrl,
-        qCount: values.qCount,
-        qType: values.qType,
-      });
-    },
-  });
-  const { mutateAsync: updateCount } = trpc.updateQueryCount.useMutation();
-  async function storeQuestionBank(
-    questions:
-      | MCQQuizResponseSchema
-      | FillBlankQuizResponseSchema
-      | MCQSimilarQuizResponseSchema
-      | OpenEndedQuizresponseSchema
-      | TrueFalseQuizResponseSchema,
-    refId: string,
-    userId: string,
-    formValues: GenerateQBankPayload
-  ) {
-    const { prompt_responses, url_responses } = questions;
+  // async function storeQuestionBank(
+  //   questions:
+  //     | MCQQuestionsSchema
+  //     | FillBlankQuizResponseSchema
+  //     | MCQSimilarQuizResponseSchema
+  //     | OpenEndedQuizResponseSchema
+  //     | TrueFalseQuestionsSchema,
+  //   refId: string,
+  //   userId: string,
+  //   formValues: GenerateQBankPayload
+  // ) {
+  //   const { prompt_responses, url_responses } = questions;
 
-    if (prompt_responses.length > 0) {
-      const { questions, input } = prompt_responses[0];
-      const { difficulty, promptUrl, qCount, qType } = formValues;
-      switch (formValues.qType) {
-        case "mcq": {
-        }
-      }
-      await saveQBank(
-        {
-          jobId: refId,
-          difficulty: difficulty,
-          userId: userId,
-          qCount: qCount,
-          qKeyword: input,
-          qType: qType,
-          questions: { questions: questions },
-          qUrl: promptUrl,
-          withAnswer: withAnswer,
-        },
-        {
-          onSuccess: (data) => {
-            if (data) {
-              const updatedList = {
-                ...questionList,
-                [data.id]: {
-                  ...data,
-                  createdAt: data.createdAt ? new Date(data.createdAt) : null,
-                  questions: data.questions,
-                  googleQuizLink: "",
-                  instituteName:
-                    instituteName.length === 0
-                      ? "Content To Quiz"
-                      : instituteName,
-                },
-              };
-              setQuestions(updatedList);
-              if (instituteName !== "Content To Quiz") {
-                setInstituteName("Content To Quiz");
-              }
-            }
-          },
-        }
-      );
-      if (subscription && subscription.queries) {
-        let count = subscription.queries - 1;
-        const { planName } = subscription;
+  //   if (prompt_responses.length > 0) {
+  //     const { questions, input } = prompt_responses[0];
+  //     const { difficulty, promptUrl, qCount, qType } = formValues;
+  //     switch (formValues.qType) {
+  //       case "mcq": {
+  //       }
+  //     }
+  //     await saveQBank(
+  //       {
+  //         jobId: refId,
+  //         difficulty: difficulty,
+  //         userId: userId,
+  //         qCount: qCount,
+  //         qKeyword: input,
+  //         qType: qType,
+  //         questions: { questions: questions },
+  //         qUrl: promptUrl,
+  //         withAnswer: withAnswer,
+  //       },
+  //       {
+  //         onSuccess: (data) => {
+  //           if (data) {
+  //             const updatedList = {
+  //               ...questionList,
+  //               [data.id]: {
+  //                 ...data,
+  //                 createdAt: data.createdAt ? new Date(data.createdAt) : null,
+  //                 questions: data.questions,
+  //                 googleQuizLink: "",
+  //                 instituteName:
+  //                   instituteName.length === 0
+  //                     ? "Content To Quiz"
+  //                     : instituteName,
+  //               },
+  //             };
+  //             setQuestions(updatedList);
+  //             if (instituteName !== "Content To Quiz") {
+  //               setInstituteName("Content To Quiz");
+  //             }
+  //           }
+  //         },
+  //       }
+  //     );
+  //     if (subscription && subscription.queries) {
+  //       let count = subscription.queries - 1;
+  //       const { planName } = subscription;
 
-        if (planName === "Integrated") {
-          count = subscription.queries;
-        }
-        await updateCount({
-          userId: userId,
-          count: count,
-        });
-      }
-    } else if (url_responses.length > 0) {
-      const { questions, input } = url_responses[0];
-      const { difficulty, promptUrl, qCount, qType } = formValues;
-      await saveQBank(
-        {
-          jobId: refId,
-          difficulty: difficulty,
-          userId: userId,
-          qCount: qCount,
-          qKeyword: input,
-          qType: qType,
-          questions: { questions: questions },
-          qUrl: promptUrl,
-          withAnswer: withAnswer,
-        },
-        {
-          onSuccess: (data) => {
-            if (data) {
-              const updatedList = {
-                ...questionList,
-                [data.id]: {
-                  ...data,
-                  createdAt: data.createdAt ? new Date(data.createdAt) : null,
-                  questions: data.questions,
-                  googleQuizLink: "",
-                  instituteName:
-                    instituteName.length === 0
-                      ? "Content To Quiz"
-                      : instituteName,
-                },
-              };
-              setQuestions(updatedList);
-              if (instituteName !== "Content To Quiz") {
-                setInstituteName("Content To Quiz");
-              }
-            }
-          },
-        }
-      );
-      if (subscription && subscription.queries) {
-        let count = subscription.queries - 1;
-        const { planName } = subscription;
+  //       if (planName === "Integrated") {
+  //         count = subscription.queries;
+  //       }
+  //       await updateCount({
+  //         userId: userId,
+  //         count: count,
+  //       });
+  //     }
+  //   } else if (url_responses.length > 0) {
+  //     const { questions, input } = url_responses[0];
+  //     const { difficulty, promptUrl, qCount, qType } = formValues;
+  //     await saveQBank(
+  //       {
+  //         jobId: refId,
+  //         difficulty: difficulty,
+  //         userId: userId,
+  //         qCount: qCount,
+  //         qKeyword: input,
+  //         qType: qType,
+  //         questions: { questions: questions },
+  //         qUrl: promptUrl,
+  //         withAnswer: withAnswer,
+  //       },
+  //       {
+  //         onSuccess: (data) => {
+  //           if (data) {
+  //             const updatedList = {
+  //               ...questionList,
+  //               [data.id]: {
+  //                 ...data,
+  //                 createdAt: data.createdAt ? new Date(data.createdAt) : null,
+  //                 questions: data.questions,
+  //                 googleQuizLink: "",
+  //                 instituteName:
+  //                   instituteName.length === 0
+  //                     ? "Content To Quiz"
+  //                     : instituteName,
+  //               },
+  //             };
+  //             setQuestions(updatedList);
+  //             if (instituteName !== "Content To Quiz") {
+  //               setInstituteName("Content To Quiz");
+  //             }
+  //           }
+  //         },
+  //       }
+  //     );
+  //     if (subscription && subscription.queries) {
+  //       let count = subscription.queries - 1;
+  //       const { planName } = subscription;
 
-        if (planName === "Integrated") {
-          count = subscription.queries;
-        }
-        await updateCount({
-          userId: userId,
-          count: count,
-        });
-      }
-    }
-  }
+  //       if (planName === "Integrated") {
+  //         count = subscription.queries;
+  //       }
+  //       await updateCount({
+  //         userId: userId,
+  //         count: count,
+  //       });
+  //     }
+  //   }
+  // }
 
   const { mutate: fetchQuestions, isLoading: fetchingQuestion } = useMutation({
     mutationFn: async ({
@@ -241,23 +209,23 @@ function CriteriaForm({ subscription }: Props) {
         resumeContent,
         candidateName,
       } = variable;
-      if (resumeContent) {
-        storeQuestionBank(data, variable.refId, variable.userId, {
-          difficulty: difficulty,
-          prompt: candidateName ? [candidateName] : [],
-          promptUrl: promptUrl,
-          qCount: qCount,
-          qType: qType,
-        });
-      } else {
-        storeQuestionBank(data, variable.refId, variable.userId, {
-          difficulty: difficulty,
-          prompt: prompt,
-          promptUrl: promptUrl,
-          qCount: qCount,
-          qType: qType,
-        });
-      }
+      // if (resumeContent) {
+      //   storeQuestionBank(data, variable.refId, variable.userId, {
+      //     difficulty: difficulty,
+      //     prompt: candidateName ?? "",
+      //     promptUrl: promptUrl,
+      //     qCount: qCount,
+      //     qType: qType,
+      //   });
+      // } else {
+      //   storeQuestionBank(data, variable.refId, variable.userId, {
+      //     difficulty: difficulty,
+      //     prompt: prompt,
+      //     promptUrl: promptUrl,
+      //     qCount: qCount,
+      //     qType: qType,
+      //   });
+      // }
       useAppStore.setState({
         generatingQuestions: false,
         renderQIdx: variable.refId,
@@ -272,43 +240,20 @@ function CriteriaForm({ subscription }: Props) {
     return false;
   }, [subscription]);
 
-  const { queries, features } = useMemo(() => {
-    if (subscription && subscription.planId) {
-      const { queries, features } = priceList[subscription.planId];
-      return { queries, features };
-    }
-    return { queries: null, features: null };
-  }, [subscription]);
-
-  async function generateQuestions(
-    values: GenerateQBankPayload,
-    qType: "GWA" | "GWOA",
-    candidateName: string | null,
-    resumeContent: boolean
-  ) {
-    useAppStore.setState({ generatingQuestions: true });
-    const data = await generateQBank({
-      ...values,
-      prompt: values.prompt ?? [],
-    });
-    if (user) {
-      fetchQuestions({
-        refId: data.reference_id,
-        userId: user.id,
-        values: values,
-        candidateName,
-        resumeContent,
-      });
-    }
-    setWithAnswer(qType);
-  }
+  // const { queries, features } = useMemo(() => {
+  //   if (subscription && subscription.planId) {
+  //     const { queries, features } = priceList[subscription.planId];
+  //     return { queries, features };
+  //   }
+  //   return { queries: null, features: null };
+  // }, [subscription]);
 
   return (
     <Flex
       w={"100%"}
       direction={"column"}
       gap={"xs"}
-      maw={{ xs: "30%", md: "20%" }}
+      maw={{ xs: "30%", md: "25%" }}
       my={"xs"}
       p={0}
       styles={{
@@ -324,20 +269,13 @@ function CriteriaForm({ subscription }: Props) {
         },
       }}
     >
-      <TextInput
-        value={instituteName}
-        onChange={(e) => setInstituteName(e.target.value)}
-        label="Brought to you by"
-        px={"xs"}
-        disabled={!subscription}
-      />
-      <Form
-        generateQuestions={generateQuestions}
-        priceDetails={priceList}
-        subscription={subscription}
-        isLoading={savingQBank || fetchingQuestion}
-        printResult={(flag) => {}}
-      />
+      {user && isLoaded && isSignedIn && (
+        <Form
+          priceDetails={priceList}
+          subscription={subscription}
+          userId={user.id}
+        />
+      )}
       {disableFields && (
         <Alert
           variant="light"
@@ -358,7 +296,7 @@ function CriteriaForm({ subscription }: Props) {
           </Flex>
         </Alert>
       )}
-      {subscription && (
+      {/* {subscription && (
         <Alert
           variant="light"
           color={!subscription.queries ? "red" : "lime"}
@@ -391,7 +329,7 @@ function CriteriaForm({ subscription }: Props) {
             </Badge>
           </Flex>
         </Alert>
-      )}
+      )} */}
     </Flex>
   );
 }

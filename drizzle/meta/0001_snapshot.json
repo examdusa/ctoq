@@ -1,9 +1,55 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "483bb615-9d21-49c5-89f7-5e4616212ff2",
-  "prevId": "3392d519-91da-4262-85ae-268b88a167aa",
+  "id": "8d5834bc-eef5-4d54-b6b2-f98ce4c88e8f",
+  "prevId": "86052d5c-1200-4032-9388-cddd78bc7ade",
   "tables": {
+    "pendingJob": {
+      "name": "pendingJob",
+      "columns": {
+        "jobId": {
+          "name": "jobId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "pendingJob_jobId_unique": {
+          "name": "pendingJob_jobId_unique",
+          "columns": [
+            "jobId"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "pendingJob_userId_userprofile_id_fk": {
+          "name": "pendingJob_userId_userprofile_id_fk",
+          "tableFrom": "pendingJob",
+          "tableTo": "userprofile",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "questionbank": {
       "name": "questionbank",
       "columns": {
@@ -20,7 +66,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'\"2024-11-04T09:25:33.785Z\"'"
+          "default": "'\"2025-01-05T01:52:01.924Z\"'"
         },
         "userId": {
           "name": "userId",
@@ -84,6 +130,54 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "googleQuizLink": {
+          "name": "googleQuizLink",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "''"
+        },
+        "instituteName": {
+          "name": "instituteName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'Content To Quiz'"
+        },
+        "outputType": {
+          "name": "outputType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'question'"
+        },
+        "guidance": {
+          "name": "guidance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'NA'"
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'NA'"
+        },
+        "googleFormId": {
+          "name": "googleFormId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'NA'"
         }
       },
       "indexes": {},
@@ -94,6 +188,100 @@
           "tableTo": "userprofile",
           "columnsFrom": [
             "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "sharedExams": {
+      "name": "sharedExams",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text(36)",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "questionRecord": {
+          "name": "questionRecord",
+          "type": "text(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "formId": {
+          "name": "formId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "firstName": {
+          "name": "firstName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lastName": {
+          "name": "lastName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "shareDate": {
+          "name": "shareDate",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'\"2025-01-05T01:52:01.925Z\"'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sharedExams_userId_userprofile_id_fk": {
+          "name": "sharedExams_userId_userprofile_id_fk",
+          "tableFrom": "sharedExams",
+          "tableTo": "userprofile",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "sharedExams_questionRecord_questionbank_id_fk": {
+          "name": "sharedExams_questionRecord_questionbank_id_fk",
+          "tableFrom": "sharedExams",
+          "tableTo": "questionbank",
+          "columnsFrom": [
+            "questionRecord"
           ],
           "columnsTo": [
             "id"
@@ -287,7 +475,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'\"2024-11-04T09:25:33.785Z\"'"
+          "default": "'\"2025-01-05T01:52:01.924Z\"'"
         }
       },
       "indexes": {},

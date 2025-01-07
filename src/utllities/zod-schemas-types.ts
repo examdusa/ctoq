@@ -1,103 +1,81 @@
 import { z } from "zod";
 
-const mcqSimilarQuestionSchema = z.object({
+const mcqQuestionSchema = z.object({
   question: z.string(),
-  options: z.record(z.string(), z.string()),
-  answer: z.array(z.string()),
-});
-
-const mcqSimilarPromptResponseSchema = z.object({
-  input: z.string(),
-  code: z.number(),
-  quiz_type: z.literal("mcq_similar"),
-  questions: z.array(mcqSimilarQuestionSchema),
-});
-
-const mcqSimilarQuizResponseSchema = z.object({
-  prompt_responses: z.array(mcqSimilarPromptResponseSchema),
-  url_responses: z.array(mcqSimilarPromptResponseSchema),
-});
-
-const fillBlankQuestionSchema = z.object({
-  question: z.string(),
-  options: z.record(z.string(), z.string()),
+  options: z.array(z.string()),
   answer: z.string(),
-});
-
-const fillBlankPromptResponseSchema = z.object({
-  input: z.string(),
-  code: z.number(),
-  quiz_type: z.literal("fill_blank"),
-  questions: z.array(fillBlankQuestionSchema),
-});
-
-const fillBlankQuizResponseSchema = z.object({
-  prompt_responses: z.array(fillBlankPromptResponseSchema),
-  url_responses: z.array(fillBlankPromptResponseSchema),
+  difficulty: z.string(),
 });
 
 const trueFalseQuestionSchema = z.object({
-  question: z.string().optional(),
-  options: z.record(z.string(), z.string()),
+  question: z.string(),
+  answer: z.enum(["True", "False"]),
+  difficulty: z.string(),
+});
+const fillBlankQuestionSchema = z.object({
+  question: z.string(),
   answer: z.string(),
-  statemen: z.string().optional(),
-  Suggested_lines: z.string().optional(),
-});
-
-const trueFalsePromptResponseSchema = z.object({
-  input: z.string(),
-  code: z.number(),
-  quiz_type: z.literal("true_false"),
-  questions: z.array(trueFalseQuestionSchema),
-});
-
-const trueFalseQuizResponseSchema = z.object({
-  prompt_responses: z.array(trueFalsePromptResponseSchema),
-  url_responses: z.array(trueFalsePromptResponseSchema),
+  difficulty: z.string(),
 });
 
 const openEndedQuestionSchema = z.object({
   question: z.string(),
   answer: z.string(),
+  difficulty: z.string(),
 });
 
-const openEndedPromptResponseSchema = z.object({
-  input: z.string(),
-  code: z.number(),
-  quiz_type: z.literal("open_ended"),
-  questions: z.array(openEndedQuestionSchema),
+const baseResultSchema = z.object({
+  status: z.enum(["success", "processing"]),
+  status_code: z.number().int().min(100).max(599),
+  job_id: z.string(),
+  callback_url: z.string().or(z.string().url()),
+  file_metadata: z.object({}).or(
+    z.object({
+      word_count: z.number().int(),
+      char_count: z.number().int(),
+      file_size: z.string(),
+    })
+  ),
+  resume_data: z
+    .string()
+    .or(z.object({}))
+    .or(
+      z.object({
+        name: z.string(),
+        email: z.string(),
+        skills: z.string(),
+      })
+    ),
+  summary: z.string(),
+  guidance: z.string(),
+  questions: z.array(
+    z.union([
+      mcqQuestionSchema,
+      trueFalseQuestionSchema,
+      fillBlankQuestionSchema,
+      openEndedQuestionSchema,
+    ])
+  ),
 });
 
-const openEndedQuizresponseSchema = z.object({
-  prompt_responses: z.array(openEndedPromptResponseSchema),
-  url_responses: z.array(openEndedPromptResponseSchema),
-});
-
-const mcqOptionsSchema = z.object({
-  A: z.string(),
-  B: z.string(),
-  C: z.string(),
-  D: z.string(),
-});
-
-const mcqQuestionSchema = z.object({
-  question: z.string(),
-  options: mcqOptionsSchema,
-  answer: z.string().refine((value) => ["A", "B", "C", "D"].includes(value), {
-    message: "Answer must be one of the options: A, B, C, D",
-  }),
-});
-
-const mcqPromptResponseSchema = z.object({
-  input: z.string(),
-  code: z.number(),
-  quiz_type: z.literal("mcq"),
+const mcqQuestionsSchema = baseResultSchema.extend({
   questions: z.array(mcqQuestionSchema),
 });
 
-const mcqQuizresponseSchema = z.object({
-  prompt_responses: z.array(mcqPromptResponseSchema),
-  url_responses: z.array(mcqPromptResponseSchema),
+const trueFalseQuestionsSchema = baseResultSchema.extend({
+  questions: z.array(trueFalseQuestionSchema),
+});
+
+const openEndedQuestionsSchema = baseResultSchema.extend({
+  questions: z.array(openEndedQuestionSchema),
+});
+
+const mcqSimilarQuestionSchema = baseResultSchema.extend({
+  questions: z.array(mcqQuestionSchema),
+});
+
+const fillBlankQuizResponseSchema = baseResultSchema.extend({
+  questions: fillBlankQuestionSchema,
 });
 
 const instituteSchema = z.object({
@@ -140,47 +118,113 @@ const instituteSchema = z.object({
 
 const institutesListSchema = z.array(instituteSchema);
 
-type MCQSimilarQuizResponseSchema = z.infer<
-  typeof mcqSimilarQuizResponseSchema
+const submitJobPayloadSchema = z.object({
+  language: z.string(),
+  actor: z.string(),
+  resume: z.string(),
+  courses: z.string(),
+  keywords: z.string(),
+  output_type: z.enum(["question", "summary", "guidance"]),
+  no_of_questions: z.number().int(),
+  question_type: z.enum([
+    "open_ended",
+    "mcq",
+    "true_false",
+    "mcq_similar",
+    "fill_blank",
+  ]).or(z.string()),
+  question_difficulty: z.string(),
+  instructions: z.string(),
+  career_goal: z.string(),
+  experience_level: z.string(),
+  geography: z.string(),
+  b_day: z.string(),
+});
+
+const generateQuestionsResponseSchema = z.object({
+  job_id: z.string(),
+  status: z.string(),
+  callback_url: z.string(),
+});
+
+const userProfileSchema = z.object({
+  id: z.string(),
+  firstname: z.string(),
+  lastname: z.string(),
+  email: z.string(),
+  googleid: z.string(),
+  appTheme: z.string(),
+  createdAt: z.instanceof(Date).nullable(),
+  language: z.string(),
+  instituteName: z.string(),
+  role: z.string(),
+});
+
+const googleDocRequestObject = z.object({
+  textToInsert: z.string(),
+});
+
+const googleDocSchema = z.object({
+  title: z.string(),
+  fromEmail: z.string(),
+  toEmails: z.array(z.string()),
+  requests: z.array(googleDocRequestObject),
+});
+
+type GoogleDocSchema = z.infer<typeof googleDocSchema>
+type SubmitJobPayloadSchema = z.infer<typeof submitJobPayloadSchema>;
+type MCQSimilarQuizResponseSchema = z.infer<typeof mcqSimilarQuestionSchema>;
+type GenerateQuestionsResponseSchema = z.infer<
+  typeof generateQuestionsResponseSchema
 >;
 type FillBlankQuizResponseSchema = z.infer<typeof fillBlankQuizResponseSchema>;
-type TrueFalseQuizResponseSchema = z.infer<typeof trueFalseQuizResponseSchema>;
-type OpenEndedQuizresponseSchema = z.infer<typeof openEndedQuizresponseSchema>;
-type MCQQuizResponseSchema = z.infer<typeof mcqQuizresponseSchema>;
-
-type MCQQuestionSchema = z.infer<typeof mcqQuestionSchema>;
+type TrueFalseQuestionsSchema = z.infer<typeof trueFalseQuestionsSchema>;
+type OpenEndedQuizResponseSchema = z.infer<typeof openEndedQuestionsSchema>;
+type MCQQuestionsSchema = z.infer<typeof mcqQuestionsSchema>;
 type FillBlankQuestionSchema = z.infer<typeof fillBlankQuestionSchema>;
 type OpenendedQuestionSchema = z.infer<typeof openEndedQuestionSchema>;
-type TrueFalseQuestionsScheam = z.infer<typeof trueFalseQuestionSchema>;
+type TrueFalseQuestionScheam = z.infer<typeof trueFalseQuestionSchema>;
 type McqSimilarQuestionScheam = z.infer<typeof mcqSimilarQuestionSchema>;
 type Institute = z.infer<typeof instituteSchema>;
 type Institutes = z.infer<typeof institutesListSchema>;
+type MCQQuestionSchema = z.infer<typeof mcqQuestionSchema>;
+type BaseResultSchema = z.infer<typeof baseResultSchema>;
+type UserProfileSchema = z.infer<typeof userProfileSchema>;
 
 export {
   fillBlankQuestionSchema,
+  userProfileSchema,
   fillBlankQuizResponseSchema,
   instituteSchema,
-  institutesListSchema,
   mcqQuestionSchema,
-  mcqQuizresponseSchema,
+  institutesListSchema,
   mcqSimilarQuestionSchema,
-  mcqSimilarQuizResponseSchema,
   openEndedQuestionSchema,
-  openEndedQuizresponseSchema,
+  openEndedQuestionsSchema,
   trueFalseQuestionSchema,
-  trueFalseQuizResponseSchema,
+  submitJobPayloadSchema,
+  trueFalseQuestionsSchema,
+  mcqQuestionsSchema,
+  generateQuestionsResponseSchema,
+  baseResultSchema,
+  googleDocSchema
 };
 export type {
   FillBlankQuestionSchema,
   FillBlankQuizResponseSchema,
+  UserProfileSchema,
   Institute,
   Institutes,
-  MCQQuestionSchema,
-  MCQQuizResponseSchema,
+  MCQQuestionsSchema,
   McqSimilarQuestionScheam,
   MCQSimilarQuizResponseSchema,
   OpenendedQuestionSchema,
-  OpenEndedQuizresponseSchema,
-  TrueFalseQuestionsScheam,
-  TrueFalseQuizResponseSchema,
+  OpenEndedQuizResponseSchema,
+  TrueFalseQuestionScheam,
+  TrueFalseQuestionsSchema,
+  MCQQuestionSchema,
+  SubmitJobPayloadSchema,
+  GenerateQuestionsResponseSchema,
+  BaseResultSchema,
+  GoogleDocSchema
 };

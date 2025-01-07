@@ -52,7 +52,7 @@ export default function EditMcqQuestion({
 
   const editForm = useForm<MCQQuestionSchema>({
     validate: zodResolver(mcqQuestionSchema),
-    initialValues: { ...question },
+    initialValues: { ...question, options: [...question.options] },
   });
 
   const modalHeaderProps = useMemo(() => {
@@ -133,27 +133,32 @@ export default function EditMcqQuestion({
           <Box>
             <Title order={5}>Options</Title>
             <Grid pt={"xs"} pl={"sm"}>
-              {Object.entries(editForm.values.options).map(([key, value]) => {
-                return (
-                  <Grid.Col span={{ xs: 12, md: 6 }} key={key}>
-                    <TextInput
-                      {...editForm.getInputProps(`options.${key}`)}
-                      w={"100%"}
-                      leftSection={
-                        <Avatar color="blue" radius={"sm"} size={"sm"}>
-                          {key}
-                        </Avatar>
-                      }
-                    />
-                  </Grid.Col>
-                );
-              })}
+              {Object.entries(editForm.values.options).map(
+                ([key, value], index) => {
+                  return (
+                    <Grid.Col span={{ xs: 12, md: 6 }} key={key}>
+                      <TextInput
+                        {...editForm.getInputProps(`options.${key}`)}
+                        w={"100%"}
+                        leftSection={
+                          <Avatar color="blue" radius={"sm"} size={"sm"}>
+                            {String.fromCharCode(65 + index)}
+                          </Avatar>
+                        }
+                      />
+                    </Grid.Col>
+                  );
+                }
+              )}
             </Grid>
           </Box>
           <Select
             label="Correct Answers"
             placeholder="Pick value"
-            data={[...Object.keys(question.options)]}
+            data={question.options.map((item) => ({
+              label: item,
+              value: item,
+            }))}
             {...editForm.getInputProps("answer")}
           />
         </Flex>

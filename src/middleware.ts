@@ -2,7 +2,7 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
 
 const customMiddleware = (req: NextRequest) => {
-  const protectedRoutes = ["/chat"];
+  const protectedRoutes = ["/chat", "/profile"];
   const pathname = req.nextUrl.pathname;
 
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {

@@ -7,18 +7,12 @@ import {
   TrueFalseQuestionsScheam,
 } from "@/utllities/zod-schemas-types";
 import {
-  Avatar,
-  Box,
   Button,
   CSSProperties,
   Flex,
-  Grid,
   Group,
   Modal,
-  Select,
-  Textarea,
-  TextInput,
-  Title,
+  TextInput
 } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
 import { useMemo } from "react";
@@ -55,8 +49,6 @@ export default function EditTrueFalseQuestion({
     initialValues: {
       ...storedQuestion,
       question: storedQuestion.question ?? undefined,
-      statemen: storedQuestion.statemen ?? undefined,
-      Suggested_lines: storedQuestion.Suggested_lines ?? undefined,
     },
   });
 
@@ -141,50 +133,10 @@ export default function EditTrueFalseQuestion({
               label="Question"
             />
           )}
-          {storedQuestion.statemen && (
-            <TextInput
-              withAsterisk
-              {...editForm.getInputProps("statemen")}
-              label="Statement"
-            />
-          )}
-          {storedQuestion.Suggested_lines && (
-            <Textarea
-              withAsterisk
-              label="Suggested lines"
-              rows={3}
-              placeholder="Enter value"
-              {...editForm.getInputProps("suggested_lines")}
-            />
-          )}
-          <Box>
-            <Title order={6} fw={100}>
-              Options
-            </Title>
-            <Grid pt={1}>
-              {Object.entries(editForm.values.options).map(([key, value]) => {
-                return (
-                  <Grid.Col span={{ xs: 12, md: 6 }} key={key}>
-                    <TextInput
-                      {...editForm.getInputProps(`options.${key}`)}
-                      w={"100%"}
-                      leftSection={
-                        <Avatar color="blue" radius={"sm"} size={"sm"}>
-                          {key}
-                        </Avatar>
-                      }
-                    />
-                  </Grid.Col>
-                );
-              })}
-            </Grid>
-          </Box>
-          <Select
+          <TextInput
             label="Correct Answer"
             withAsterisk
             placeholder="Pick answer"
-            data={[...Object.keys(storedQuestion.options)]}
-            checkIconPosition="right"
             {...editForm.getInputProps("answer")}
           />
         </Flex>

@@ -1,18 +1,13 @@
 import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
-import {
-  TrueFalseQuestionsScheam
-} from "@/utllities/zod-schemas-types";
+import { TrueFalseQuestionsScheam } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
-  Alert,
   Badge,
   Button,
   Flex,
   Group,
-  List,
   Text,
-  ThemeIcon,
   Tooltip,
   useMantineTheme
 } from "@mantine/core";
@@ -20,7 +15,6 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
 import { useMemo } from "react";
 import EditTrueFalseQuestion from "./modals/edit-truefalse-question-modal";
-import { OverlayModal } from "./modals/loader";
 
 interface Props {
   index: number;
@@ -40,7 +34,6 @@ function RenderTrueFalseQuestion({
   const [opened, { open: openEditModal, close: closeEditModal }] =
     useDisclosure();
   const theme = useMantineTheme();
-  const generatingQuestions = useAppStore((state) => state.generatingQuestions);
   const questions = useAppStore((state) => state.questions);
   const { mutateAsync: deleteQuestion, isLoading: deletingQuestion } =
     trpc.deleteQuestion.useMutation();
@@ -80,21 +73,6 @@ function RenderTrueFalseQuestion({
           {question.question}
         </Text>
       );
-    } else if (question.statemen || question.Suggested_lines) {
-      return (
-        <Flex direction={"column"} w={"100%"} h={"auto"} gap={"xs"}>
-          <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]}>
-            {question.statemen}
-          </Text>
-          {question.Suggested_lines && (
-            <Alert variant="light" color="green" radius={"md"}>
-              <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} size="xs">
-                {question.Suggested_lines}
-              </Text>
-            </Alert>
-          )}
-        </Flex>
-      );
     }
     return null;
   }, [question, theme]);
@@ -114,12 +92,6 @@ function RenderTrueFalseQuestion({
         },
       }}
     >
-      <OverlayModal
-        opened={generatingQuestions}
-        message="Generating questions..."
-        width={80}
-        height={80}
-      />
       <Flex
         direction={"row"}
         w={"100%"}
@@ -177,47 +149,17 @@ function RenderTrueFalseQuestion({
               </Tooltip>
             </Group>
           </Flex>
-          <Flex
-            direction={"column"}
-            w={"auto"}
-            gap={3}
-            pl={"md"}
-            styles={{
-              root: {
-                flexGrow: 1,
-              },
-            }}
+          <Badge
+            hidden={!!showAnswer}
+            variant="outline"
+            bg="teal"
+            color="white"
+            size="lg"
+            radius="sm"
+            mt={"auto"}
           >
-            <List spacing="md" size="sm" center={true} mb={"sm"}>
-              {Object.entries(question.options).map(([key, value]) => {
-                return (
-                  <List.Item
-                    key={key}
-                    icon={
-                      <ThemeIcon color="blue" size={"sm"} radius="xl">
-                        {key}
-                      </ThemeIcon>
-                    }
-                  >
-                    <Text size="sm" lh={"xs"}>
-                      {value}
-                    </Text>
-                  </List.Item>
-                );
-              })}
-            </List>
-            <Badge
-              hidden={!!showAnswer}
-              variant="outline"
-              bg="teal"
-              color="white"
-              size="lg"
-              radius="sm"
-              mt={"auto"}
-            >
-              Answer: {question.answer}
-            </Badge>
-          </Flex>
+            Answer: {question.answer}
+          </Badge>
         </Flex>
       </Flex>
       {opened && (
@@ -235,3 +177,4 @@ function RenderTrueFalseQuestion({
 }
 
 export { RenderTrueFalseQuestion };
+

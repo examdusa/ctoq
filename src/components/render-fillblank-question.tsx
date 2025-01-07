@@ -7,16 +7,13 @@ import {
   Button,
   Flex,
   Group,
-  List,
   Text,
-  ThemeIcon,
   Tooltip,
-  useMantineTheme,
+  useMantineTheme
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
 import EditFillBlankQuestion from "./modals/edit-fillblank-question-modal";
-import { OverlayModal } from "./modals/loader";
 
 interface Props {
   index: number;
@@ -35,7 +32,6 @@ function RenderFillBlankQuestion({
 }: Props) {
   const [opened, { open: openEditModal, close: closeEditModal }] =
     useDisclosure();
-  const generatingQuestions = useAppStore((state) => state.generatingQuestions);
   const theme = useMantineTheme();
   const questions = useAppStore((state) => state.questions);
   const { mutateAsync: deleteQuestion, isLoading: deletingQuestion } =
@@ -84,12 +80,6 @@ function RenderFillBlankQuestion({
         },
       }}
     >
-      <OverlayModal
-        opened={generatingQuestions}
-        message="Generating questions..."
-        width={80}
-        height={80}
-      />
       <Flex
         direction={"row"}
         w={"100%"}
@@ -142,7 +132,7 @@ function RenderFillBlankQuestion({
               </Tooltip>
             </Group>
           </Flex>
-          <Flex
+          {/* <Flex
             direction={"column"}
             w={"auto"}
             gap={3}
@@ -171,18 +161,18 @@ function RenderFillBlankQuestion({
                 );
               })}
             </List>
-            <Badge
-              hidden={!!showAnswer}
-              variant="outline"
-              bg="teal"
-              color="white"
-              size="lg"
-              radius="sm"
-              mt={"auto"}
-            >
-              Answer: {question.answer}
-            </Badge>
-          </Flex>
+          </Flex> */}
+          <Badge
+            hidden={!!showAnswer}
+            variant="outline"
+            bg="teal"
+            color="white"
+            size="lg"
+            radius="sm"
+            mt={"auto"}
+          >
+            Answer: {question.answer}
+          </Badge>
         </Flex>
       </Flex>
       <EditFillBlankQuestion
@@ -198,3 +188,4 @@ function RenderFillBlankQuestion({
 }
 
 export { RenderFillBlankQuestion };
+

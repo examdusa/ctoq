@@ -5,16 +5,13 @@ import {
   TrueFalseQuestionsScheam,
 } from "@/utllities/zod-schemas-types";
 import {
-  Avatar,
   Box,
   Button,
   Flex,
-  Grid,
   Group,
   Modal,
   Select,
-  Text,
-  TextInput,
+  Textarea
 } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
 import { CSSProperties, useMemo } from "react";
@@ -67,21 +64,18 @@ export default function AddTrueFalseQuestion({
     mode: "controlled",
     validate: zodResolver(trueFalseQuestionSchema),
     initialValues: {
-      answer: "",
-      options: {
-        A: "",
-        B: "",
-      },
+      answer: "False",
       question: "",
+      difficulty: "",
     },
   });
 
   async function handleFormSubmit(values: TrueFalseQuestionsScheam) {
-    const { answer, options, question } = values;
+    const { answer, question, difficulty } = values;
 
     const payload: TrueFalseQuestionsScheam = {
       answer: answer,
-      options: options,
+      difficulty,
       question: question,
     };
 
@@ -130,45 +124,18 @@ export default function AddTrueFalseQuestion({
           })}
         >
           <Flex direction={"column"} w={"100%"} h={"100%"} gap={"lg"}>
-            <TextInput
+            <Textarea
               label="Question"
               {...form.getInputProps("question")}
               placeholder="Enter your question"
               autoFocus
             />
-            <Flex direction={"column"} w={"100%"} h={"auto"} gap={2}>
-              <Text size="sm">Answers Options</Text>
-              <Grid>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.A")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        A
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.B")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        B
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-              </Grid>
-            </Flex>
             <Select
               label="Correct Answer"
               placeholder="Pick one"
               data={[
-                { value: "A", label: "A" },
-                { value: "B", label: "B" },
+                { value: "True", label: "True" },
+                { value: "False", label: "False" },
               ]}
               {...form.getInputProps("answer")}
             />

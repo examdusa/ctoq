@@ -16,7 +16,9 @@ export default function RootLayout({
 }>) {
   return (
     <Provider>
-      <MantineProvider defaultColorScheme="light" forceColorScheme="light">{children}</MantineProvider>
+      <MantineProvider defaultColorScheme="light" forceColorScheme="light">
+        {children}
+      </MantineProvider>
     </Provider>
   );
 }

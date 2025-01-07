@@ -1,7 +1,10 @@
 "use client";
 
+import { trpc } from "@/app/_trpc/client";
+import { SelectQuestionBank } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import {
+  Button,
   Flex,
   ScrollArea,
   Stack,
@@ -9,6 +12,7 @@ import {
   UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
+import { IconReload } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -18,10 +22,14 @@ dayjs.extend(isBetween);
 
 function QBankCreateHistory() {
   const questions = useAppStore((state) => state.questions);
+  const userProfile = useAppStore((state) => state.userProfile);
   const theme = useMantineTheme();
   const renderQIdx = useAppStore((state) => state.renderQIdx);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [activeFilterIdx, setActiveFilterIdx] = useState(1);
+  const { mutateAsync: fetchQuestionsByUserId, isLoading: fetchingQuestions } =
+    trpc.getQuestions.useMutation();
+  const setQuestions = useAppStore((state) => state.setQuestions);
 
   const filteredQuestions = useMemo(() => {
     if (questions) {
@@ -30,7 +38,7 @@ function QBankCreateHistory() {
           const { createdAt } = value;
           if (createdAt) {
             const createDate = dayjs(createdAt).tz(dayjs.tz.guess());
-            
+
             if (activeFilterIdx === 0) {
               const startToday = dayjs().startOf("day");
               const endToday = dayjs().endOf("day");
@@ -71,6 +79,31 @@ function QBankCreateHistory() {
     }
   }, [questions]);
 
+  async function fetchQuestions() {
+    if (userProfile) {
+      await fetchQuestionsByUserId(
+        { userId: userProfile.id },
+        {
+          onSuccess: (data) => {
+            if (data) {
+              const formattedQuestions: Record<string, SelectQuestionBank> = {};
+              if (questions) {
+                data.forEach((item) => {
+                  formattedQuestions[item.id] = {
+                    ...item,
+                    createdAt: item.createdAt ? new Date(item.createdAt) : null,
+                    questions: item.questions,
+                  };
+                });
+              }
+              setQuestions({ ...formattedQuestions });
+            }
+          },
+        }
+      );
+    }
+  }
+
   return (
     <Flex
       direction={"column"}
@@ -92,6 +125,14 @@ function QBankCreateHistory() {
         activeIdx={activeFilterIdx}
         setActiveIdx={setActiveFilterIdx}
       />
+      <Button
+        variant="filled"
+        leftSection={<IconReload />}
+        onClick={fetchQuestions}
+        loading={fetchingQuestions}
+      >
+        Refresh
+      </Button>
       {filteredQuestions && (
         <ScrollArea
           ref={viewportRef}
@@ -159,3 +200,4 @@ function QBankCreateHistory() {
 }
 
 export { QBankCreateHistory };
+

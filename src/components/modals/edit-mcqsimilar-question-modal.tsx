@@ -3,8 +3,8 @@
 import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
 import {
-  McqSimilarQuestionScheam,
-  mcqSimilarQuestionSchema,
+  mcqQuestionSchema,
+  MCQQuestionSchema,
 } from "@/utllities/zod-schemas-types";
 import {
   Avatar,
@@ -16,7 +16,7 @@ import {
   Group,
   Input,
   Modal,
-  MultiSelect,
+  Select,
   TextInput,
   Title,
 } from "@mantine/core";
@@ -27,7 +27,7 @@ import { OverlayModal } from "./loader";
 interface Props {
   open: boolean;
   close: VoidFunction;
-  question: McqSimilarQuestionScheam;
+  question: MCQQuestionSchema;
   questionId: string;
   questionType: string;
   index: number;
@@ -41,6 +41,7 @@ export default function EditMcqSimilarQuestion({
   index,
   questionType,
 }: Props) {
+
   const questions = useAppStore((state) => state.questions);
   const setQuestions = useAppStore((state) => state.setQuestions);
   const {
@@ -50,9 +51,13 @@ export default function EditMcqSimilarQuestion({
     isSuccess: updateSuccess,
   } = trpc.updateQuestions.useMutation();
 
-  const editForm = useForm<McqSimilarQuestionScheam>({
-    validate: zodResolver(mcqSimilarQuestionSchema),
-    initialValues: { ...question },
+  const editForm = useForm<MCQQuestionSchema>({
+    validate: zodResolver(mcqQuestionSchema),
+    initialValues: {
+      ...question,
+      options: [...question.options],
+      answer: question.answer,
+    },
   });
 
   const modalHeaderProps = useMemo(() => {
@@ -78,7 +83,7 @@ export default function EditMcqSimilarQuestion({
     return props;
   }, [updateError, updateSuccess]);
 
-  async function handleUpdateQuestion(values: McqSimilarQuestionScheam) {
+  async function handleUpdateQuestion(values: MCQQuestionSchema) {
     await updateQuestion(
       {
         question: values,
@@ -92,7 +97,7 @@ export default function EditMcqSimilarQuestion({
           if (questionType === "mcq") {
           }
           const quesRec = { ...questions[questionId] };
-          const updatedList = quesRec.questions as McqSimilarQuestionScheam[];
+          const updatedList = quesRec.questions as MCQQuestionSchema[];
           updatedList[index] = values;
           setQuestions({
             ...questions,
@@ -138,32 +143,34 @@ export default function EditMcqSimilarQuestion({
           <Box>
             <Title order={5}>Options</Title>
             <Grid pt={"xs"} pl={"sm"}>
-              {Object.entries(editForm.values.options).map(([key, value]) => {
-                return (
-                  <Grid.Col span={{ xs: 12, md: 6 }} key={key}>
-                    <TextInput
-                      {...editForm.getInputProps(`options.${key}`)}
-                      w={"100%"}
-                      leftSection={
-                        <Avatar color="blue" radius={"sm"} size={"sm"}>
-                          {key}
-                        </Avatar>
-                      }
-                    />
-                  </Grid.Col>
-                );
-              })}
+              {Object.entries(editForm.values.options).map(
+                ([key, value], index) => {
+                  return (
+                    <Grid.Col span={{ xs: 12, md: 6 }} key={key}>
+                      <TextInput
+                        {...editForm.getInputProps(`options.${key}`)}
+                        w={"100%"}
+                        leftSection={
+                          <Avatar color="blue" radius={"sm"} size={"sm"}>
+                            {String.fromCharCode(65 + index)}
+                          </Avatar>
+                        }
+                      />
+                    </Grid.Col>
+                  );
+                }
+              )}
             </Grid>
           </Box>
           <Box>
-            <MultiSelect
+            <Select
               label="Correct Answers"
               placeholder="Pick value"
-              data={[...Object.keys(question.options)]}
-              checkIconPosition="right"
+              data={question.options.map((item) => ({
+                label: item,
+                value: item,
+              }))}
               {...editForm.getInputProps("answer")}
-              searchable
-              nothingFoundMessage="Nothing found..."
             />
           </Box>
         </Flex>

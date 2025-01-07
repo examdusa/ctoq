@@ -20,6 +20,9 @@ importers:
       '@mantine/core':
         specifier: ^7.13.4
         version: 7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021)
+      '@mantine/dates':
+        specifier: ^7.15.2
+        version: 7.15.2(@mantine/core@7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021))(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(dayjs@1.11.13)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021)
       '@mantine/dropzone':
         specifier: ^7.13.4
         version: 7.13.4(@mantine/core@7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021))(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021)
@@ -50,6 +53,9 @@ importers:
       '@trpc/server':
         specifier: ^10.45.2
         version: 10.45.2
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       dayjs:
         specifier: ^1.11.13
         version: 1.11.13
@@ -59,6 +65,9 @@ importers:
       drizzle-orm:
         specifier: ^0.35.3
         version: 0.35.3(@libsql/client-wasm@0.14.0)(@libsql/client@0.14.0)(@types/react@18.3.12)(mysql2@3.11.3)(react@19.0.0-rc-69d4b800-20241021)
+      mantine-datatable:
+        specifier: ^7.15.1
+        version: 7.15.1(@mantine/core@7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021))(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(clsx@2.1.1)(react@19.0.0-rc-69d4b800-20241021)
       mysql2:
         specifier: ^3.11.3
         version: 3.11.3
@@ -712,6 +721,15 @@ packages:
       '@mantine/hooks': 7.13.4
       react: ^18.2.0
       react-dom: ^18.2.0
+
+  '@mantine/dates@7.15.2':
+    resolution: {integrity: sha512-WeJ+a16bZC+7k9Fr6jiC5NrdZi23Hp28xGBa3kKYk0Nanz/lTgg2DTBgFB537+4MVD1kOmqso+7z1VO9uLeaEw==}
+    peerDependencies:
+      '@mantine/core': 7.15.2
+      '@mantine/hooks': 7.15.2
+      dayjs: '>=1.0.0'
+      react: ^18.x || ^19.x
+      react-dom: ^18.x || ^19.x
 
   '@mantine/dropzone@7.13.4':
     resolution: {integrity: sha512-RmiBfi+u16vh0ZUjJvn8cUfsgScN0o/F/P4mZUFm7AE4ap7jUdIyBWr4aBiHu0v5DXKywNO6ZrsSaoZnpbiUgQ==}
@@ -1891,6 +1909,14 @@ packages:
   lru.min@1.1.1:
     resolution: {integrity: sha512-FbAj6lXil6t8z4z3j0E5mfRlPzxkySotzUHwRXjlpRh10vc6AI6WN62ehZj82VG7M20rqogJ0GLwar2Xa05a8Q==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
+
+  mantine-datatable@7.15.1:
+    resolution: {integrity: sha512-MwehjtkdT6FQfuPgTXmGA2Y3DmHdCdLzcl4G4LoccSpG2ul2RwEdCO/dQmrPBsNo4mMepNN9dE3/1vSuYsU+7Q==}
+    peerDependencies:
+      '@mantine/core': '>=7.14'
+      '@mantine/hooks': '>=7.14'
+      clsx: '>=2'
+      react: '>=18.2'
 
   map-obj@4.3.0:
     resolution: {integrity: sha512-hdN1wVrZbb29eBGiGjJbeP8JbKjq1urkHJ/LIP/NY48MZ1QVXUsQBV1G1zvYFHn1XE06cwjBsOI2K3Ulnj1YXQ==}
@@ -3106,6 +3132,15 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
+  '@mantine/dates@7.15.2(@mantine/core@7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021))(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(dayjs@1.11.13)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021)':
+    dependencies:
+      '@mantine/core': 7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021)
+      '@mantine/hooks': 7.13.4(react@19.0.0-rc-69d4b800-20241021)
+      clsx: 2.1.1
+      dayjs: 1.11.13
+      react: 19.0.0-rc-69d4b800-20241021
+      react-dom: 19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021)
+
   '@mantine/dropzone@7.13.4(@mantine/core@7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021))(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021)':
     dependencies:
       '@mantine/core': 7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021)
@@ -3823,7 +3858,7 @@ snapshots:
       debug: 4.3.7
       enhanced-resolve: 5.17.1
       eslint: 9.13.0(jiti@1.21.6)
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@1.21.6)))(eslint@9.13.0(jiti@1.21.6))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@9.13.0(jiti@1.21.6))
       fast-glob: 3.3.2
       get-tsconfig: 4.8.1
       is-bun-module: 1.2.1
@@ -3836,7 +3871,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@1.21.6)))(eslint@9.13.0(jiti@1.21.6)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@9.13.0(jiti@1.21.6)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -3858,7 +3893,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.13.0(jiti@1.21.6)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@1.21.6)))(eslint@9.13.0(jiti@1.21.6))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@9.13.0(jiti@1.21.6))
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
@@ -4378,6 +4413,13 @@ snapshots:
   lru-cache@7.18.3: {}
 
   lru.min@1.1.1: {}
+
+  mantine-datatable@7.15.1(@mantine/core@7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021))(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(clsx@2.1.1)(react@19.0.0-rc-69d4b800-20241021):
+    dependencies:
+      '@mantine/core': 7.13.4(@mantine/hooks@7.13.4(react@19.0.0-rc-69d4b800-20241021))(@types/react@18.3.12)(react-dom@19.0.0-rc-69d4b800-20241021(react@19.0.0-rc-69d4b800-20241021))(react@19.0.0-rc-69d4b800-20241021)
+      '@mantine/hooks': 7.13.4(react@19.0.0-rc-69d4b800-20241021)
+      clsx: 2.1.1
+      react: 19.0.0-rc-69d4b800-20241021
 
   map-obj@4.3.0: {}
 

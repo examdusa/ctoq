@@ -8,7 +8,7 @@ import {
   MCQQuestionSchema,
   McqSimilarQuestionScheam,
   OpenendedQuestionSchema,
-  TrueFalseQuestionsScheam,
+  TrueFalseQuestionScheam,
 } from "@/utllities/zod-schemas-types";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -32,6 +32,7 @@ import {
   IconEye,
   IconEyeClosed,
   IconPlus,
+  IconShare3,
   IconTrash,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
@@ -51,10 +52,12 @@ import { OverlayModal } from "./modals/loader";
 import { NoQuestion } from "./no-question";
 import { Pricing } from "./pricing";
 import { RenderFillBlankQuestion } from "./render-fillblank-question";
+import { RenderGuidanceOrSummaryResult } from "./render-guidance-summary-result";
 import { RenderMcqQuestion } from "./render-mcq-question";
 import { RenderMcqSimilarQuestion } from "./render-mcqsimilar-question";
 import { RenderOpenEndedQuestion } from "./render-openended-question";
 import { RenderTrueFalseQuestion } from "./render-truefalse-question";
+import { ShareExam } from "./modals/share-exam";
 
 dayjs.extend(tz);
 dayjs.extend(utc);
@@ -68,7 +71,6 @@ interface RenderQuestionRecordProps {
   record: SelectQuestionBank;
   planName: string;
   userEmail: string;
-  instituteName: string;
   deleteQuestionBank: (questionId: string) => void;
   deletingQBank: boolean;
 }
@@ -78,7 +80,7 @@ interface RenderQuestionProps {
     | MCQQuestionSchema
     | FillBlankQuestionSchema
     | OpenendedQuestionSchema
-    | TrueFalseQuestionsScheam
+    | TrueFalseQuestionScheam
     | McqSimilarQuestionScheam;
   index: number;
   questionId: string;
@@ -106,7 +108,7 @@ function RenderQuestion({
   } else if (questionType === "mcq_similar") {
     return (
       <RenderMcqSimilarQuestion
-        question={question as McqSimilarQuestionScheam}
+        question={question as MCQQuestionSchema}
         index={index}
         questionId={questionId}
         questionType={questionType}
@@ -118,7 +120,7 @@ function RenderQuestion({
       <RenderTrueFalseQuestion
         index={index}
         questionId={questionId}
-        question={question as TrueFalseQuestionsScheam}
+        question={question as TrueFalseQuestionScheam}
         questionType={questionType}
         showAnswer={showAnswer}
       />
@@ -150,10 +152,10 @@ function RenderQuestionRecrod({
   record,
   planName,
   userEmail,
-  instituteName,
   deleteQuestionBank,
   deletingQBank,
 }: RenderQuestionRecordProps) {
+
   const [opened, { close, open }] = useDisclosure();
   const [
     headingModalOpened,
@@ -165,7 +167,12 @@ function RenderQuestionRecrod({
     useDisclosure();
   const [showAnswers, setShowAnswers] = useState(true);
   const { questionType } = record;
+  const [shareExamModalOpened, { toggle }] = useDisclosure(false);
   const theme = useMantineTheme();
+  const userProfile = useAppStore((state) => state.userProfile);
+
+  const isSummaryOrGuidanceType =
+    record.outputType === "guidance" || record.outputType === "summary";
 
   const questions = useMemo(() => {
     if (questionType === "mcq") {
@@ -175,7 +182,7 @@ function RenderQuestionRecrod({
     } else if (questionType === "mcq_similar") {
       return record.questions as McqSimilarQuestionScheam[];
     } else if (questionType === "true_false") {
-      return record.questions as TrueFalseQuestionsScheam[];
+      return record.questions as TrueFalseQuestionScheam[];
     }
     return record.questions as OpenendedQuestionSchema[];
   }, [record, questionType]);
@@ -241,6 +248,16 @@ function RenderQuestionRecrod({
     printWindow.close();
   }
 
+  const disableShareButton = useMemo(() => {
+    const { outputType, googleFormId, googleQuizLink } = record;
+
+    if (outputType === "question") {
+      return googleQuizLink ? false : true;
+    }
+
+    return googleFormId ? false : true;
+  }, [record]);
+
   return (
     <Paper
       withBorder
@@ -289,35 +306,48 @@ function RenderQuestionRecrod({
                 },
               }}
             >
-              Brought to you by ~ {instituteName}
+              Brought to you by ~{" "}
+              {userProfile ? userProfile.instituteName : null}
             </Badge>
           </Flex>
           <Flex direction={"row"} w={"auto"} gap={"sm"} align={"center"}>
-            <Tooltip label={!showAnswers ? "Hide answers" : "Show answers"}>
+            <Tooltip label={"Share exam"}>
               <ActionIcon
                 variant="transparent"
-                onClick={() => {
-                  setShowAnswers(!showAnswers);
-                }}
+                onClick={toggle}
+                disabled={disableShareButton}
               >
-                {showAnswers ? (
-                  <IconEyeClosed color={theme.colors.blue[5]} />
-                ) : (
-                  <IconEye color={theme.colors.blue[5]} />
-                )}
+                <IconShare3 />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Add new question">
-              <ActionIcon
-                variant="transparent"
-                onClick={() => {
-                  openAddModal();
-                }}
-              >
-                <IconPlus fill={theme.colors.blue[5]} />
-              </ActionIcon>
-            </Tooltip>
-
+            {!isSummaryOrGuidanceType && (
+              <Tooltip label={!showAnswers ? "Hide answers" : "Show answers"}>
+                <ActionIcon
+                  variant="transparent"
+                  onClick={() => {
+                    setShowAnswers(!showAnswers);
+                  }}
+                >
+                  {showAnswers ? (
+                    <IconEyeClosed color={theme.colors.blue[5]} />
+                  ) : (
+                    <IconEye color={theme.colors.blue[5]} />
+                  )}
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {!isSummaryOrGuidanceType && (
+              <Tooltip label="Add new question">
+                <ActionIcon
+                  variant="transparent"
+                  onClick={() => {
+                    openAddModal();
+                  }}
+                >
+                  <IconPlus fill={theme.colors.blue[5]} />
+                </ActionIcon>
+              </Tooltip>
+            )}
             <Tooltip label={"Google Quiz"}>
               <UnstyledButton
                 onClick={(e) => {
@@ -370,7 +400,11 @@ function RenderQuestionRecrod({
         </Flex>
         <Divider />
         <Grid gutter={{ base: 5, xs: "md", md: "xl", xl: 50 }}>
+          {isSummaryOrGuidanceType && (
+            <RenderGuidanceOrSummaryResult record={record} />
+          )}
           {questionType &&
+            !isSummaryOrGuidanceType &&
             questions.map((question, i) => {
               return (
                 <Grid.Col
@@ -457,6 +491,14 @@ function RenderQuestionRecrod({
           userEmail={userEmail}
         />
       )}
+      {shareExamModalOpened && userProfile && (
+        <ShareExam
+          opened={shareExamModalOpened}
+          close={toggle}
+          record={record}
+          userProfile={userProfile}
+        />
+      )}
     </Paper>
   );
 }
@@ -502,47 +544,6 @@ function QuestionContainer({ subscription, isLoading }: Props) {
       }
     );
   }
-
-  // useEffect(() => {
-  //   if (containerRef && containerRef.current) {
-  //     const content = containerRef.current?.outerHTML;
-  //     if (!content) return;
-
-  //     const printWindow = window.open("", "_blank");
-  //     if (!printWindow) return;
-  //     const tempContainer = document.createElement("div");
-  //     tempContainer.innerHTML = content;
-  //     tempContainer.querySelectorAll("button, svg").forEach((element) => {
-  //       element.setAttribute("display", "none");
-  //     });
-  //     printWindow.document.write(`
-  //   <html>
-  //     <head>
-  //       <title>Print</title>
-  //       <link
-  //         rel="stylesheet"
-  //         href="https://unpkg.com/@mantine/core@7.4.2/styles.css"
-  //       />
-  //       <style>
-  //         @media print {
-  //           body { font-size: 10pt; }
-  //           .mantine-ScrollArea-root { height: auto !important; }
-  //           .mantine-ScrollArea-viewPort { height: auto !important; }
-  //           #question-container svg, button {
-  //             display: "none !important"
-  //           }
-  //         }
-  //       </style>
-  //     </head>
-  //     <body onload="window.print();window.close()">
-  //       ${tempContainer.innerHTML}
-  //     </body>
-  //   </html>
-  // `);
-
-  //     printWindow.document.close();
-  //   }
-  // }, []);
 
   if (!subscription) {
     return (
@@ -604,7 +605,6 @@ function QuestionContainer({ subscription, isLoading }: Props) {
             record={question}
             planName={subscription.planName ?? ""}
             userEmail={user.primaryEmailAddress?.emailAddress ?? ""}
-            instituteName={question.instituteName ?? ""}
             deleteQuestionBank={handleDeleteQBank}
             deletingQBank={deletingQBank}
           />

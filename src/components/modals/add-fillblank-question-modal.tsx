@@ -5,15 +5,12 @@ import {
   fillBlankQuestionSchema,
 } from "@/utllities/zod-schemas-types";
 import {
-  Avatar,
   Box,
   Button,
   Flex,
-  Grid,
   Group,
   Modal,
-  Select,
-  Text,
+  Textarea,
   TextInput,
 } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
@@ -39,6 +36,9 @@ export default function AddFillBlankQuestion({
   } = trpc.addQuestion.useMutation();
   const questions = useAppStore((state) => state.questions);
   const setQuestions = useAppStore((state) => state.setQuestions);
+  const questionRec = useMemo(() => {
+    return questions[questionId];
+  }, [questions, questionId]);
 
   const modalHeaderProps = useMemo(() => {
     let props: CSSProperties = { background: "white", color: "black" };
@@ -68,23 +68,18 @@ export default function AddFillBlankQuestion({
     validate: zodResolver(fillBlankQuestionSchema),
     initialValues: {
       question: "",
-      options: {
-        A: "",
-        B: "",
-        C: "",
-        D: "",
-      },
       answer: "",
+      difficulty: questionRec.difficultyLevel ?? "easy",
     },
   });
 
   async function handleFormSubmit(values: FillBlankQuestionSchema) {
-    const { answer, options, question } = values;
+    const { answer, question, difficulty } = values;
 
     const payload: FillBlankQuestionSchema = {
-      answer: answer as "A" | "B" | "C" | "D",
-      options: options,
+      answer: answer,
       question: question,
+      difficulty,
     };
 
     await addQuestion(
@@ -132,71 +127,17 @@ export default function AddFillBlankQuestion({
           })}
         >
           <Flex direction={"column"} w={"100%"} h={"100%"} gap={"lg"}>
-            <TextInput
+            <Textarea
+              rows={4}
               label="Question"
               {...form.getInputProps("question")}
               key={form.key("question")}
               placeholder="Enter your question"
               autoFocus
             />
-            <Flex direction={"column"} w={"100%"} h={"auto"} gap={2}>
-              <Text size="sm">Answers Options</Text>
-              <Grid>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.A")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        A
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.B")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        B
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.C")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        C
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ xs: 12, md: 6 }}>
-                  <TextInput
-                    placeholder="Enter option value"
-                    {...form.getInputProps("options.D")}
-                    leftSection={
-                      <Avatar color="blue" radius={"sm"} size={"sm"}>
-                        D
-                      </Avatar>
-                    }
-                  />
-                </Grid.Col>
-              </Grid>
-            </Flex>
-            <Select
+            <TextInput
               label="Correct Answer"
-              placeholder="Pick one"
-              data={[
-                { value: "A", label: "A" },
-                { value: "B", label: "B" },
-                { value: "C", label: "C" },
-                { value: "D", label: "D" },
-              ]}
+              placeholder="Enter answer"
               {...form.getInputProps("answer")}
             />
           </Flex>

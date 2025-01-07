@@ -6,6 +6,7 @@ import localFont from "next/font/local";
 import Script from "next/script";
 import Provider from "./_trpc/provider";
 import "./globals.css";
+import PendingJobsHandler from "@/components/pending-jobs-handler";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -39,7 +40,10 @@ export default function RootLayout({
       >
         <Provider>
           <MantineProvider defaultColorScheme="light" forceColorScheme="light">
-            <ClerkAuthWrapper>{children}</ClerkAuthWrapper>
+            <ClerkAuthWrapper>
+              {children}
+              <PendingJobsHandler />
+            </ClerkAuthWrapper>
           </MantineProvider>
         </Provider>
       </body>
