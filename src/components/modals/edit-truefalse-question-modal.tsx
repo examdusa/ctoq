@@ -4,7 +4,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
 import {
   trueFalseQuestionSchema,
-  TrueFalseQuestionsScheam,
+  TrueFalseQuestionScheam,
 } from "@/utllities/zod-schemas-types";
 import {
   Button,
@@ -21,7 +21,7 @@ import { OverlayModal } from "./loader";
 interface Props {
   open: boolean;
   close: VoidFunction;
-  question: TrueFalseQuestionsScheam;
+  question: TrueFalseQuestionScheam;
   questionId: string;
   questionType: string;
   index: number;
@@ -44,7 +44,7 @@ export default function EditTrueFalseQuestion({
     isSuccess: updateSuccess,
   } = trpc.updateQuestions.useMutation();
 
-  const editForm = useForm<TrueFalseQuestionsScheam>({
+  const editForm = useForm<TrueFalseQuestionScheam>({
     validate: zodResolver(trueFalseQuestionSchema),
     initialValues: {
       ...storedQuestion,
@@ -75,7 +75,7 @@ export default function EditTrueFalseQuestion({
     return props;
   }, [updateError, updateSuccess]);
 
-  async function handleUpdateQuestion(values: TrueFalseQuestionsScheam) {
+  async function handleUpdateQuestion(values: TrueFalseQuestionScheam) {
     await updateQuestion(
       {
         question: values,
@@ -86,7 +86,7 @@ export default function EditTrueFalseQuestion({
       {
         onSuccess: () => {
           const quesRec = { ...questions[questionId] };
-          const updatedList = quesRec.questions as TrueFalseQuestionsScheam[];
+          const updatedList = quesRec.questions as TrueFalseQuestionScheam[];
           updatedList[index] = values;
           setQuestions({
             ...questions,

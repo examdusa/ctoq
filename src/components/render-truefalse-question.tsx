@@ -1,6 +1,6 @@
 import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
-import { TrueFalseQuestionsScheam } from "@/utllities/zod-schemas-types";
+import { TrueFalseQuestionScheam } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
   Badge,
@@ -18,7 +18,7 @@ import EditTrueFalseQuestion from "./modals/edit-truefalse-question-modal";
 
 interface Props {
   index: number;
-  question: TrueFalseQuestionsScheam;
+  question: TrueFalseQuestionScheam;
   questionId: string;
   questionType: string;
   showAnswer: boolean;
@@ -49,7 +49,7 @@ function RenderTrueFalseQuestion({
             if (questions && questions[questionId]) {
               const record = { ...questions[questionId] };
               const newList = [
-                ...(record.questions as TrueFalseQuestionsScheam[]).filter(
+                ...(record.questions as TrueFalseQuestionScheam[]).filter(
                   (_, id) => id !== index
                 ),
               ];
