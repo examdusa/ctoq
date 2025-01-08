@@ -438,6 +438,23 @@ async function getProfileDetailsByGuidUserId(
   }
 }
 
+async function testFunction(jobId: string) {
+  try {
+    const response = await fetch(
+      `https://augmentbyai.com/job_status/job_status/${jobId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log(response);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 export {
   createCheckoutSession,
   createGoogleDoc,
@@ -448,4 +465,5 @@ export {
   getProfileDetailsByGuidUserId,
   postUnifiedData,
   uploadResume,
+  testFunction
 };

@@ -2,7 +2,7 @@
 import { trpc } from "@/app/_trpc/client";
 import { SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
-import { GenerateQuestionsPayload } from "@/utllities/apiFunctions";
+import { GenerateQuestionsPayload, testFunction } from "@/utllities/apiFunctions";
 import { encodeFileToBase64 } from "@/utllities/helpers";
 import { QuestionBankSchema } from "@/utllities/zod-schemas-types";
 import {
@@ -292,52 +292,53 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
         },
       }
     );
-    await fetchGenerationResult(
-      {
-        jobId: job_id,
-        userId,
-        difficulty,
-        keyword,
-        qCount,
-        questionType: qType,
-        outputType,
-      },
-      {
-        onSuccess: (data) => {
-          if (data === "pending" || data === "TIMEOUT_ERROR") {
-            addPendingJob({
-              jobId: job_id,
-              userId: userId,
-              difficulty,
-              keyword,
-              outputType,
-              qCount,
-              questionType: qType,
-            });
-          } else {
-            updateQuestionsList({
-              [data.id]: { ...data },
-            });
-          }
-          setAttempt(0);
-        },
-        onError: (err) => {
-          if (err instanceof Error) {
-            if (err.message.toLowerCase().includes("timeout")) {
-              addPendingJob({
-                jobId: job_id,
-                userId: userId,
-                difficulty,
-                keyword,
-                outputType,
-                qCount,
-                questionType: qType,
-              });
-            }
-          }
-        },
-      }
-    );
+    await testFunction(job_id)
+    // await fetchGenerationResult(
+    //   {
+    //     jobId: job_id,
+    //     userId,
+    //     difficulty,
+    //     keyword,
+    //     qCount,
+    //     questionType: qType,
+    //     outputType,
+    //   },
+    //   {
+    //     onSuccess: (data) => {
+    //       if (data === "pending" || data === "TIMEOUT_ERROR") {
+    //         addPendingJob({
+    //           jobId: job_id,
+    //           userId: userId,
+    //           difficulty,
+    //           keyword,
+    //           outputType,
+    //           qCount,
+    //           questionType: qType,
+    //         });
+    //       } else {
+    //         updateQuestionsList({
+    //           [data.id]: { ...data },
+    //         });
+    //       }
+    //       setAttempt(0);
+    //     },
+    //     onError: (err) => {
+    //       if (err instanceof Error) {
+    //         if (err.message.toLowerCase().includes("timeout")) {
+    //           addPendingJob({
+    //             jobId: job_id,
+    //             userId: userId,
+    //             difficulty,
+    //             keyword,
+    //             outputType,
+    //             qCount,
+    //             questionType: qType,
+    //           });
+    //         }
+    //       }
+    //     },
+    //   }
+    // );
     form.reset();
   }
 
