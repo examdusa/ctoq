@@ -91,7 +91,6 @@ function QBankCreateHistory() {
                 data.forEach((item) => {
                   formattedQuestions[item.id] = {
                     ...item,
-                    createdAt: item.createdAt ? new Date(item.createdAt) : null,
                     questions: item.questions,
                   };
                 });
@@ -200,4 +199,3 @@ function QBankCreateHistory() {
 }
 
 export { QBankCreateHistory };
-
