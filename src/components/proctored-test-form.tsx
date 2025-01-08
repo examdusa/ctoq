@@ -6,7 +6,6 @@ import { useAppStore } from "@/store/app-store";
 import {
   createGoogleDoc,
   createGoogleQuizForm,
-  getInstitutes,
   getProfileDetailsByGuidUserId,
   postUnifiedData,
   UnifiedSchema,
@@ -14,15 +13,16 @@ import {
 import {
   FillBlankQuestionSchema,
   GoogleDocSchema,
-  Institute,
   MCQQuestionSchema,
   McqSimilarQuestionScheam,
   OpenendedQuestionSchema,
   TrueFalseQuestionScheam,
 } from "@/utllities/zod-schemas-types";
 import {
+  Alert,
   Button,
   Center,
+  Container,
   Fieldset,
   Flex,
   Grid,
@@ -33,12 +33,13 @@ import {
   Text,
   TextInput,
   Tooltip,
+  useMantineTheme,
 } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
 import { useDebouncedCallback } from "@mantine/hooks";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { z } from "zod";
 import {
   GoogleQuizPayloadSchema,
@@ -83,12 +84,6 @@ const proctoredTestForm = z.object({
     .trim()
     .min(1, { message: "Email cannot be empty" })
     .email({ message: "Enter a valid email address" }),
-  instituteName: z
-    .string()
-    .nullable()
-    .refine((value) => value !== null && value.trim().length > 0, {
-      message: "Select institute",
-    }),
   courseName: z
     .string()
     .trim()
@@ -121,19 +116,14 @@ export default function RenderProctoredTestForm({
 }: Props) {
   const questions = useAppStore((state) => state.questions);
   const setQuestions = useAppStore((state) => state.setQuestions);
+  const userProfile = useAppStore((state) => state.userProfile);
+  const institutesById = useAppStore((state) => state.institutesById);
+  const theme = useMantineTheme();
   const {
     mutateAsync: addSharedExamRecord,
     isLoading: addingRecord,
     isError: addRecordFailed,
   } = trpc.addSharedExamRecord.useMutation();
-
-  const {
-    mutateAsync: getInstitues,
-    isLoading: fetchingInstitutes,
-    data: instituteList,
-  } = useMutation({
-    mutationFn: getInstitutes,
-  });
 
   const {
     mutateAsync: createGQuiz,
@@ -169,35 +159,17 @@ export default function RenderProctoredTestForm({
     isLoading: addingQuizLinkToRec,
   } = trpc.addGoogleQuizLinkToRec.useMutation();
 
-  const institutesById = useMemo(() => {
-    const institutes: Record<string, Institute> = {};
-
-    if (instituteList) {
-      instituteList.forEach((institute) => {
-        institutes[institute.instituteId] = { ...institute };
-      });
+  const showMissingInstituteAlert = useMemo(() => {
+    if (userProfile) {
+      return userProfile.instituteName ? false : true;
     }
-
-    return institutes;
-  }, [instituteList]);
-
-  const instituteOptions = useMemo(() => {
-    let options: InstituteOptions = [];
-
-    if (instituteList) {
-      options = instituteList.map((institute) => ({
-        label: institute.instituteName,
-        value: "" + institute.instituteId,
-      }));
-    }
-    return options;
-  }, [instituteList]);
+    return false;
+  }, [userProfile]);
 
   const form = useForm<ProctoredTestForm>({
     validate: zodResolver(proctoredTestForm),
     initialValues: {
       courseName: "",
-      instituteName: "",
       instructorId: 0,
       quizName: "",
       userEmail: "",
@@ -212,10 +184,10 @@ export default function RenderProctoredTestForm({
   const updateQuestionRecord = useCallback(
     (quizLink: string) => {
       const updatedQuestionsList = { ...questions };
-      updatedQuestionsList[record.id].googleQuizLink = quizLink;
+      updatedQuestionsList[record.jobId].googleQuizLink = quizLink;
       setQuestions({ ...updatedQuestionsList });
     },
-    [questions, record.id, setQuestions]
+    [questions, record.jobId, setQuestions]
   );
 
   function formatQuestion(
@@ -306,10 +278,26 @@ export default function RenderProctoredTestForm({
     [createGQuiz, record, userEmail, createDoc]
   );
 
+  async function createOnlyQuiz() {
+    const { questionType, outputType, id, userId } = record;
+    if (questionType && outputType) {
+      const quizLink = await handleCreateQuiz(
+        userEmail,
+        questionType,
+        outputType
+      );
+      updateQuestionRecord(quizLink);
+      addGoogleQuizLinkToRec({
+        recId: record.id,
+        gQuizLink: quizLink,
+        outputType,
+      });
+    }
+  }
+
   async function handleSubmit(values: ProctoredTestForm) {
     const {
       userEmail,
-      instituteName,
       userFirstName,
       userLastName,
       courseName,
@@ -318,16 +306,37 @@ export default function RenderProctoredTestForm({
       quizType,
       quizDuration,
     } = values;
-    const { questionType, outputType, id, userId } = record;
-    if (questionType && outputType) {
-      const quizLink = await handleCreateQuiz(
-        userEmail,
-        questionType,
-        outputType
-      );
-      if (!instituteName || !institutesById[instituteName]) return;
+    const {
+      questionType,
+      outputType,
+      id,
+      userId,
+      googleQuizLink,
+      googleFormId,
+    } = record;
+    if (questionType && outputType && userProfile) {
+      let quizLink = googleQuizLink ?? googleFormId ?? "";
+      if (outputType === "question") {
+        if (!googleQuizLink) {
+          quizLink = await handleCreateQuiz(
+            userEmail,
+            questionType,
+            outputType
+          );
+        }
+      } else {
+        if (!googleFormId) {
+          quizLink = await handleCreateQuiz(
+            userEmail,
+            questionType,
+            outputType
+          );
+        }
+      }
+
+      const { instituteName } = userProfile;
       const unifiedPayload: UnifiedSchema = {
-        instituteName: institutesById[instituteName].instituteName,
+        instituteName: instituteName,
         userEmail: userEmail,
         userFirstName: userFirstName,
         userLastName: userLastName,
@@ -367,23 +376,33 @@ export default function RenderProctoredTestForm({
       };
       await postStudentUnifiedData(unifiedPayload, {
         onSuccess: async (data) => {
-          await Promise.all([
-            addSharedExamRecord({
-              email: userEmail,
-              formId: quizLink,
-              questionRecordId: id,
-              userId: userId,
-              firstName: userFirstName,
-              lastName: userLastName,
-            }),
-            addGoogleQuizLinkToRec({
-              recId: record.id,
-              gQuizLink: quizLink,
-              outputType,
-            }),
-          ]);
-
-          updateQuestionRecord(quizLink);
+          await addSharedExamRecord({
+            email: userEmail,
+            formId: quizLink,
+            questionRecordId: id,
+            userId: userId,
+            firstName: userFirstName,
+            lastName: userLastName,
+          });
+          if (outputType === "question") {
+            if (!googleQuizLink) {
+              await addGoogleQuizLinkToRec({
+                recId: record.id,
+                gQuizLink: quizLink,
+                outputType,
+              });
+              updateQuestionRecord(quizLink);
+            }
+          } else {
+            if (!googleFormId) {
+              await addGoogleQuizLinkToRec({
+                recId: record.id,
+                gQuizLink: quizLink,
+                outputType,
+              });
+              updateQuestionRecord(quizLink);
+            }
+          }
         },
       });
     }
@@ -405,8 +424,8 @@ export default function RenderProctoredTestForm({
   );
 
   async function handleInstructorIdInput(value: string) {
-    const { instituteName } = form.values;
-
+    if (!userProfile) return;
+    const { instituteName } = userProfile;
     if (!instituteName) {
       form.setFieldError("instituteName", "Select institure first");
     } else {
@@ -416,12 +435,6 @@ export default function RenderProctoredTestForm({
       }
     }
   }
-
-  useEffect(() => {
-    if (!instituteList) {
-      getInstitues();
-    }
-  }, [instituteList, getInstitues]);
 
   if (creatingQuiz || postingUnifiedData || addingQuizLinkToRec) {
     return (
@@ -516,121 +529,185 @@ export default function RenderProctoredTestForm({
   }
 
   return (
-    <form onSubmit={form.onSubmit(handleSubmit)}>
-      <Fieldset legend="User information">
-        <Grid>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <TextInput
-              label="First name"
-              placeholder="Enter first name"
-              {...form.getInputProps("userFirstName")}
-            />
-          </Grid.Col>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <TextInput
-              label="Last name"
-              placeholder="Enter last name"
-              {...form.getInputProps("userLastName")}
-            />
-          </Grid.Col>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <TextInput
-              label="Email"
-              placeholder="Enter your email"
-              {...form.getInputProps("userEmail")}
-            />
-          </Grid.Col>
-        </Grid>
-      </Fieldset>
-      <Fieldset legend="Other information" mt={"sm"}>
-        <Grid>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <Select
-              searchable
-              data={[...instituteOptions]}
-              clearable
-              disabled={fetchingInstitutes}
-              leftSection={fetchingInstitutes ? <Loader size={"xs"} /> : null}
-              {...form.getInputProps("instituteName")}
-              label="Institute"
-              placeholder="Select institute"
-            />
-          </Grid.Col>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <NumberInput
-              {...form.getInputProps("instructorId")}
-              onChange={(value) => {
-                if (typeof value === "string") {
-                  handleInstructorIdInput(value);
-                  form.setFieldValue("instructorId", Number(value));
-                } else {
-                  handleInstructorIdInput("" + value);
-                  form.setFieldValue("instructorId", value);
-                }
-              }}
-              label={
-                <Flex gap={"xs"} align="center" direction={"row"} w={"auto"}>
-                  <Text size="sm">Instructor&apos;s Id</Text>
-                  <Tooltip label="If you know your instructor ID please put it here. Support team normally creates the Instructor ID for the Institute and shares that with you. If you do not have this ID please send an email to support@beyondexam.com">
-                    <IconInfoCircle size={15} />
-                  </Tooltip>
-                </Flex>
-              }
-              placeholder="Enter instructor's Id"
-            />
-          </Grid.Col>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <TextInput
-              {...form.getInputProps("courseName")}
-              placeholder="Enter course name"
-              label="Course name"
-            />
-          </Grid.Col>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <Select
-              {...form.getInputProps("quizType")}
-              placeholder="Select quiz type"
-              data={[
-                {
-                  label: "Written AI Exam",
-                  value: "Written AI Exam",
-                },
-                { label: "Discussion", value: "Discussion" },
-                { label: "Interview", value: "Interview" },
-              ]}
-              label="Quiz Type"
-            />
-          </Grid.Col>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <TextInput
-              {...form.getInputProps("quizName")}
-              placeholder="Enter quiz name"
-              label="Quiz name"
-            />
-          </Grid.Col>
-          <Grid.Col span={{ xs: 12, md: 4 }}>
-            <NumberInput
-              {...form.getInputProps("quizDuration")}
-              label="Quiz duration (in mins)"
-              placeholder="Enter quiz duration"
-            />
-          </Grid.Col>
-        </Grid>
-      </Fieldset>
-      <Group gap={"sm"} mt={"md"} justify="end" w={"100%"}>
-        <Button variant="filled" onClick={close}>
-          Close
-        </Button>
-        <Button
-          variant="filled"
-          type="submit"
-          loading={
-            addingQuizLinkToRec || addingRecord || creatingDoc || creatingQuiz
-          }
+    <Flex w={"100%"} h={"100%"} direction={"column"} gap={"sm"}>
+      <Container
+        bg={theme.colors.blue[1]}
+        styles={{
+          root: {
+            height: 50,
+            width: "100%",
+            borderRadius: theme.radius.sm,
+          },
+        }}
+      >
+        <Flex
+          w={"100%"}
+          h={"100%"}
+          align={"center"}
+          justify={"center"}
+          direction={"row"}
+          gap={"md"}
         >
-          Create
-        </Button>
-      </Group>
-    </form>
+          {createDocSuccess && <Text fw={500}>Google doc created</Text>}
+          {quizCreated && <Text fw={500}>Google quiz created</Text>}
+          {!createDocSuccess &&
+            !quizCreated &&
+            !record.googleQuizLink &&
+            !record.googleFormId && (
+              <>
+                <Text fw={500}>Create only google quiz instead ?</Text>
+                <Button
+                  variant="filled"
+                  size="xs"
+                  onClick={createOnlyQuiz}
+                  loading={creatingDoc || creatingQuiz}
+                >
+                  Create quiz
+                </Button>
+              </>
+            )}
+          {record.googleQuizLink && (
+            <>
+              <Text fw={500}>Open google quiz ?</Text>
+              <Button
+                variant="filled"
+                size="xs"
+                onClick={() => {
+                  if (record.googleQuizLink)
+                    window.open(record.googleQuizLink, "_blank");
+                }}
+                loading={creatingDoc || creatingQuiz}
+              >
+                Open
+              </Button>
+            </>
+          )}
+        </Flex>
+      </Container>
+      {showMissingInstituteAlert ? (
+        <Alert
+          variant="light"
+          color="yellow"
+          title="Proctored exam"
+          icon={<IconInfoCircle />}
+        >
+          To do proctored exam, please provide your institute name. Please go to
+          Update Profile menu and add your institute name.
+        </Alert>
+      ) : (
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Fieldset legend="User information">
+            <Grid>
+              <Grid.Col span={{ xs: 12, md: 4 }}>
+                <TextInput
+                  label="First name"
+                  placeholder="Enter first name"
+                  {...form.getInputProps("userFirstName")}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ xs: 12, md: 4 }}>
+                <TextInput
+                  label="Last name"
+                  placeholder="Enter last name"
+                  {...form.getInputProps("userLastName")}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ xs: 12, md: 4 }}>
+                <TextInput
+                  label="Email"
+                  placeholder="Enter your email"
+                  {...form.getInputProps("userEmail")}
+                />
+              </Grid.Col>
+            </Grid>
+          </Fieldset>
+          <Fieldset legend="Other information" mt={"sm"}>
+            <Grid>
+              <Grid.Col span={{ xs: 12, md: 4 }}>
+                <NumberInput
+                  {...form.getInputProps("instructorId")}
+                  onChange={(value) => {
+                    if (typeof value === "string") {
+                      handleInstructorIdInput(value);
+                      form.setFieldValue("instructorId", Number(value));
+                    } else {
+                      handleInstructorIdInput("" + value);
+                      form.setFieldValue("instructorId", value);
+                    }
+                  }}
+                  label={
+                    <Flex
+                      gap={"xs"}
+                      align="center"
+                      direction={"row"}
+                      w={"auto"}
+                    >
+                      <Text size="sm">Instructor&apos;s Id</Text>
+                      <Tooltip label="If you know your instructor ID please put it here. Support team normally creates the Instructor ID for the Institute and shares that with you. If you do not have this ID please send an email to support@beyondexam.com">
+                        <IconInfoCircle size={15} />
+                      </Tooltip>
+                    </Flex>
+                  }
+                  placeholder="Enter instructor's Id"
+                />
+              </Grid.Col>
+              <Grid.Col span={{ xs: 12, md: 4 }}>
+                <TextInput
+                  {...form.getInputProps("courseName")}
+                  placeholder="Enter course name"
+                  label="Course name"
+                />
+              </Grid.Col>
+              <Grid.Col span={{ xs: 12, md: 4 }}>
+                <Select
+                  {...form.getInputProps("quizType")}
+                  placeholder="Select quiz type"
+                  data={[
+                    {
+                      label: "Written AI Exam",
+                      value: "Written AI Exam",
+                    },
+                    { label: "Discussion", value: "Discussion" },
+                    { label: "Interview", value: "Interview" },
+                  ]}
+                  label="Quiz Type"
+                />
+              </Grid.Col>
+              <Grid.Col span={{ xs: 12, md: 4 }}>
+                <TextInput
+                  {...form.getInputProps("quizName")}
+                  placeholder="Enter quiz name"
+                  label="Quiz name"
+                />
+              </Grid.Col>
+              <Grid.Col span={{ xs: 12, md: 4 }}>
+                <NumberInput
+                  {...form.getInputProps("quizDuration")}
+                  label="Quiz duration (in mins)"
+                  placeholder="Enter quiz duration"
+                />
+              </Grid.Col>
+            </Grid>
+          </Fieldset>
+          <Group gap={"sm"} mt={"md"} justify="end" w={"100%"}>
+            <Button variant="filled" onClick={close}>
+              Close
+            </Button>
+            <Button
+              variant="filled"
+              type="submit"
+              loading={
+                addingQuizLinkToRec ||
+                addingRecord ||
+                creatingDoc ||
+                creatingQuiz
+              }
+            >
+              Create
+            </Button>
+          </Group>
+        </form>
+      )}
+    </Flex>
   );
 }

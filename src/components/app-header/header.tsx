@@ -32,73 +32,16 @@ import { useEffect } from "react";
 import { AlertModal } from "../modals/alert-modal";
 
 function AppHeader() {
-  const { isSignedIn, user, isLoaded } = useUser();
-  const { mutateAsync: saveUserDetails, data: userData } =
-    trpc.saveUserDetails.useMutation();
+  const { user } = useUser();
   const {
     mutateAsync: generateBillPortalLink,
     isLoading: generatingLink,
     isError: generateLinkError,
   } = trpc.generateBillingPortalLink.useMutation();
   const subscriptionDetail = useAppStore((state) => state.subscription);
-  const userProfile = useAppStore((state) => state.userProfile);
-  const setUserProfile = useAppStore((state) => state.setUserProfile);
   const [opened, { open, close }] = useDisclosure();
   const [burgerOpened, { toggle }] = useDisclosure(false);
   const router = useRouter();
-  const { mutateAsync: getProfileDetails } =
-    trpc.getProfileDetails.useMutation();
-
-  useEffect(() => {
-    async function saveUser() {
-      if (userData === "User exists") return;
-      if (user) {
-        await saveUserDetails({
-          appTheme: "dark",
-          email: user.emailAddresses[0].emailAddress,
-          firstname: user.firstName,
-          googleid: "",
-          id: user.id,
-          lastname: user.lastName,
-          language: "english",
-          role: "instructor",
-        });
-      }
-    }
-
-    if (user && isSignedIn && isLoaded && !userProfile) {
-      (async () => {
-        await getProfileDetails(
-          { userId: user.id },
-          {
-            onSuccess: async (data) => {
-              const { code, data: userProfile } = data;
-
-              if (code === "SUCCESS" && userProfile) {
-                setUserProfile({
-                  ...userProfile,
-                  createdAt: userProfile.createdAt
-                    ? new Date(userProfile.createdAt)
-                    : new Date(),
-                });
-              } else if (code === "NOT_FOUND") {
-                await saveUser();
-              }
-            },
-          }
-        );
-      })();
-    }
-  }, [
-    user,
-    isSignedIn,
-    isLoaded,
-    saveUserDetails,
-    userData,
-    getProfileDetails,
-    userProfile,
-    setUserProfile,
-  ]);
 
   useEffect(() => {
     if (generateLinkError || generatingLink) {
@@ -249,3 +192,4 @@ function AppHeader() {
 }
 
 export { AppHeader };
+

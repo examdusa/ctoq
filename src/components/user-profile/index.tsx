@@ -14,10 +14,10 @@ import {
   Select,
   Tabs,
   Text,
-  TextInput,
 } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { useForm, zodResolver } from "@mantine/form";
 import Image from "next/image";
+import { useMemo } from "react";
 import { z } from "zod";
 
 interface Props {
@@ -25,9 +25,9 @@ interface Props {
 }
 
 const basicDetailForm = z.object({
-  language: z.string({ message: "Select a laguage" }),
-  role: z.string(),
-  instituteName: z.string({ message: "Enter institute name" }),
+  language: z.string().default(""),
+  role: z.string().default(""),
+  instituteName: z.string().default("Content To Quiz"),
 });
 
 const langSchema = z.record(z.string(), z.string());
@@ -69,6 +69,7 @@ function UserProfileDetail({ userDetail }: Props) {
   const { user } = useUser();
   const userProfile = useAppStore((state) => state.userProfile);
   const setUserProfile = useAppStore((state) => state.setUserProfile);
+  const institutesById = useAppStore((state) => state.institutesById);
   const {
     mutateAsync: updateDetails,
     isLoading: updatingDetails,
@@ -82,21 +83,34 @@ function UserProfileDetail({ userDetail }: Props) {
       role: userDetail.role ?? "instructor",
     },
     mode: "controlled",
-    validate: {
-      instituteName: (value) => (!value ? "Enter institute name" : null),
-      language: (value) => (!value ? "Select a language" : null),
-      role: (value) => (!value ? "Select a role" : null),
-    },
+    validate: zodResolver(basicDetailForm),
   });
+
+  const instituteOptions = useMemo(() => {
+    if (institutesById) {
+      return Object.entries(institutesById).map(([key, value]) => ({
+        value: key,
+        label: value.instituteName,
+      }));
+    }
+    return [];
+  }, [institutesById]);
 
   async function handleSubmit(values: BaseDetailForm) {
     const { role, language, instituteName } = values;
     const { id } = userDetail;
+
+    let instName = "Content To Quiz";
+
+    if (institutesById) {
+      instName = institutesById[instituteName].instituteName;
+    }
+
     try {
       await updateDetails(
         {
           role,
-          instituteName,
+          instituteName: instName,
           language,
           id,
         },
@@ -203,9 +217,10 @@ function UserProfileDetail({ userDetail }: Props) {
                     />
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <TextInput
-                      label="Institute name"
-                      placeholder="Enter institute name"
+                    <Select
+                      data={instituteOptions}
+                      label="Institute"
+                      placeholder="Select an institute"
                       key={basicForm.key("instituteName")}
                       {...basicForm.getInputProps("instituteName")}
                     />
@@ -230,3 +245,4 @@ function UserProfileDetail({ userDetail }: Props) {
 }
 
 export { UserProfileDetail };
+

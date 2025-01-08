@@ -3,120 +3,96 @@
 import { trpc } from "@/app/_trpc/client";
 import { SelectQuestionBank } from "@/db/schema";
 import { PendingJobDetail, useAppStore } from "@/store/app-store";
-import { BaseResultSchema } from "@/utllities/zod-schemas-types";
-import { Notification, Text } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 function PendingJobsHandler() {
-  const { mutateAsync: fetchGeneratedQuestions } =
+  const { mutate: fetchGeneratedQuestions } =
     trpc.fetchGeneratedQuestions.useMutation();
   const updateQuestionsList = useAppStore((state) => state.updateQuestionsList);
-  const userProfile = useAppStore((state) => state.userProfile);
-  const completedJobs = useRef<BaseResultSchema[]>([]);
-  const [
-    showCmpltNoficiation,
-    { close: closeNotification, open: openNotificaiton },
-  ] = useDisclosure();
+  const pendingJobsWithId = useAppStore((state) => state.pendingJobsWithId);
+  const deletePendingJob = useAppStore((state) => state.deletePendingJob);
+  const ongoingJobPolling = useRef<Set<string>>(new Set());
+  const { mutateAsync: deleteQuestionRecord } = trpc.deleteQBank.useMutation();
+
+  const addToQuestionsList = useCallback(
+    (job_id: string, result: SelectQuestionBank) => {
+      updateQuestionsList({ [result.id]: result });
+      deletePendingJob(job_id);
+    },
+    [updateQuestionsList, deletePendingJob]
+  );
+
+  const pollPendingJobsResult = useCallback(
+    async (job: PendingJobDetail) => {
+      const intervalId = setInterval(() => {
+        fetchGeneratedQuestions(
+          { ...job },
+          {
+            onSuccess: (data) => {
+              if (data !== "pending") {
+                clearInterval(intervalId);
+                ongoingJobPolling.current.delete(job.jobId);
+
+                if (data.createdAt) {
+                  addToQuestionsList(job.jobId, { ...data });
+                }
+              }
+            },
+            onError: async (err) => {
+              if (err instanceof Error) {
+                console.error(
+                  `Error polling job ${job.jobId}:`,
+                  JSON.stringify(err, null, 2)
+                );
+                await deleteQuestionRecord({ questionId: job.jobId });
+
+                clearInterval(intervalId);
+                ongoingJobPolling.current.delete(job.jobId);
+              }
+            },
+          }
+        );
+      }, 30000);
+      // await fetchGeneratedQuestions(
+      //   { ...job },
+      //   {
+      //     onSuccess: (data) => {
+      //       if (typeof data === "string" && data === "pending") {
+      //         pollPendingJobsResult(job);
+      //       } else {
+      //         ongoingJobPolling.current.delete(job.jobId);
+      //         if (data.createdAt)
+      //           addToQuestionsList(job.jobId, {
+      //             ...data,
+      //           });
+      //       }
+      //     },
+      //     onError: async (err) => {
+      //       if (err instanceof Error) {
+      //         console.error(JSON.stringify(err, null, 2));
+      //         await deleteQuestionRecord({ questionId: job.jobId });
+      //         ongoingJobPolling.current.delete(job.jobId);
+      //       }
+      //     },
+      //   }
+      // );
+    },
+    [fetchGeneratedQuestions, addToQuestionsList, deleteQuestionRecord]
+  );
 
   useEffect(() => {
-    const unsubscribe = useAppStore.subscribe(
-      (state) => state.pendingJobsWithId,
-      (jobs) => {
-        let timeout: NodeJS.Timeout | null = null;
-        const jobsById: { [key: string]: PendingJobDetail } = jobs.reduce<
-          Record<string, PendingJobDetail>
-        >((acc, job) => {
-          acc[job.jobId] = { ...job };
-          return acc;
-        }, {});
-        if (jobs.length > 0) {
-          timeout = setInterval(async () => {
-            completedJobs.current = [];
-            const pendingJobs: PendingJobDetail[] = [];
-            const results = await Promise.all(
-              jobs.map((job) => fetchGeneratedQuestions({ ...job }))
-            );
-
-            results.forEach((result, index) => {
-              if (typeof result === "string" && result === "pending") {
-                pendingJobs.push(jobs[index]);
-              } else {
-                completedJobs.current.push({ ...result });
-                openNotificaiton();
-              }
-            });
-
-            if (pendingJobs.length === 0) {
-              if (timeout) clearInterval(timeout);
-            }
-
-            useAppStore.setState({ pendingJobsWithId: [...pendingJobs] });
-          }, 5000);
-
-          if (completedJobs.current.length > 0 && userProfile) {
-            const questions = completedJobs.current.reduce<
-              Record<string, SelectQuestionBank>
-            >((acc, job) => {
-              const {
-                difficulty,
-                jobId,
-                keyword,
-                outputType,
-                qCount,
-                questionType,
-                userId,
-              } = jobsById[job.job_id];
-              const { guidance, summary, questions } = job;
-              const x: SelectQuestionBank = {
-                userId: userId,
-                id: jobId,
-                createdAt: null,
-                jobId: jobId,
-                questions,
-                summary,
-                guidance,
-                withAnswer: null,
-                questionType: questionType,
-                outputType,
-                instituteName: userProfile.instituteName,
-                difficultyLevel: difficulty,
-                questionsCount: qCount,
-                prompt: keyword,
-                promptUrl: "",
-                googleQuizLink: null,
-                googleFormId: null,
-              };
-              acc[job.job_id] = { ...x };
-              return acc;
-            }, {});
-            updateQuestionsList(questions);
-          }
+    if (pendingJobsWithId.length > 0) {
+      pendingJobsWithId.forEach((job) => {
+        if (!ongoingJobPolling.current.has(job.jobId)) {
+          ongoingJobPolling.current.add(job.jobId);
+          pollPendingJobsResult(job);
         }
-      }
-    );
-
+      });
+    }
     return () => {
-      if (unsubscribe) unsubscribe();
+      ongoingJobPolling.current.clear();
     };
-  }, [
-    fetchGeneratedQuestions,
-    updateQuestionsList,
-    userProfile,
-    openNotificaiton,
-  ]);
-
-  if (showCmpltNoficiation) {
-    return completedJobs.current.map((job) => {
-      return (
-        <Notification title="Result is ready" key={job.job_id}>
-          <Text fw={500} size="sm">
-            Results are generated for the job: ${job.job_id}
-          </Text>
-        </Notification>
-      );
-    });
-  }
+  }, [pendingJobsWithId, pollPendingJobsResult]);
 
   return null;
 }

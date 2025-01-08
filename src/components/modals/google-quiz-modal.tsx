@@ -1,9 +1,7 @@
 "use client";
 
 import { SelectQuestionBank } from "@/db/schema";
-import { useAppStore } from "@/store/app-store";
-import { Flex, Group, Modal, Title, useMantineTheme } from "@mantine/core";
-import { useMemo } from "react";
+import { Flex, Modal } from "@mantine/core";
 import { z } from "zod";
 import RenderProctoredTestForm from "../proctored-test-form";
 
@@ -41,44 +39,10 @@ const googleQuizPayloadSchema = z.object({
   shareWithInvite: z.boolean(),
 });
 
-const formSchema = z.object({
-  email: z
-    .string()
-    .email({
-      message: "Invalid email",
-    })
-    .optional()
-    .or(z.literal("")),
-});
-
 export type GoogleQuizPayloadSchema = z.infer<typeof googleQuizPayloadSchema>;
 export type GoogleQuizQuestionsSchema = z.infer<typeof googleQuizQuestions>;
 
 function GoogleQuizModal({ open, close, record, userEmail }: Props) {
-  const subscription = useAppStore((state) => state.subscription);
-  const theme = useMantineTheme();
-
-  const modalTitle = useMemo(() => {
-    let content = (
-      <Group gap={"xl"} w={"100%"} justify="start" align="center">
-        <Title order={5}>Google Quiz</Title>
-      </Group>
-    );
-
-    if (subscription) {
-      const { planName } = subscription;
-
-      if (planName === "Integrated") {
-        content = (
-          <Group gap={"xl"} w={"100%"} justify="start" align="center">
-            <Title order={5}>Google Quiz</Title>
-          </Group>
-        );
-      }
-    }
-    return content;
-  }, [subscription]);
-
   return (
     <Modal
       opened={open}
@@ -87,13 +51,16 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
       centered
       closeOnClickOutside={false}
       closeOnEscape={false}
-      title={modalTitle}
+      title={"Google Quiz"}
       styles={{
         body: {
           width: "100%",
           minHeight: "20vh",
           display: "flex",
           flexDirection: "column",
+        },
+        title: {
+          fontWeight: 500,
         },
       }}
     >

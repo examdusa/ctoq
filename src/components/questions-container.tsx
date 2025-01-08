@@ -155,7 +155,6 @@ function RenderQuestionRecrod({
   deleteQuestionBank,
   deletingQBank,
 }: RenderQuestionRecordProps) {
-
   const [opened, { close, open }] = useDisclosure();
   const [
     headingModalOpened,
@@ -201,11 +200,8 @@ function RenderQuestionRecrod({
     if (planName === "Starter") {
       open();
       return;
-    } else if (!record.googleQuizLink) {
-      openGQuizModal();
-    } else {
-      window.open(record.googleQuizLink, "_blank");
     }
+    openGQuizModal();
   }
 
   function handleRedirect() {

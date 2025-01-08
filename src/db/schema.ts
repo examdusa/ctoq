@@ -11,10 +11,10 @@ export const userProfile = sqliteTable("userprofile", {
   email: text("email", { length: 255 }).notNull(),
   googleid: text("googleid", { length: 255 }),
   appTheme: text("appTheme", { length: 50 }),
-  createdAt: integer("createdAt", { mode: "timestamp" }).default(new Date()),
+  createdAt: integer("createdAt", { mode: "timestamp" }).default(new Date()).notNull(),
   language: text("language").default("English"),
   instituteName: text("instituteName").default("Content To Quiz"),
-  role: text("userRole").default("student"),
+  role: text("userRole").default("instructor"),
 });
 
 export const userProfileRelation = relations(userProfile, ({ many, one }) => ({
@@ -29,11 +29,11 @@ export const userProfileRelation = relations(userProfile, ({ many, one }) => ({
 // Define Questionbank schema with a foreign key to Userprofile
 export const questionbank = sqliteTable("questionbank", {
   id: text("id", { length: 36 }).primaryKey(),
-  createdAt: integer("createdAt", { mode: "timestamp" }).default(new Date()),
+  createdAt: text("createdAt").notNull(),
   userId: text("userId", { length: 36 })
     .notNull()
     .references(() => userProfile.id, { onDelete: "cascade" }),
-  jobId: text("jobId", { length: 255 }),
+  jobId: text("jobId", { length: 255 }).notNull(),
   questions: text("questions", { mode: "json" }),
   difficultyLevel: text("difficultyLevel"),
   questionsCount: integer("questionsCount"),
@@ -64,7 +64,7 @@ export const subscription = sqliteTable("subscription", {
   id: text("id", { length: 36 }).primaryKey(),
   userId: text("userId", { length: 36 })
     .notNull()
-    .references(() => userProfile.id),
+    .references(() => userProfile.id, {onDelete: 'cascade'}),
   status: text("status", { length: 255 }),
   startDate: text("startDate", { length: 36 }),
   endDate: text("endDate", { length: 36 }),
@@ -83,11 +83,11 @@ export const subscription = sqliteTable("subscription", {
 export const sharedExams = sqliteTable("sharedExams", {
   id: text("id", { length: 36 }).primaryKey(),
   userId: text("userId", { length: 36 })
-  .notNull()
-  .references(() => userProfile.id, { onDelete: "cascade" }), // FK to userProfile
-questionRecord: text("questionRecord", { length: 36 })
-  .notNull()
-  .references(() => questionbank.id, { onDelete: "cascade" }),
+    .notNull()
+    .references(() => userProfile.id, { onDelete: "cascade" }), // FK to userProfile
+  questionRecord: text("questionRecord", { length: 36 })
+    .notNull()
+    .references(() => questionbank.id, { onDelete: "cascade" }),
   formId: text("formId"),
   firstName: text("firstName"),
   lastName: text("lastName"),
@@ -99,7 +99,7 @@ export const pendingJob = sqliteTable("pendingJob", {
   jobId: text("jobId", { length: 36 }).primaryKey().notNull(),
   userId: text("userId", { length: 36 })
     .notNull()
-    .references(() => userProfile.id)
+    .references(() => userProfile.id, {onDelete: 'cascade'})
     .notNull(),
   questionBankId: text("jobId").unique().notNull(),
   status: text("status").notNull(),

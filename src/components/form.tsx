@@ -1,10 +1,10 @@
 "use client";
 import { trpc } from "@/app/_trpc/client";
-import { SelectQuestionBank, SelectSubscription } from "@/db/schema";
+import { SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import { GenerateQuestionsPayload } from "@/utllities/apiFunctions";
 import { encodeFileToBase64 } from "@/utllities/helpers";
-import { BaseResultSchema } from "@/utllities/zod-schemas-types";
+import { QuestionBankSchema } from "@/utllities/zod-schemas-types";
 import {
   Button,
   FileInput,
@@ -81,16 +81,14 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
   const userProfile = useAppStore((state) => state.userProfile);
   const updateQuestionsList = useAppStore((state) => state.updateQuestionsList);
   const theme = useMantineTheme();
-  const {
-    mutateAsync: generateQuestions,
-    isLoading: isGenerating,
-    isError: generationError,
-  } = trpc.generateQuestions.useMutation();
+  const [attempt, setAttempt] = useState(0);
+
+  const { mutateAsync: generateQuestions, isLoading: isGenerating } =
+    trpc.generateQuestions.useMutation();
 
   const {
     mutateAsync: fetchGenerationResult,
     isLoading: isFetchingResults,
-    isError: fetchResultsError,
     data: generatedQuestions,
   } = trpc.fetchGeneratedQuestions.useMutation();
 
@@ -164,6 +162,8 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
       }
     }
 
+    if (!attempt) return false;
+
     if (isGenerating || isFetchingResults) return true;
 
     const { keyword, resumeFile, resumeUrl, courseFile, courseUrl } =
@@ -193,7 +193,14 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
     }
 
     return false;
-  }, [subscription, isGenerating, form, contentType, isFetchingResults]);
+  }, [
+    subscription,
+    isGenerating,
+    form,
+    contentType,
+    isFetchingResults,
+    attempt,
+  ]);
 
   const disableFields = useMemo(() => {
     if (subscription) {
@@ -241,7 +248,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
     if (outputType !== "question") {
       payload.no_of_questions = 0;
       payload.question_type = "";
-      payload.question_difficulty = ""
+      payload.question_difficulty = "";
     }
 
     if (userProfile) {
@@ -273,60 +280,64 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
       payload.keywords = keyword.split(" ").join(",");
     }
     if (!userProfile) return;
-    const { job_id } = await generateQuestions({
-      payload: { ...payload },
-      contentType,
-      userId: userProfile.id,
-    });
-    const result: "pending" | BaseResultSchema = await fetchGenerationResult({
-      jobId: job_id,
-      userId,
-      difficulty,
-      keyword,
-      qCount,
-      questionType: qType,
-      outputType,
-    });
-    if (result === "pending") {
-      addPendingJob({
+    const { job_id } = await generateQuestions(
+      {
+        payload: { ...payload },
+        contentType,
+        userId: userProfile.id,
+      },
+      {
+        onSettled: () => {
+          setAttempt(1);
+        },
+      }
+    );
+    await fetchGenerationResult(
+      {
         jobId: job_id,
-        userId: userId,
+        userId,
         difficulty,
         keyword,
-        outputType,
         qCount,
         questionType: qType,
-      });
-    } else {
-      if (!userProfile) return;
-      const { job_id, questions, guidance, summary, resume_data } = result;
-      let prompt = keyword;
-      if (contentType !== "Keywords") {
-        if (typeof resume_data !== "string" && "name" in resume_data) {
-          prompt = resume_data.name;
-        }
+        outputType,
+      },
+      {
+        onSuccess: (data) => {
+          if (data === "pending") {
+            addPendingJob({
+              jobId: job_id,
+              userId: userId,
+              difficulty,
+              keyword,
+              outputType,
+              qCount,
+              questionType: qType,
+            });
+          } else {
+            updateQuestionsList({
+              [data.id]: { ...data },
+            });
+          }
+          setAttempt(0);
+        },
+        onError: (err) => {
+          if (err instanceof Error) {
+            if (err.message.toLowerCase().includes("timeout")) {
+              addPendingJob({
+                jobId: job_id,
+                userId: userId,
+                difficulty,
+                keyword,
+                outputType,
+                qCount,
+                questionType: qType,
+              });
+            }
+          }
+        },
       }
-      const question: SelectQuestionBank = {
-        id: job_id,
-        createdAt: new Date(),
-        userId: userProfile.id,
-        instituteName: userProfile.instituteName,
-        jobId: job_id,
-        questions,
-        difficultyLevel: difficulty,
-        questionsCount: qCount,
-        prompt: prompt,
-        questionType: qType,
-        promptUrl: "",
-        withAnswer: true,
-        googleQuizLink: "",
-        outputType: outputType,
-        guidance,
-        summary,
-        googleFormId: "",
-      };
-      updateQuestionsList({ [question.id]: { ...question } });
-    }
+    );
     form.reset();
   }
 
@@ -337,7 +348,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
       const closeInterval = setInterval(() => {
         closePendingAlert();
         clearInterval(closeInterval);
-      }, 1500);
+      }, 2000);
     }
   }, [generatedQuestions, openPendingAlert, closePendingAlert]);
 

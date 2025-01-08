@@ -126,13 +126,9 @@ const submitJobPayloadSchema = z.object({
   keywords: z.string(),
   output_type: z.enum(["question", "summary", "guidance"]),
   no_of_questions: z.number().int(),
-  question_type: z.enum([
-    "open_ended",
-    "mcq",
-    "true_false",
-    "mcq_similar",
-    "fill_blank",
-  ]).or(z.string()),
+  question_type: z
+    .enum(["open_ended", "mcq", "true_false", "mcq_similar", "fill_blank"])
+    .or(z.string()),
   question_difficulty: z.string(),
   instructions: z.string(),
   career_goal: z.string(),
@@ -154,7 +150,7 @@ const userProfileSchema = z.object({
   email: z.string(),
   googleid: z.string(),
   appTheme: z.string(),
-  createdAt: z.instanceof(Date).nullable(),
+  createdAt: z.date(),
   language: z.string(),
   instituteName: z.string(),
   role: z.string(),
@@ -171,7 +167,37 @@ const googleDocSchema = z.object({
   requests: z.array(googleDocRequestObject),
 });
 
-type GoogleDocSchema = z.infer<typeof googleDocSchema>
+const questionBankSchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  userId: z.string(),
+  jobId: z.string(),
+  questions: z
+    .array(
+      z.union([
+        mcqQuestionSchema,
+        trueFalseQuestionSchema,
+        fillBlankQuestionSchema,
+        openEndedQuestionSchema,
+      ])
+    )
+    .default([]),
+  difficultyLevel: z.string(),
+  questionsCount: z.number(),
+  prompt: z.string(),
+  questionType: z.string(),
+  promptUrl: z.string(),
+  withAnswer: z.boolean(),
+  googleQuizLink: z.string(),
+  instituteName: z.string(),
+  outputType: z.string(),
+  guidance: z.string(),
+  summary: z.string(),
+  googleFormId: z.string(),
+});
+
+type QuestionBankSchema = z.infer<typeof questionBankSchema>;
+type GoogleDocSchema = z.infer<typeof googleDocSchema>;
 type SubmitJobPayloadSchema = z.infer<typeof submitJobPayloadSchema>;
 type MCQSimilarQuizResponseSchema = z.infer<typeof mcqSimilarQuestionSchema>;
 type GenerateQuestionsResponseSchema = z.infer<
@@ -207,7 +233,8 @@ export {
   mcqQuestionsSchema,
   generateQuestionsResponseSchema,
   baseResultSchema,
-  googleDocSchema
+  googleDocSchema,
+  questionBankSchema,
 };
 export type {
   FillBlankQuestionSchema,
@@ -226,5 +253,6 @@ export type {
   SubmitJobPayloadSchema,
   GenerateQuestionsResponseSchema,
   BaseResultSchema,
-  GoogleDocSchema
+  GoogleDocSchema,
+  QuestionBankSchema,
 };

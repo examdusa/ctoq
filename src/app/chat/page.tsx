@@ -10,6 +10,7 @@ import { SelectQuestionBank } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import { useUser } from "@clerk/nextjs";
 import { Flex } from "@mantine/core";
+import { redirect } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
 export default function ChatContainer() {
@@ -37,7 +38,6 @@ export default function ChatContainer() {
         questions.forEach((item) => {
           formattedQuestions[item.id] = {
             ...item,
-            createdAt: item.createdAt ? new Date(item.createdAt) : null,
             questions: item.questions,
           };
         });
@@ -52,12 +52,10 @@ export default function ChatContainer() {
   useEffect(() => {
     if (user) {
       fetchUserData(user.id);
+    } else {
+      redirect('/')
     }
   }, [user, fetchUserData]);
-
-  if (fetchingSubscription || fetchingQuestions || !user) {
-    return <DashboardLoader />;
-  }
 
   return (
     <ThemeWrapper>

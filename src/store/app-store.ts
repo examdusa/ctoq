@@ -1,9 +1,5 @@
-import {
-  SelectQuestionBank,
-  SelectSubscription,
-  userProfile,
-} from "@/db/schema";
-import { UserProfileSchema } from "@/utllities/zod-schemas-types";
+import { SelectQuestionBank, SelectSubscription } from "@/db/schema";
+import { Institute, UserProfileSchema } from "@/utllities/zod-schemas-types";
 import { create } from "zustand";
 import {
   createJSONStorage,
@@ -32,6 +28,7 @@ interface State {
     outputType: "question" | "summary" | "guidance";
   }[];
   userProfile: UserProfileSchema | null;
+  institutesById: { [key: string]: Institute };
 }
 
 interface PendingJobDetail {
@@ -55,6 +52,8 @@ interface Actions {
   addToPendingJobs: (job: PendingJobDetail) => void;
   setUserProfile: (profile: UserProfileSchema) => void;
   updateQuestionsList: (questions: Record<string, SelectQuestionBank>) => void;
+  deletePendingJob: (jobId: string) => void;
+  setInstitues: (institutes: { [key: string]: Institute }) => void;
 }
 
 export type Store = State & Actions;
@@ -66,6 +65,7 @@ export const defaultStoreState: State = {
   generatingQuestions: false,
   pendingJobsWithId: [],
   userProfile: null,
+  institutesById: {},
 };
 
 export const useAppStore = create<Store>()(
@@ -87,6 +87,15 @@ export const useAppStore = create<Store>()(
             const qList = { ...get().questions };
             set({ questions: { ...qList, ...questions } });
           },
+          deletePendingJob: (jobId) => {
+            const pendingJobs = [...get().pendingJobsWithId].filter(
+              (job) => job.jobId !== jobId
+            );
+            set({ pendingJobsWithId: [...pendingJobs] });
+          },
+          setInstitues: (institutes) => {
+            set({ institutesById: institutes });
+          },
         }),
         {
           name: "app-store",
@@ -102,3 +111,4 @@ export const useAppStore = create<Store>()(
 );
 
 export type { PendingJobDetail };
+

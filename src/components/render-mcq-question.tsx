@@ -83,12 +83,6 @@ function RenderMcqQuestion({
         },
       }}
     >
-      {/* <OverlayModal
-        opened={generatingQuestions}
-        message="Generating questions..."
-        width={80}
-        height={80}
-      /> */}
       <Flex
         direction={"row"}
         w={"100%"}
@@ -202,3 +196,4 @@ function RenderMcqQuestion({
 }
 
 export { RenderMcqQuestion };
+

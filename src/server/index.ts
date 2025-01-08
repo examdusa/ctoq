@@ -18,11 +18,13 @@ import {
   mcqSimilarQuestionSchema,
   OpenendedQuestionSchema,
   openEndedQuestionSchema,
+  questionBankSchema,
   submitJobPayloadSchema,
   TrueFalseQuestionScheam,
   trueFalseQuestionSchema,
   userProfileSchema,
 } from "@/utllities/zod-schemas-types";
+import dayjs from "dayjs";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 import z from "zod";
@@ -45,7 +47,7 @@ export type UserObjectShape = z.infer<typeof UserObject>;
 export const appRouter = router({
   getQuestions: procedure
     .input(z.object({ userId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       try {
         const questions: SelectQuestionBank[] = await db
           .select({
@@ -94,23 +96,19 @@ export const appRouter = router({
           .where(eq(userProfile.id, userId));
 
         if (profiles.length > 0) {
-          const { data, error } = userProfileSchema.safeParse(profiles[0]);
+          const { data, error, success } = userProfileSchema.safeParse(
+            profiles[0]
+          );
 
-          if (error) {
-            console.log("Profile data validation failed");
+          if (success) {
+            return { code: "SUCCESS", data };
           }
-          return { code: "SUCCESS", data };
+          console.log("Profile data validation failed", error);
         }
-        return {
-          code: "NOT_FOUND",
-          data: null,
-        };
+        throw new Error("USER_NOT_FOUND");
       } catch (err) {
         console.log("GetProfileDetails error: ", JSON.stringify(err, null, 2));
-        return {
-          code: "NOT_FOUND",
-          data: null,
-        };
+        throw new Error("USER_NOT_FOUND");
       }
     }),
   getUserSubscriptionDetails: procedure
@@ -182,12 +180,9 @@ export const appRouter = router({
         language,
       } = input;
       try {
-        const user = await db
-          .select()
-          .from(userProfile)
-          .where(eq(userProfile.id, id));
-        if (user.length === 0) {
-          await db.insert(userProfile).values({
+        const records = await db
+          .insert(userProfile)
+          .values({
             email: email,
             id: id,
             appTheme: appTheme,
@@ -198,11 +193,17 @@ export const appRouter = router({
             language,
             role,
             instituteName: "Content To Quiz",
-          });
-          return "Inserted";
-        } else {
-          return "User exists";
+          })
+          .returning();
+        if (records.length === 0) {
+          throw new Error("Insert failed");
         }
+
+        const { data, success } = userProfileSchema.safeParse(records[0]);
+        if (success) {
+          return data;
+        }
+        throw new Error("Insert failed");
       } catch (err) {
         console.log(err);
         throw new Error("Insert failed");
@@ -609,7 +610,7 @@ export const appRouter = router({
             courses,
           } = input.payload;
 
-          let prompt = keywords;
+          let prompt = keywords.split(",").join(" ");
 
           if (input.contentType === "Courses") {
             if (z.string().url().safeParse(courses).success) {
@@ -629,7 +630,7 @@ export const appRouter = router({
 
           const { rowsAffected } = await db.insert(questionbank).values({
             id: data.job_id,
-            createdAt: new Date(),
+            createdAt: dayjs().toISOString(),
             jobId: data.job_id,
             userId: input.userId,
             difficultyLevel: question_difficulty,
@@ -704,9 +705,10 @@ export const appRouter = router({
           console.log("RESPONSE_VALIDATION_ERROR:: ", error);
           throw error;
         }
+
         try {
           const { guidance, summary } = data;
-          const { rowsAffected } = await db
+          const updatedRecords = await db
             .update(questionbank)
             .set({
               difficultyLevel: difficulty,
@@ -718,12 +720,20 @@ export const appRouter = router({
               summary: summary,
               outputType: outputType,
             })
-            .where(eq(questionbank.jobId, jobId));
+            .where(eq(questionbank.jobId, jobId))
+            .returning();
 
-          if (rowsAffected === 0) {
+          if (updatedRecords.length === 0) {
             throw new Error("Record insertion failed");
           }
-          return data;
+          const { data: questionRecord, error } = questionBankSchema.safeParse(
+            updatedRecords[0]
+          );
+          if (error) {
+            console.log(JSON.stringify(error, null, 2));
+            throw new Error("QUEST_REC_VALIDATTION_ERROR");
+          }
+          return questionRecord;
         } catch (err) {
           console.log(err);
           throw new Error("Insert failed");
