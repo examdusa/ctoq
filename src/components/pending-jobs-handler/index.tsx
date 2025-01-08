@@ -29,7 +29,7 @@ function PendingJobsHandler() {
           { ...job },
           {
             onSuccess: (data) => {
-              if (data !== "pending") {
+              if (data !== "pending" && data !== "TIMEOUT_ERROR") {
                 clearInterval(intervalId);
                 ongoingJobPolling.current.delete(job.jobId);
 
