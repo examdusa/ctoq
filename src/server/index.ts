@@ -696,6 +696,10 @@ export const appRouter = router({
           }
         );
 
+        if (response.status === 504) {
+          return "TIMEOUT_ERROR"
+        }
+
         const jsonResp = await response.json();
         if (typeof jsonResp === "string") {
           return "pending";
@@ -730,17 +734,13 @@ export const appRouter = router({
             updatedRecords[0]
           );
           if (error) {
-            console.log(JSON.stringify(error, null, 2));
             throw new Error("QUEST_REC_VALIDATTION_ERROR");
           }
           return questionRecord;
         } catch (err) {
-          console.log(err);
           throw new Error("Insert failed");
         }
       } catch (err) {
-        console.log((err as any).statusCode)
-        console.log(err)
         throw err;
       }
     }),

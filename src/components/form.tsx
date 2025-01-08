@@ -304,7 +304,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
       },
       {
         onSuccess: (data) => {
-          if (data === "pending") {
+          if (data === "pending" || data === "TIMEOUT_ERROR") {
             addPendingJob({
               jobId: job_id,
               userId: userId,
@@ -322,8 +322,6 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
           setAttempt(0);
         },
         onError: (err) => {
-          console.log((err as any).statusCode)
-          console.log(JSON.stringify(err, null, 2));
           if (err instanceof Error) {
             if (err.message.toLowerCase().includes("timeout")) {
               addPendingJob({
