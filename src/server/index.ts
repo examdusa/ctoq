@@ -695,7 +695,7 @@ export const appRouter = router({
             },
           }
         );
-
+        console.log(response)
         if (response.status === 504) {
           return "TIMEOUT_ERROR"
         }
