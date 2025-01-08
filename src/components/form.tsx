@@ -322,6 +322,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
           setAttempt(0);
         },
         onError: (err) => {
+          console.log(JSON.stringify(err, null, 2));
           if (err instanceof Error) {
             if (err.message.toLowerCase().includes("timeout")) {
               addPendingJob({
