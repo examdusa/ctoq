@@ -739,7 +739,8 @@ export const appRouter = router({
           throw new Error("Insert failed");
         }
       } catch (err) {
-        console.log(JSON.stringify(err, null, 2));
+        console.log((err as any).statusCode)
+        console.log(err)
         throw err;
       }
     }),
