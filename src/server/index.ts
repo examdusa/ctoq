@@ -601,57 +601,6 @@ export const appRouter = router({
         if (error) {
           throw new Error("Invalid response");
         }
-        // try {
-        //   const {
-        //     question_difficulty,
-        //     no_of_questions,
-        //     question_type,
-        //     output_type,
-        //     keywords,
-        //     courses,
-        //   } = input.payload;
-
-        //   let prompt = keywords.split(",").join(" ");
-
-        //   if (input.contentType === "Courses") {
-        //     if (z.string().url().safeParse(courses).success) {
-        //       prompt = `Content as per ${courses}`;
-        //     } else {
-        //       prompt = "Content based on file";
-        //     }
-        //   }
-
-        //   if (input.contentType === "Resume") {
-        //     if (z.string().url().safeParse(courses).success) {
-        //       prompt = `Content as per ${courses}`;
-        //     } else {
-        //       prompt = "Content based on file";
-        //     }
-        //   }
-
-        //   const { rowsAffected } = await db.insert(questionbank).values({
-        //     id: data.job_id,
-        //     createdAt: dayjs().toISOString(),
-        //     jobId: data.job_id,
-        //     userId: input.userId,
-        //     difficultyLevel: question_difficulty,
-        //     prompt: prompt,
-        //     promptUrl: "",
-        //     questions: [],
-        //     questionsCount: no_of_questions,
-        //     questionType: question_type,
-        //     withAnswer: true,
-        //     guidance: "",
-        //     summary: "",
-        //     outputType: output_type,
-        //   });
-
-        //   if (rowsAffected > 0) {
-        //     return data;
-        //   }
-        // } catch (err) {
-        //   throw err;
-        // }
         return data;
       } catch (err) {
         throw err;

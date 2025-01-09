@@ -29,7 +29,7 @@ import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { IconFile3d, IconInfoCircle, IconX } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import z from "zod";
 import { PriceDetail } from "./criteria-form";
 import { ResetIcon, WithAnswersIcon } from "./icons";
@@ -80,7 +80,6 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
   const [contentType, setContentType] = useState<
     "Resume" | "Courses" | "Keywords"
   >("Keywords");
-  const addPendingJob = useAppStore((state) => state.addToPendingJobs);
   const userProfile = useAppStore((state) => state.userProfile);
   const updateQuestionsList = useAppStore((state) => state.updateQuestionsList);
   const theme = useMantineTheme();
@@ -91,18 +90,13 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
   const { mutateAsync: addQBankRecord } =
     trpc.addQuestionBankRecord.useMutation();
 
-  const {
-    mutateAsync: fetchGenerationResult,
-    isLoading: isFetchingResults,
-    data: generatedQuestions,
-  } = useMutation({
-    mutationFn: pollGeneratedResult,
-  });
-
   const [
     showPendingAlert,
     { close: closePendingAlert, open: openPendingAlert },
   ] = useDisclosure();
+  const { mutateAsync: fetchGenerationResult } = useMutation({
+    mutationFn: pollGeneratedResult,
+  });
 
   const form = useForm<FormSchema>({
     mode: "controlled",
@@ -171,7 +165,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
 
     if (!attempt) return false;
 
-    if (isGenerating || isFetchingResults) return true;
+    if (isGenerating) return true;
 
     const { keyword, resumeFile, resumeUrl, courseFile, courseUrl } =
       form.values;
@@ -200,14 +194,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
     }
 
     return false;
-  }, [
-    subscription,
-    isGenerating,
-    form,
-    contentType,
-    isFetchingResults,
-    attempt,
-  ]);
+  }, [subscription, isGenerating, form, contentType, attempt]);
 
   const disableFields = useMemo(() => {
     if (subscription) {
@@ -296,57 +283,73 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
       {
         onSettled: () => {
           setAttempt(1);
+          form.reset();
         },
       }
     );
-    const { code, data } = await pollGeneratedResult({
-      jobId: job_id,
-      difficulty,
-      keyword,
-      outputType,
-      qCount,
-      questionType: qType,
-      userId,
-      contentType,
-    });
-
-    if (code !== "PENDING") {
-      if (userProfile) {
-        if (data) {
-          const { code, data: record } = await addQBankRecord({
-            data: {
-              difficulty,
-              jobId: job_id,
-              keyword,
-              outputType,
-              qCount,
-              questionType: qType,
-              userId,
-              instituteName: userProfile.instituteName,
-              result: data,
-              contentType,
-            },
-          });
-
-          if (code === "SUCCESS") {
-            if (record) updateQuestionsList({ [record.jobId]: { ...record } });
+    await fetchGenerationResult(
+      {
+        jobId: job_id,
+        difficulty,
+        keyword,
+        outputType,
+        qCount,
+        questionType: qType,
+        userId,
+        contentType,
+      },
+      {
+        onSettled: async (settledResult, error) => {
+          if (error) {
+            if ((error as any) === "TIMEOUT") {
+              openPendingAlert();
+              const closeInterval = setInterval(() => {
+                closePendingAlert();
+                clearInterval(closeInterval);
+              }, 2000);
+            }
           }
-        }
+          if (settledResult) {
+            const { code, data } = settledResult;
+            if (code !== "PENDING") {
+              if (userProfile) {
+                if (data) {
+                  const { code, data: record } = await addQBankRecord({
+                    data: {
+                      difficulty,
+                      jobId: job_id,
+                      keyword,
+                      outputType,
+                      qCount,
+                      questionType: qType,
+                      userId,
+                      instituteName: userProfile.instituteName,
+                      result: data,
+                      contentType,
+                    },
+                  });
+
+                  if (code === "SUCCESS") {
+                    if (record)
+                      updateQuestionsList({ [record.jobId]: { ...record } });
+                  }
+                }
+              }
+            }
+          }
+        },
+        onError: (err) => {
+          if ((err as any) === "TIMEOUT") {
+            openPendingAlert();
+            const closeInterval = setInterval(() => {
+              closePendingAlert();
+              clearInterval(closeInterval);
+            }, 2000);
+          }
+        },
       }
-    }
-    form.reset();
+    );
   }
-
-  useEffect(() => {
-    if (generatedQuestions && generatedQuestions.code === "PENDING") {
-      openPendingAlert();
-
-      const closeInterval = setInterval(() => {
-        closePendingAlert();
-        clearInterval(closeInterval);
-      }, 2000);
-    }
-  }, [generatedQuestions, openPendingAlert, closePendingAlert]);
 
   return (
     <>
@@ -676,7 +679,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
             </Grid.Col>
             <Grid.Col span={12}>
               <Button
-                loading={isGenerating || isFetchingResults}
+                loading={isGenerating}
                 disabled={disableActionButton}
                 fullWidth
                 type="submit"
