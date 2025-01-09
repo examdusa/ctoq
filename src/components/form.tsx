@@ -2,9 +2,11 @@
 import { trpc } from "@/app/_trpc/client";
 import { SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
-import { GenerateQuestionsPayload, testFunction } from "@/utllities/apiFunctions";
+import {
+  GenerateQuestionsPayload,
+  pollGeneratedResult,
+} from "@/utllities/apiFunctions";
 import { encodeFileToBase64 } from "@/utllities/helpers";
-import { QuestionBankSchema } from "@/utllities/zod-schemas-types";
 import {
   Button,
   FileInput,
@@ -26,6 +28,7 @@ import "@mantine/dropzone/styles.css";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { IconFile3d, IconInfoCircle, IconX } from "@tabler/icons-react";
+import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import z from "zod";
 import { PriceDetail } from "./criteria-form";
@@ -85,12 +88,16 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
 
   const { mutateAsync: generateQuestions, isLoading: isGenerating } =
     trpc.generateQuestions.useMutation();
+  const { mutateAsync: addQBankRecord } =
+    trpc.addQuestionBankRecord.useMutation();
 
   const {
     mutateAsync: fetchGenerationResult,
     isLoading: isFetchingResults,
     data: generatedQuestions,
-  } = trpc.fetchGeneratedQuestions.useMutation();
+  } = useMutation({
+    mutationFn: pollGeneratedResult,
+  });
 
   const [
     showPendingAlert,
@@ -292,58 +299,46 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
         },
       }
     );
-    await testFunction(job_id)
-    // await fetchGenerationResult(
-    //   {
-    //     jobId: job_id,
-    //     userId,
-    //     difficulty,
-    //     keyword,
-    //     qCount,
-    //     questionType: qType,
-    //     outputType,
-    //   },
-    //   {
-    //     onSuccess: (data) => {
-    //       if (data === "pending" || data === "TIMEOUT_ERROR") {
-    //         addPendingJob({
-    //           jobId: job_id,
-    //           userId: userId,
-    //           difficulty,
-    //           keyword,
-    //           outputType,
-    //           qCount,
-    //           questionType: qType,
-    //         });
-    //       } else {
-    //         updateQuestionsList({
-    //           [data.id]: { ...data },
-    //         });
-    //       }
-    //       setAttempt(0);
-    //     },
-    //     onError: (err) => {
-    //       if (err instanceof Error) {
-    //         if (err.message.toLowerCase().includes("timeout")) {
-    //           addPendingJob({
-    //             jobId: job_id,
-    //             userId: userId,
-    //             difficulty,
-    //             keyword,
-    //             outputType,
-    //             qCount,
-    //             questionType: qType,
-    //           });
-    //         }
-    //       }
-    //     },
-    //   }
-    // );
+    const { code, data } = await pollGeneratedResult({
+      jobId: job_id,
+      difficulty,
+      keyword,
+      outputType,
+      qCount,
+      questionType: qType,
+      userId,
+      contentType,
+    });
+
+    if (code !== "PENDING") {
+      if (userProfile) {
+        if (data) {
+          const { code, data: record } = await addQBankRecord({
+            data: {
+              difficulty,
+              jobId: job_id,
+              keyword,
+              outputType,
+              qCount,
+              questionType: qType,
+              userId,
+              instituteName: userProfile.instituteName,
+              result: data,
+              contentType,
+            },
+          });
+
+          if (code === "SUCCESS") {
+            if (record) updateQuestionsList({ [record.jobId]: { ...record } });
+          }
+        }
+      }
+    }
     form.reset();
   }
 
   useEffect(() => {
-    if (generatedQuestions === "pending") {
+    if (generatedQuestions && generatedQuestions.code === "PENDING") {
       openPendingAlert();
 
       const closeInterval = setInterval(() => {

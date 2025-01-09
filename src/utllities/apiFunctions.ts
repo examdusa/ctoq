@@ -1,6 +1,9 @@
 import { GoogleQuizPayloadSchema } from "@/components/modals/google-quiz-modal";
+import { useAppStore } from "@/store/app-store";
 import z from "zod";
 import {
+  baseResultSchema,
+  BaseResultSchema,
   fillBlankQuizResponseSchema,
   FillBlankQuizResponseSchema,
   GoogleDocSchema,
@@ -438,20 +441,91 @@ async function getProfileDetailsByGuidUserId(
   }
 }
 
-async function testFunction(jobId: string) {
+async function pollGeneratedResult({
+  difficulty,
+  jobId,
+  keyword,
+  outputType,
+  qCount,
+  questionType,
+  userId,
+  contentType,
+}: {
+  jobId: string;
+  userId: string;
+  difficulty: "easy" | "medium" | "hard";
+  keyword: string;
+  outputType: "guidance" | "summary" | "question";
+  qCount: number;
+  questionType:
+    | "mcq"
+    | "mcq_similar"
+    | "fill_blank"
+    | "true_false"
+    | "open_ended";
+  contentType: string;
+}): Promise<{ code: "SUCCESS" | "PENDING"; data: BaseResultSchema | null }> {
+  const pendingJobs = useAppStore.getState().pendingJobsWithId;
+
+  const abortController = new AbortController();
+  const { signal } = abortController;
+  const timeout = setTimeout(() => {
+    abortController.abort("TIMEOUT");
+    if (!(jobId in pendingJobs)) {
+      useAppStore.getState().addToPendingJobs({
+        jobId: jobId,
+        userId: userId,
+        difficulty,
+        keyword,
+        outputType,
+        qCount,
+        questionType: questionType,
+        contentType,
+      });
+    }
+  }, 5000);
   try {
-    const response = await fetch(
-      `https://augmentbyai.com/job_status/job_status/${jobId}`,
-      {
+    const response = await Promise.race([
+      fetch(`https://augmentbyai.com/job_status/job_status/${jobId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-      }
-    );
-    console.log(response);
+        signal: signal,
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => {
+          abortController.abort('TIMEOUT');
+          reject(new Error("Request timed out"));
+        }, 2000)
+      ),
+    ]);
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const err = new Error();
+      err.message = `FETCH_ERROR: ${response.status}`;
+      throw err;
+    }
+
+    const jsonResp = await response.json();
+    if (typeof jsonResp === "string" && jsonResp === "pending") {
+      return {
+        code: "PENDING",
+        data: null,
+      };
+    }
+
+    const { error, data } = baseResultSchema.safeParse(jsonResp);
+    if (error || !data) {
+      console.log("RESPONSE_VALIDATION_ERROR:: ", error);
+      throw error;
+    }
+    return { code: "SUCCESS", data };
   } catch (err) {
-    console.log(err);
+    console.log(JSON.stringify(err, null, 2));
+    throw err;
   }
 }
 
@@ -463,7 +537,7 @@ export {
   generateQuestionBank,
   getInstitutes,
   getProfileDetailsByGuidUserId,
+  pollGeneratedResult,
   postUnifiedData,
   uploadResume,
-  testFunction
 };

@@ -7,6 +7,7 @@ import {
   subscription,
   userProfile,
 } from "@/db/schema";
+import { updateQBankRecordScheam } from "@/utllities/helpers";
 import {
   baseResultSchema,
   FillBlankQuestionSchema,
@@ -600,57 +601,57 @@ export const appRouter = router({
         if (error) {
           throw new Error("Invalid response");
         }
-        try {
-          const {
-            question_difficulty,
-            no_of_questions,
-            question_type,
-            output_type,
-            keywords,
-            courses,
-          } = input.payload;
+        // try {
+        //   const {
+        //     question_difficulty,
+        //     no_of_questions,
+        //     question_type,
+        //     output_type,
+        //     keywords,
+        //     courses,
+        //   } = input.payload;
 
-          let prompt = keywords.split(",").join(" ");
+        //   let prompt = keywords.split(",").join(" ");
 
-          if (input.contentType === "Courses") {
-            if (z.string().url().safeParse(courses).success) {
-              prompt = `Content as per ${courses}`;
-            } else {
-              prompt = "Content based on file";
-            }
-          }
+        //   if (input.contentType === "Courses") {
+        //     if (z.string().url().safeParse(courses).success) {
+        //       prompt = `Content as per ${courses}`;
+        //     } else {
+        //       prompt = "Content based on file";
+        //     }
+        //   }
 
-          if (input.contentType === "Resume") {
-            if (z.string().url().safeParse(courses).success) {
-              prompt = `Content as per ${courses}`;
-            } else {
-              prompt = "Content based on file";
-            }
-          }
+        //   if (input.contentType === "Resume") {
+        //     if (z.string().url().safeParse(courses).success) {
+        //       prompt = `Content as per ${courses}`;
+        //     } else {
+        //       prompt = "Content based on file";
+        //     }
+        //   }
 
-          const { rowsAffected } = await db.insert(questionbank).values({
-            id: data.job_id,
-            createdAt: dayjs().toISOString(),
-            jobId: data.job_id,
-            userId: input.userId,
-            difficultyLevel: question_difficulty,
-            prompt: prompt,
-            promptUrl: "",
-            questions: [],
-            questionsCount: no_of_questions,
-            questionType: question_type,
-            withAnswer: true,
-            guidance: "",
-            summary: "",
-            outputType: output_type,
-          });
+        //   const { rowsAffected } = await db.insert(questionbank).values({
+        //     id: data.job_id,
+        //     createdAt: dayjs().toISOString(),
+        //     jobId: data.job_id,
+        //     userId: input.userId,
+        //     difficultyLevel: question_difficulty,
+        //     prompt: prompt,
+        //     promptUrl: "",
+        //     questions: [],
+        //     questionsCount: no_of_questions,
+        //     questionType: question_type,
+        //     withAnswer: true,
+        //     guidance: "",
+        //     summary: "",
+        //     outputType: output_type,
+        //   });
 
-          if (rowsAffected > 0) {
-            return data;
-          }
-        } catch (err) {
-          throw err;
-        }
+        //   if (rowsAffected > 0) {
+        //     return data;
+        //   }
+        // } catch (err) {
+        //   throw err;
+        // }
         return data;
       } catch (err) {
         throw err;
@@ -695,9 +696,9 @@ export const appRouter = router({
             },
           }
         );
-        console.log(response)
+        console.log(response);
         if (response.status === 504) {
-          return "TIMEOUT_ERROR"
+          return "TIMEOUT_ERROR";
         }
 
         const jsonResp = await response.json();
@@ -869,6 +870,88 @@ export const appRouter = router({
       } catch (err) {
         console.log(JSON.stringify(err, null, 2));
         throw err;
+      }
+    }),
+  addQuestionBankRecord: procedure
+    .input(
+      z.object({
+        data: updateQBankRecordScheam,
+      })
+    )
+    .mutation(async ({ input }) => {
+      const {
+        data: {
+          difficulty,
+          jobId,
+          outputType,
+          qCount,
+          questionType,
+          result,
+          userId,
+          instituteName,
+          keyword,
+          contentType,
+        },
+      } = input;
+      const { guidance, summary, questions, resume_data } = result;
+      try {
+        let prompt = keyword;
+
+        if (contentType !== "question") {
+          if (typeof resume_data !== "string" && "name" in resume_data) {
+            prompt = resume_data.name;
+          } else {
+            prompt = `Content based on URL`;
+          }
+        }
+        const insertedRecords = await db
+          .insert(questionbank)
+          .values({
+            difficultyLevel: difficulty,
+            questions: questions,
+            questionsCount: qCount,
+            questionType: questionType,
+            withAnswer: true,
+            guidance: guidance,
+            summary: summary,
+            outputType: outputType,
+            createdAt: dayjs().toISOString(),
+            id: jobId,
+            jobId,
+            userId,
+            googleFormId: "",
+            googleQuizLink: "",
+            instituteName,
+            prompt: prompt,
+            promptUrl: "",
+          })
+          .returning();
+        if (insertedRecords.length === 0) {
+          return {
+            code: "INSERT_FAILED",
+            data: null,
+          };
+        }
+        const { data: questionRecord, error } = questionBankSchema.safeParse(
+          insertedRecords[0]
+        );
+        if (error) {
+          console.log("QUEST_REC_VALIDATTION_ERROR", error);
+          return {
+            code: "DATA_VALIDATION_ERROR",
+            data: null,
+          };
+        }
+        return {
+          code: "SUCCESS",
+          data: questionRecord,
+        };
+      } catch (err) {
+        console.log("Insert failed: ", err);
+        return {
+          code: "INSERT_FAILED",
+          data: null,
+        };
       }
     }),
 });

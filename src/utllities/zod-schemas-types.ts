@@ -29,23 +29,22 @@ const baseResultSchema = z.object({
   status_code: z.number().int().min(100).max(599),
   job_id: z.string(),
   callback_url: z.string().or(z.string().url()),
-  file_metadata: z.object({}).or(
+  file_metadata: z.union([
     z.object({
       word_count: z.number().int(),
       char_count: z.number().int(),
       file_size: z.string(),
-    })
-  ),
-  resume_data: z
-    .string()
-    .or(z.object({}))
-    .or(
-      z.object({
-        name: z.string(),
-        email: z.string(),
-        skills: z.string(),
-      })
-    ),
+    }),
+    z.object({}),
+  ]),
+  resume_data: z.union([
+    z.object({
+      name: z.string(),
+      email: z.string(),
+      skills: z.string(),
+    }),
+    z.object({}),
+  ]),
   summary: z.string(),
   guidance: z.string(),
   questions: z.array(

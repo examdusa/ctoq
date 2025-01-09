@@ -3,16 +3,31 @@
 import { trpc } from "@/app/_trpc/client";
 import { SelectQuestionBank } from "@/db/schema";
 import { PendingJobDetail, useAppStore } from "@/store/app-store";
+import { pollGeneratedResult } from "@/utllities/apiFunctions";
+import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 
 function PendingJobsHandler() {
   const { mutate: fetchGeneratedQuestions } =
     trpc.fetchGeneratedQuestions.useMutation();
+  const { mutateAsync: addQBankRecord } =
+    trpc.addQuestionBankRecord.useMutation();
   const updateQuestionsList = useAppStore((state) => state.updateQuestionsList);
+  const userProfile = useAppStore((state) => state.userProfile);
   const pendingJobsWithId = useAppStore((state) => state.pendingJobsWithId);
   const deletePendingJob = useAppStore((state) => state.deletePendingJob);
   const ongoingJobPolling = useRef<Set<string>>(new Set());
   const { mutateAsync: deleteQuestionRecord } = trpc.deleteQBank.useMutation();
+  const { mutateAsync: pollResult } = useMutation({
+    mutationFn: pollGeneratedResult,
+    retry: (_, error) => {
+      if ((error as any) === "TIMEOUT") {
+        return true;
+      }
+      return false;
+    },
+    retryDelay: 5000,
+  });
 
   const addToQuestionsList = useCallback(
     (job_id: string, result: SelectQuestionBank) => {
@@ -24,65 +39,65 @@ function PendingJobsHandler() {
 
   const pollPendingJobsResult = useCallback(
     async (job: PendingJobDetail) => {
-      const intervalId = setInterval(() => {
-        fetchGeneratedQuestions(
-          { ...job },
-          {
-            onSuccess: (data) => {
-              if (data !== "pending" && data !== "TIMEOUT_ERROR") {
-                clearInterval(intervalId);
-                ongoingJobPolling.current.delete(job.jobId);
+      await pollResult(
+        { ...job },
+        {
+          onSuccess: async (data) => {
+            const { code, data: result } = data;
+            if (code === "SUCCESS") {
+              ongoingJobPolling.current.delete(job.jobId);
 
-                if (data.createdAt) {
-                  addToQuestionsList(job.jobId, { ...data });
+              if (result && userProfile) {
+                const {
+                  difficulty,
+                  jobId,
+                  keyword,
+                  outputType,
+                  qCount,
+                  questionType,
+                  userId,
+                  contentType,
+                } = job;
+                const { instituteName } = userProfile;
+                const { code, data } = await addQBankRecord({
+                  data: {
+                    jobId,
+                    keyword,
+                    outputType,
+                    qCount,
+                    questionType,
+                    result,
+                    userId,
+                    difficulty,
+                    instituteName,
+                    contentType,
+                  },
+                });
+                if (code === "SUCCESS") {
+                  if (data) addToQuestionsList(job.jobId, { ...data });
                 }
               }
-            },
-            onError: async (err) => {
-              if (err instanceof Error) {
-                console.error(
-                  `Error polling job ${job.jobId}:`,
-                  JSON.stringify(err, null, 2)
-                );
-                await deleteQuestionRecord({ questionId: job.jobId });
+            }
+          },
+          onError: async (err) => {
+            console.error(
+              `Error polling job ${job.jobId}:`,
+              JSON.stringify(err, null, 2)
+            );
 
-                clearInterval(intervalId);
-                ongoingJobPolling.current.delete(job.jobId);
-              }
-            },
-          }
-        );
-      }, 30000);
-      // await fetchGeneratedQuestions(
-      //   { ...job },
-      //   {
-      //     onSuccess: (data) => {
-      //       if (typeof data === "string" && data === "pending") {
-      //         pollPendingJobsResult(job);
-      //       } else {
-      //         ongoingJobPolling.current.delete(job.jobId);
-      //         if (data.createdAt)
-      //           addToQuestionsList(job.jobId, {
-      //             ...data,
-      //           });
-      //       }
-      //     },
-      //     onError: async (err) => {
-      //       if (err instanceof Error) {
-      //         console.error(JSON.stringify(err, null, 2));
-      //         await deleteQuestionRecord({ questionId: job.jobId });
-      //         ongoingJobPolling.current.delete(job.jobId);
-      //       }
-      //     },
-      //   }
-      // );
+            if ((err as any) === "TIMEOUT") {
+              await pollResult({ ...job });
+            }
+          },
+        }
+      );
     },
-    [fetchGeneratedQuestions, addToQuestionsList, deleteQuestionRecord]
+    [userProfile, addToQuestionsList, pollResult, addQBankRecord]
   );
 
   useEffect(() => {
-    if (pendingJobsWithId.length > 0) {
-      pendingJobsWithId.forEach((job) => {
+    if (Object.keys(pendingJobsWithId).length > 0) {
+      Object.values(pendingJobsWithId).forEach((job) => {
         if (!ongoingJobPolling.current.has(job.jobId)) {
           ongoingJobPolling.current.add(job.jobId);
           pollPendingJobsResult(job);

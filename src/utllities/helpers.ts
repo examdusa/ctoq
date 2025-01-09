@@ -1,4 +1,25 @@
 import dayjs from "dayjs";
+import { z } from "zod";
+import { baseResultSchema } from "./zod-schemas-types";
+
+const updateQBankRecordScheam = z.object({
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  jobId: z.string(),
+  keyword: z.string(),
+  outputType: z.enum(["question", "summary", "guidance"]),
+  qCount: z.number(),
+  questionType: z.enum([
+    "mcq",
+    "mcq_similar",
+    "fill_blank",
+    "true_false",
+    "open_ended",
+  ]),
+  userId: z.string(),
+  result: baseResultSchema,
+  instituteName: z.string(),
+  contentType: z.string(),
+});
 
 function generateAsciiCharFromNumber(number: number) {
   return String.fromCharCode(65 + number);
@@ -28,4 +49,9 @@ function encodeFileToBase64(file: File): Promise<string> {
   });
 }
 
-export { dateFormatter, generateAsciiCharFromNumber, encodeFileToBase64 };
+export {
+  dateFormatter,
+  encodeFileToBase64,
+  generateAsciiCharFromNumber,
+  updateQBankRecordScheam,
+};

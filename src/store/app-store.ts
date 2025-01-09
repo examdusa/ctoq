@@ -13,20 +13,24 @@ interface State {
   subscription: SelectSubscription | undefined;
   renderQIdx: string;
   generatingQuestions: boolean;
-  pendingJobsWithId: {
-    jobId: string;
-    userId: string;
-    questionType:
-      | "mcq"
-      | "mcq_similar"
-      | "fill_blank"
-      | "true_false"
-      | "open_ended";
-    qCount: number;
-    keyword: string;
-    difficulty: "easy" | "medium" | "hard";
-    outputType: "question" | "summary" | "guidance";
-  }[];
+  pendingJobsWithId: Record<
+    string,
+    {
+      jobId: string;
+      userId: string;
+      questionType:
+        | "mcq"
+        | "mcq_similar"
+        | "fill_blank"
+        | "true_false"
+        | "open_ended";
+      qCount: number;
+      keyword: string;
+      difficulty: "easy" | "medium" | "hard";
+      outputType: "question" | "summary" | "guidance";
+      contentType: string;
+    }
+  >;
   userProfile: UserProfileSchema | null;
   institutesById: { [key: string]: Institute };
 }
@@ -44,6 +48,7 @@ interface PendingJobDetail {
   keyword: string;
   difficulty: "easy" | "medium" | "hard";
   outputType: "question" | "summary" | "guidance";
+  contentType: string;
 }
 
 interface Actions {
@@ -63,7 +68,7 @@ export const defaultStoreState: State = {
   subscription: undefined,
   renderQIdx: "",
   generatingQuestions: false,
-  pendingJobsWithId: [],
+  pendingJobsWithId: {},
   userProfile: null,
   institutesById: {},
 };
@@ -77,8 +82,12 @@ export const useAppStore = create<Store>()(
           setQuestions: (questions) => set({ questions }),
           setSubscription: (subscription) => set({ subscription }),
           addToPendingJobs: (job) => {
-            const pendingJobs = [...get().pendingJobsWithId];
-            set({ pendingJobsWithId: [...pendingJobs, job] });
+            const pendingJobs = { ...get().pendingJobsWithId };
+            if (!(job.jobId in pendingJobs)) {
+              set({
+                pendingJobsWithId: { ...pendingJobs, [job.jobId]: { ...job } },
+              });
+            }
           },
           setUserProfile: (profile) => {
             set({ userProfile: profile });
@@ -88,10 +97,16 @@ export const useAppStore = create<Store>()(
             set({ questions: { ...qList, ...questions } });
           },
           deletePendingJob: (jobId) => {
-            const pendingJobs = [...get().pendingJobsWithId].filter(
-              (job) => job.jobId !== jobId
-            );
-            set({ pendingJobsWithId: [...pendingJobs] });
+            const pendingJobs = { ...get().pendingJobsWithId };
+            const jobs = Object.entries(pendingJobs).reduce<
+              Record<string, PendingJobDetail>
+            >((acc, [, value]) => {
+              if (value.jobId !== jobId) {
+                acc[value.jobId] = { ...value };
+              }
+              return acc;
+            }, {});
+            set({ pendingJobsWithId: { ...jobs } });
           },
           setInstitues: (institutes) => {
             set({ institutesById: institutes });
@@ -111,4 +126,3 @@ export const useAppStore = create<Store>()(
 );
 
 export type { PendingJobDetail };
-

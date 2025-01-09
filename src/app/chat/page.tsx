@@ -3,10 +3,9 @@
 import { trpc } from "@/app/_trpc/client";
 import { ThemeWrapper } from "@/components/app-layout";
 import { CriteriaForm } from "@/components/criteria-form";
-import DashboardLoader from "@/components/modals/loader/dashboard-loader";
 import { QBankCreateHistory } from "@/components/qbank-create-history";
 import { QuestionContainer } from "@/components/questions-container";
-import { SelectQuestionBank } from "@/db/schema";
+import { SelectQuestionBank, userProfile } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import { useUser } from "@clerk/nextjs";
 import { Flex } from "@mantine/core";
@@ -25,6 +24,7 @@ export default function ChatContainer() {
 
   const setSubscription = useAppStore((state) => state.setSubscription);
   const setQuestions = useAppStore((state) => state.setQuestions);
+  const userProfile = useAppStore((state) => state.userProfile);
 
   const fetchUserData = useCallback(
     async (userId: string) => {
@@ -52,20 +52,18 @@ export default function ChatContainer() {
   useEffect(() => {
     if (user) {
       fetchUserData(user.id);
-    } else {
-      redirect('/')
     }
   }, [user, fetchUserData]);
 
+  useEffect(() => {
+    if (!userProfile && !subscription && !user) {
+      redirect("/");
+    }
+  }, [user, subscription, userProfile]);
+
   return (
     <ThemeWrapper>
-      <Flex
-        direction={"row"}
-        w={"100%"}
-        h={'100%'}
-        justify={"center"}
-        gap={10}
-      >
+      <Flex direction={"row"} w={"100%"} h={"100%"} justify={"center"} gap={10}>
         <QBankCreateHistory />
         <QuestionContainer
           isLoading={fetchingQuestions || fetchingSubscription}
