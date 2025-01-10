@@ -846,7 +846,7 @@ export const appRouter = router({
       try {
         let prompt = keyword;
 
-        if (contentType !== "question") {
+        if (outputType !== "question") {
           if (typeof resume_data !== "string" && "name" in resume_data) {
             prompt = resume_data.name;
           } else {

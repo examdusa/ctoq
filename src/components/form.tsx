@@ -243,17 +243,14 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
       payload.no_of_questions = 0;
       payload.question_type = "";
       payload.question_difficulty = "";
+      payload.career_goal = careerGoal;
+      payload.geography = geography;
     }
 
     if (userProfile) {
       const { role, language } = userProfile;
       payload.actor = roles[role];
       payload.language = language;
-    }
-
-    if (outputType !== "question") {
-      payload.career_goal = careerGoal;
-      payload.geography = geography;
     }
 
     if (contentType === "Resume") {

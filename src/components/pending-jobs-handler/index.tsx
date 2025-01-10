@@ -8,8 +8,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 
 function PendingJobsHandler() {
-  const { mutate: fetchGeneratedQuestions } =
-    trpc.fetchGeneratedQuestions.useMutation();
   const { mutateAsync: addQBankRecord } =
     trpc.addQuestionBankRecord.useMutation();
   const updateQuestionsList = useAppStore((state) => state.updateQuestionsList);
@@ -17,7 +15,7 @@ function PendingJobsHandler() {
   const pendingJobsWithId = useAppStore((state) => state.pendingJobsWithId);
   const deletePendingJob = useAppStore((state) => state.deletePendingJob);
   const ongoingJobPolling = useRef<Set<string>>(new Set());
-  const { mutateAsync: deleteQuestionRecord } = trpc.deleteQBank.useMutation();
+
   const { mutateAsync: pollResult } = useMutation({
     mutationFn: pollGeneratedResult,
     retry: (_, error) => {
