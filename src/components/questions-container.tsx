@@ -49,6 +49,7 @@ import { AlertModal } from "./modals/alert-modal";
 import EditQuestionLabelModal from "./modals/edit-question-label";
 import { GoogleQuizModal } from "./modals/google-quiz-modal";
 import { OverlayModal } from "./modals/loader";
+import { ShareExam } from "./modals/share-exam";
 import { NoQuestion } from "./no-question";
 import { Pricing } from "./pricing";
 import { RenderFillBlankQuestion } from "./render-fillblank-question";
@@ -57,7 +58,6 @@ import { RenderMcqQuestion } from "./render-mcq-question";
 import { RenderMcqSimilarQuestion } from "./render-mcqsimilar-question";
 import { RenderOpenEndedQuestion } from "./render-openended-question";
 import { RenderTrueFalseQuestion } from "./render-truefalse-question";
-import { ShareExam } from "./modals/share-exam";
 
 dayjs.extend(tz);
 dayjs.extend(utc);
@@ -169,6 +169,7 @@ function RenderQuestionRecrod({
   const [shareExamModalOpened, { toggle }] = useDisclosure(false);
   const theme = useMantineTheme();
   const userProfile = useAppStore((state) => state.userProfile);
+  const institutesById = useAppStore((state) => state.institutesById);
 
   const isSummaryOrGuidanceType =
     record.outputType === "guidance" || record.outputType === "summary";
@@ -303,7 +304,9 @@ function RenderQuestionRecrod({
               }}
             >
               Brought to you by ~{" "}
-              {userProfile ? userProfile.instituteName : null}
+              {userProfile
+                ? institutesById[userProfile.instituteName].instituteName
+                : null}
             </Badge>
           </Flex>
           <Flex direction={"row"} w={"auto"} gap={"sm"} align={"center"}>
@@ -611,3 +614,4 @@ function QuestionContainer({ subscription, isLoading }: Props) {
 }
 
 export { QuestionContainer };
+

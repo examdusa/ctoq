@@ -1,7 +1,7 @@
 "use client";
 
 import { trpc } from "@/app/_trpc/client";
-import { useAppStore } from "@/store/app-store";
+import { defaultStoreState, useAppStore } from "@/store/app-store";
 import { getInstitutes } from "@/utllities/apiFunctions";
 import { Institute } from "@/utllities/zod-schemas-types";
 import { useUser } from "@clerk/nextjs";
@@ -22,7 +22,7 @@ function AppOrchestrator() {
     onSuccess: (data) => {
       const institutes = data.reduce<Record<string, Institute>>(
         (acc, institute) => {
-          acc[institute.instituteId] = { ...institute };
+          acc[institute.guid] = { ...institute };
           return acc;
         },
         {}
@@ -92,6 +92,10 @@ function AppOrchestrator() {
 
       fetchUserProfileDetails();
     }
+
+    if (!isSignedIn) {
+      useAppStore.setState({ ...defaultStoreState });
+    }
   }, [
     user,
     isLoaded,
@@ -99,10 +103,11 @@ function AppOrchestrator() {
     userProfileDetails,
     getProfileDetails,
     saveUserDetails,
-    setUserProfile
+    setUserProfile,
   ]);
 
   return null;
 }
 
 export { AppOrchestrator };
+

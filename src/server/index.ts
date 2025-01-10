@@ -193,7 +193,7 @@ export const appRouter = router({
             googleid: googleid ?? null,
             language,
             role,
-            instituteName: "Content To Quiz",
+            instituteName: "https://www.content2quiz.com",
           })
           .returning();
         if (records.length === 0) {
