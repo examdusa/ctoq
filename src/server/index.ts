@@ -797,24 +797,29 @@ export const appRouter = router({
       try {
         const { email, firstName, formId, lastName, questionRecordId, userId } =
           input;
-        const { rowsAffected } = await db.insert(sharedExams).values({
-          id: crypto.randomUUID(),
-          email,
-          questionRecord: questionRecordId,
-          userId,
-          firstName,
-          formId,
-          lastName,
-          shareDate: new Date(),
-        });
+        const insertedRecords = await db
+          .insert(sharedExams)
+          .values({
+            id: crypto.randomUUID(),
+            email,
+            questionRecord: questionRecordId,
+            userId,
+            firstName,
+            formId,
+            lastName,
+            shareDate: new Date(),
+          })
+          .returning();
 
-        if (rowsAffected === 0) {
+        if (insertedRecords.length === 0) {
           return {
             code: "INSERT_FAILED",
+            data: null,
           };
         }
         return {
           code: "SUCCESS",
+          data: insertedRecords[0],
         };
       } catch (err) {
         console.log(JSON.stringify(err, null, 2));
@@ -846,10 +851,10 @@ export const appRouter = router({
       try {
         let prompt = keyword;
 
-        if (outputType !== "question") {
-          if (typeof resume_data !== "string" && "name" in resume_data) {
-            prompt = resume_data.name;
-          } else {
+        if (typeof resume_data !== "string" && "name" in resume_data) {
+          prompt = resume_data.name;
+        } else {
+          if (outputType !== "question") {
             prompt = `Content based on URL`;
           }
         }

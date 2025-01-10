@@ -310,7 +310,7 @@ function RenderQuestionRecrod({
             </Badge>
           </Flex>
           <Flex direction={"row"} w={"auto"} gap={"sm"} align={"center"}>
-            <Tooltip label={"Share exam"}>
+            <Tooltip label={"Share"}>
               <ActionIcon
                 variant="transparent"
                 onClick={toggle}
@@ -347,7 +347,11 @@ function RenderQuestionRecrod({
                 </ActionIcon>
               </Tooltip>
             )}
-            <Tooltip label={"Google Quiz"}>
+            <Tooltip
+              label={
+                record.outputType === "question" ? "Google Quiz" : "Google Doc"
+              }
+            >
               <UnstyledButton
                 onClick={(e) => {
                   handleGoogleQuiz();
@@ -614,4 +618,3 @@ function QuestionContainer({ subscription, isLoading }: Props) {
 }
 
 export { QuestionContainer };
-

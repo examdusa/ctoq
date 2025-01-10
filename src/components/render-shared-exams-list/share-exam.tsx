@@ -1,27 +1,34 @@
 "use client";
 
 import { trpc } from "@/app/_trpc/client";
-import { SelectQuestionBank } from "@/db/schema";
-import { UserProfileSchema } from "@/utllities/zod-schemas-types";
+import {
+  SharedRecordSchema,
+  UserProfileSchema,
+} from "@/utllities/zod-schemas-types";
 import {
   Box,
   Button,
   CSSProperties,
   Grid,
-  Group,
   Modal,
   TextInput,
 } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
 import { useMemo } from "react";
 import { z } from "zod";
-import { OverlayModal } from "./loader";
+import { OverlayModal } from "../modals/loader";
 
 interface Props {
   opened: boolean;
   close: VoidFunction;
-  record: SelectQuestionBank;
+  record: SharedRecordSchema;
   userProfile: UserProfileSchema;
+  updateList: (
+    firstName: string | null,
+    lastName: string | null,
+    email: string,
+    shareDate: Date
+  ) => void;
 }
 
 const formObject = z.object({
@@ -32,7 +39,7 @@ const formObject = z.object({
 
 type FormSchema = z.infer<typeof formObject>;
 
-function ShareExam({ opened, close, record, userProfile }: Props) {
+function ShareExam({ opened, close, record, userProfile, updateList }: Props) {
   const {
     mutateAsync: addSharedExamRecord,
     isLoading: sharingExam,
@@ -46,7 +53,6 @@ function ShareExam({ opened, close, record, userProfile }: Props) {
     isError: shareFormError,
     isSuccess: shareFormSuccess,
   } = trpc.shareGoogleForm.useMutation();
-
   const {
     mutateAsync: shareGoogleDoc,
     isLoading: sharingDoc,
@@ -85,50 +91,52 @@ function ShareExam({ opened, close, record, userProfile }: Props) {
 
   async function handleSubmit(values: FormSchema) {
     const { email, firstName, lastName } = values;
-    const { googleFormId, id: qId, outputType, googleQuizLink } = record;
-    const { id } = userProfile;
-    if (userProfile) {
-      if (outputType === "question") {
-        if (googleQuizLink) {
-          await shareGoogleForm(
-            { email, formId: googleQuizLink },
-            {
-              onSuccess: async ({ code }) => {
-                if (code === "SUCCESS") {
-                  await addSharedExamRecord({
-                    email,
-                    firstName,
-                    lastName,
-                    formId: googleQuizLink,
-                    questionRecordId: qId,
-                    userId: id,
-                  });
-                }
-              },
+
+    const { outputType, googleQuizLink, googleFormId, questionRecord } = record;
+
+    if (outputType === "question" && googleQuizLink) {
+      await shareGoogleForm(
+        {
+          email: email,
+          formId: googleQuizLink,
+        },
+        {
+          onSuccess: async ({ code }) => {
+            if (code === "SUCCESS") {
+              await addSharedExamRecord({
+                email,
+                firstName,
+                lastName,
+                formId: googleQuizLink,
+                questionRecordId: questionRecord,
+                userId: userProfile.id,
+              });
+              updateList(firstName, lastName, email, new Date());
             }
-          );
+          },
         }
-      } else {
-        if (googleFormId) {
-          await shareGoogleDoc(
-            {
-              email,
-              formId: googleFormId,
+      );
+    } else {
+      if (googleFormId) {
+        await shareGoogleDoc(
+          {
+            email,
+            formId: googleFormId,
+          },
+          {
+            onSuccess: async (data) => {
+              await addSharedExamRecord({
+                email,
+                firstName,
+                lastName,
+                formId: googleFormId,
+                questionRecordId: questionRecord,
+                userId: userProfile.id,
+              });
+              updateList(firstName, lastName, email, new Date());
             },
-            {
-              onSuccess: async (data) => {
-                await addSharedExamRecord({
-                  email,
-                  firstName,
-                  lastName,
-                  formId: googleFormId,
-                  questionRecordId: qId,
-                  userId: id,
-                });
-              },
-            }
-          );
-        }
+          }
+        );
       }
     }
   }
@@ -173,7 +181,8 @@ function ShareExam({ opened, close, record, userProfile }: Props) {
       closeOnClickOutside={false}
       withCloseButton
       centered
-      size={"xl"}
+      size={"lg"}
+      p={"md"}
       closeOnEscape={false}
       shadow="lg"
       styles={{
@@ -186,7 +195,7 @@ function ShareExam({ opened, close, record, userProfile }: Props) {
       }}
     >
       <OverlayModal opened={sharingExam} message="Sharing exam ..." />
-      <Box py={"sm"}>
+      <Box py={"sm"} w={"100%"} h={"100%"}>
         <form
           onSubmit={form.onSubmit((values) => handleSubmit(values))}
           style={{ width: "100%", height: "100%" }}
@@ -217,15 +226,14 @@ function ShareExam({ opened, close, record, userProfile }: Props) {
               />
             </Grid.Col>
           </Grid>
-          <Group justify="self-end" mt={"md"}>
-            <Button
-              variant="filled"
-              type="submit"
-              loading={sharingExam || sharingForm || sharingDoc}
-            >
-              Share
-            </Button>
-          </Group>
+          <Button
+            variant="filled"
+            type="submit"
+            loading={sharingExam || sharingForm || sharingDoc}
+            mt={"md"}
+          >
+            Share
+          </Button>
         </form>
       </Box>
     </Modal>

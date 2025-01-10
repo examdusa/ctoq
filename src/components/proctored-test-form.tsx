@@ -106,7 +106,6 @@ const proctoredTestForm = z.object({
     .min(1, { message: "Enter a valid instructor ID" }),
 });
 
-type InstituteOptions = z.infer<typeof instituteOptionsSchema>;
 type ProctoredTestForm = z.infer<typeof proctoredTestForm>;
 
 export default function RenderProctoredTestForm({
@@ -255,7 +254,9 @@ export default function RenderProctoredTestForm({
         formattedQuestions = formatQuestion(questions, questionType);
         const payload: GoogleQuizPayloadSchema = {
           questions: formattedQuestions,
-          formTitle: record.prompt ?? "",
+          formTitle:
+            record.prompt +
+            ` Brought to you br ~ ${userProfile?.instituteName}`,
           ownerEmail: userEmail,
           studentEmail: email,
           shareWithInvite: false,
@@ -264,7 +265,9 @@ export default function RenderProctoredTestForm({
         return quizLink;
       }
       const formattedQuestions: GoogleDocSchema = {
-        title: record.prompt ?? "",
+        title:
+          record.prompt +
+          ` Brought to you br ~ ${userProfile?.instituteName}`,
         fromEmail: userEmail,
         toEmails: [email],
         requests: [
@@ -275,11 +278,11 @@ export default function RenderProctoredTestForm({
       };
       return await createDoc({ ...formattedQuestions });
     },
-    [createGQuiz, record, userEmail, createDoc]
+    [createGQuiz, record, userEmail, createDoc, userProfile?.instituteName]
   );
 
   async function createOnlyQuiz() {
-    const { questionType, outputType, id, userId } = record;
+    const { questionType, outputType } = record;
     if (questionType && outputType) {
       const quizLink = await handleCreateQuiz(
         userEmail,
@@ -528,6 +531,8 @@ export default function RenderProctoredTestForm({
     );
   }
 
+  const { outputType } = record;
+
   return (
     <Flex w={"100%"} h={"100%"} direction={"column"} gap={"sm"}>
       <Container
@@ -555,20 +560,28 @@ export default function RenderProctoredTestForm({
             !record.googleQuizLink &&
             !record.googleFormId && (
               <>
-                <Text fw={500}>Create only google quiz instead ?</Text>
+                {outputType === "question" ? (
+                  <Text fw={500}>Create only google quiz instead ?</Text>
+                ) : (
+                  <Text fw={500}>Create only google doc instead ?</Text>
+                )}
                 <Button
                   variant="filled"
                   size="xs"
                   onClick={createOnlyQuiz}
                   loading={creatingDoc || creatingQuiz}
                 >
-                  Create quiz
+                  {outputType === "question" ? "Create quiz" : "Create doc"}
                 </Button>
               </>
             )}
-          {record.googleQuizLink && (
+          {(record.googleQuizLink || record.googleFormId) && (
             <>
-              <Text fw={500}>Open google quiz ?</Text>
+              {outputType === "question" ? (
+                <Text fw={500}>Open google quiz ?</Text>
+              ) : (
+                <Text fw={500}>Open google doc ?</Text>
+              )}
               <Button
                 variant="filled"
                 size="xs"

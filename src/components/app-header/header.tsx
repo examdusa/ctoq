@@ -100,16 +100,11 @@ function AppHeader() {
         align={"center"}
       >
         <Group visibleFrom="md" gap={"sm"}>
-          <Link href={"/about"}>About us</Link>
-          <Link href={"/support"}>Support</Link>
-          <SignedOut>
-            <Link href={"/pricing"}>See plans</Link>
-          </SignedOut>
           <SignedIn>
+            <Link href={"/chat"}>Dashboard</Link>
             {user && user.id && (
               <Link href={`/shared-exams/${user.id}`}>Shared exams</Link>
             )}
-            <Link href={"/chat"}>Dashboard</Link>
             <Menu shadow="md" width={200}>
               <Menu.Target>
                 <UnstyledButton>Subscription</UnstyledButton>
@@ -150,6 +145,11 @@ function AppHeader() {
               </Menu.Dropdown>
             </Menu>
           </SignedIn>
+          <Link href={"/about"}>About us</Link>
+          <Link href={"/support"}>Support</Link>
+          <SignedOut>
+            <Link href={"/pricing"}>See plans</Link>
+          </SignedOut>
         </Group>
         <Burger
           opened={burgerOpened}

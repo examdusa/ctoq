@@ -43,6 +43,8 @@ export type GoogleQuizPayloadSchema = z.infer<typeof googleQuizPayloadSchema>;
 export type GoogleQuizQuestionsSchema = z.infer<typeof googleQuizQuestions>;
 
 function GoogleQuizModal({ open, close, record, userEmail }: Props) {
+  const { outputType } = record;
+
   return (
     <Modal
       opened={open}
@@ -51,7 +53,7 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
       centered
       closeOnClickOutside={false}
       closeOnEscape={false}
-      title={"Google Quiz"}
+      title={outputType === "question" ? "Google Quiz" : "Google Doc"}
       styles={{
         body: {
           width: "100%",
@@ -88,4 +90,3 @@ function GoogleQuizModal({ open, close, record, userEmail }: Props) {
 }
 
 export { GoogleQuizModal };
-

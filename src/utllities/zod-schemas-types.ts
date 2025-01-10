@@ -195,6 +195,22 @@ const questionBankSchema = z.object({
   googleFormId: z.string(),
 });
 
+const sharedRecordSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  questionRecord: z.string(),
+  formId: z.string().nullable(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  email: z.string().email(),
+  shareDate: z.date().nullable(),
+  prompt: z.string().nullable(),
+  googleQuizLink: z.string().nullable(),
+  googleFormId: z.string().nullable(),
+  outputType: z.string().nullable()
+});
+
+type SharedRecordSchema = z.infer<typeof sharedRecordSchema>
 type QuestionBankSchema = z.infer<typeof questionBankSchema>;
 type GoogleDocSchema = z.infer<typeof googleDocSchema>;
 type SubmitJobPayloadSchema = z.infer<typeof submitJobPayloadSchema>;
@@ -234,6 +250,7 @@ export {
   baseResultSchema,
   googleDocSchema,
   questionBankSchema,
+  sharedRecordSchema
 };
 export type {
   FillBlankQuestionSchema,
@@ -254,4 +271,5 @@ export type {
   BaseResultSchema,
   GoogleDocSchema,
   QuestionBankSchema,
+  SharedRecordSchema
 };

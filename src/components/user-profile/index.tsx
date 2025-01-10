@@ -5,6 +5,7 @@ import { SelectUser } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import { useUser } from "@clerk/nextjs";
 import {
+  Alert,
   Button,
   Container,
   Divider,
@@ -16,6 +17,7 @@ import {
   Text,
 } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
+import { IconInfoCircle } from "@tabler/icons-react";
 import Image from "next/image";
 import { useMemo } from "react";
 import { z } from "zod";
@@ -74,6 +76,7 @@ function UserProfileDetail({ userDetail }: Props) {
     mutateAsync: updateDetails,
     isLoading: updatingDetails,
     isError: udpateError,
+    isSuccess: updateSuccess,
   } = trpc.updateUserProfileDetails.useMutation();
 
   const basicForm = useForm<BaseDetailForm>({
@@ -100,17 +103,11 @@ function UserProfileDetail({ userDetail }: Props) {
     const { role, language, instituteName } = values;
     const { id } = userDetail;
 
-    let instName = "Content To Quiz";
-
-    if (institutesById) {
-      instName = institutesById[instituteName].instituteName;
-    }
-
     try {
       await updateDetails(
         {
           role,
-          instituteName: instName,
+          instituteName,
           language,
           id,
         },
@@ -235,6 +232,30 @@ function UserProfileDetail({ userDetail }: Props) {
                 >
                   Save
                 </Button>
+                {updateSuccess && !updatingDetails && (
+                  <Alert
+                    variant="light"
+                    color="lime"
+                    title="Success"
+                    icon={<IconInfoCircle />}
+                    mt={"md"}
+                    mx={"lg"}
+                  >
+                    Profile updated successfully
+                  </Alert>
+                )}
+                {udpateError && !updatingDetails && (
+                  <Alert
+                    variant="light"
+                    color="orange"
+                    title="Faild"
+                    icon={<IconInfoCircle />}
+                    mt={"md"}
+                    mx={"lg"}
+                  >
+                    Profile update failed.
+                  </Alert>
+                )}
               </Paper>
             </form>
           </Tabs.Panel>
@@ -245,4 +266,3 @@ function UserProfileDetail({ userDetail }: Props) {
 }
 
 export { UserProfileDetail };
-

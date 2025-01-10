@@ -1,17 +1,17 @@
 import { ThemeWrapper } from "@/components/app-layout";
 import { RenderSharedExamsList } from "@/components/render-shared-exams-list";
 import { db } from "@/db";
+import { questionbank, sharedExams, userProfile } from "@/db/schema";
 import {
-  questionbank,
-  SelectSharedExams,
-  sharedExams,
-  userProfile,
-} from "@/db/schema";
-import { Flex } from "@mantine/core";
+  SharedRecordSchema,
+  sharedRecordSchema,
+} from "@/utllities/zod-schemas-types";
+import { Flex, Paper } from "@mantine/core";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
-export interface SharedExamDetail extends SelectSharedExams {
-  prompt: string | null;
+export interface GroupedRecords {
+  [key: string]: { prompt: string; records: SharedRecordSchema[] };
 }
 
 export default async function SharedExams({
@@ -21,37 +21,45 @@ export default async function SharedExams({
 }) {
   const id = (await params).id;
 
-  const records: SharedExamDetail[] = await db
+  const records = await db
     .select({
       id: sharedExams.id,
       userId: sharedExams.userId,
-      questionRecord: sharedExams.questionRecord,
       formId: sharedExams.formId,
       firstName: sharedExams.firstName,
       lastName: sharedExams.lastName,
       email: sharedExams.email,
-      shareDate: sharedExams.shareDate ?? new Date(),
+      shareDate: sharedExams.shareDate,
       prompt: questionbank.prompt,
+      googleQuizLink: questionbank.googleQuizLink,
+      googleFormId: questionbank.googleFormId,
+      outputType: questionbank.outputType,
+      questionRecord: sharedExams.questionRecord,
     })
     .from(sharedExams)
-    .innerJoin(questionbank, eq(sharedExams.questionRecord, questionbank.id))
+    .innerJoin(questionbank, eq(sharedExams.questionRecord, questionbank.jobId))
     .innerJoin(userProfile, eq(questionbank.userId, userProfile.id))
     .where(eq(sharedExams.userId, id));
 
-  const groupedRecords = records.reduce<
-    Record<string, { records: SharedExamDetail[]; propmt: string }>
-  >((acc, record) => {
-    const { questionRecord, prompt } = record; 
+  const { success, data } = z.array(sharedRecordSchema).safeParse(records);
 
-    if (!acc[questionRecord]) {
-      acc[questionRecord] = { propmt: prompt ?? '', records: [] }; 
-    }
+  let groupedRecords: GroupedRecords = {};
 
-    acc[questionRecord].records.push(record); 
-    return acc;
-  }, {});
+  if (success) {
+    groupedRecords = data.reduce<GroupedRecords>((acc, record) => {
+      const { questionRecord, prompt } = record;
 
-  console.log(records);
+      if (!acc[questionRecord]) {
+        acc[questionRecord] = {
+          records: [],
+          prompt: prompt ?? "N/A",
+        };
+      }
+
+      acc[questionRecord].records.push(record);
+      return acc;
+    }, {});
+  }
 
   return (
     <ThemeWrapper>
@@ -60,10 +68,11 @@ export default async function SharedExams({
         h={"100%"}
         w={"100%"}
         align={"center"}
-        justify={"center"}
         p={"xl"}
       >
-        <RenderSharedExamsList exams={groupedRecords} />
+        <Paper withBorder radius={"sm"} w={"100%"} maw={"auto"}>
+          <RenderSharedExamsList records={groupedRecords} />
+        </Paper>
       </Flex>
     </ThemeWrapper>
   );

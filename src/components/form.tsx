@@ -46,7 +46,7 @@ export const formObject = z
       "open_ended",
     ]),
     difficulty: z.enum(["easy", "medium", "hard"]),
-    qCount: z.number().min(0).max(30),
+    qCount: z.number().min(0).max(50),
     keyword: z.string(),
     resumeUrl: z.string().url({ message: "Enter resume url" }),
     resumeFile: z.instanceof(File) as z.ZodType<File | null>,
@@ -348,6 +348,8 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
     );
   }
 
+  const { outputType } = form.values;
+
   return (
     <>
       <ScrollArea
@@ -383,6 +385,19 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
                 ]}
               />
             </Grid.Col>
+            <Grid.Col span={6}>
+              <Select
+                label="Output Type"
+                placeholder="Pick an output type"
+                disabled={disableFields}
+                data={[
+                  { label: "Question Bank", value: "question" },
+                  { label: "Guidance", value: "guidance" },
+                  { label: "Summary", value: "summary" },
+                ]}
+                {...form.getInputProps("outputType")}
+              />
+            </Grid.Col>
             {form.values.outputType === "question" && (
               <Grid.Col span={6}>
                 <Select
@@ -400,19 +415,6 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
                 />
               </Grid.Col>
             )}
-            <Grid.Col span={6}>
-              <Select
-                label="Output Type"
-                placeholder="Pick an output type"
-                disabled={disableFields}
-                data={[
-                  { label: "Question Bank", value: "question" },
-                  { label: "Guidance", value: "guidance" },
-                  { label: "Summary", value: "summary" },
-                ]}
-                {...form.getInputProps("outputType")}
-              />
-            </Grid.Col>
             {form.values.outputType === "question" && (
               <Grid.Col span={6}>
                 <Select
@@ -444,7 +446,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
                   max={
                     subscription && subscription.planId
                       ? priceDetails[subscription.planId].label === "Integrated"
-                        ? 30
+                        ? 50
                         : 10
                       : 10
                   }
@@ -682,7 +684,9 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
                 type="submit"
                 leftSection={<WithAnswersIcon />}
               >
-                Generate questions
+                {outputType === "question" && "Generate questions"}
+                {outputType === "guidance" && "Generate guidance"}
+                {outputType === "summary" && "Generate summary"}
               </Button>
             </Grid.Col>
             <Grid.Col span={12}>
