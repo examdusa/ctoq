@@ -62,6 +62,7 @@ function AppOrchestrator() {
           ]);
 
         const { code, data } = profileDetials;
+        console.log(code, data);
 
         if (code === "SUCCESS" && data) {
           setUserProfile({
@@ -111,8 +112,11 @@ function AppOrchestrator() {
           setQuestions({});
         }
 
-        if (subscriptionDetails) {
-          setSubscription(subscriptionDetails);
+        if (
+          subscriptionDetails.code === "SUCCESS" &&
+          subscriptionDetails.data
+        ) {
+          setSubscription(subscriptionDetails.data);
         }
       }
 

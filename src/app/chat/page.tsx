@@ -28,7 +28,7 @@ export default function ChatContainer() {
   if (!userProfile || !institutesById) {
     return <DashboardLoader />;
   }
-
+  
   return (
     <ThemeWrapper>
       <Flex direction={"row"} w={"100%"} h={"100%"} justify={"center"} gap={10}>

@@ -217,21 +217,29 @@ export const appRouter = router({
         userId: z.string(),
       })
     )
-    .mutation(async ({ ctx, input }): Promise<SelectSubscription> => {
-      try {
-        const res: SelectSubscription[] = await db
-          .select()
-          .from(subscription)
-          .where(eq(subscription.userId, input.userId));
-        if (res.length > 0) {
-          return res[0];
+    .mutation(
+      async ({
+        ctx,
+        input,
+      }): Promise<{
+        code: "SUCCESS" | "NOT_FOUND";
+        data: SelectSubscription | null;
+      }> => {
+        try {
+          const res: SelectSubscription[] = await db
+            .select()
+            .from(subscription)
+            .where(eq(subscription.userId, input.userId));
+          if (res.length > 0) {
+            return { code: "SUCCESS", data: res[0] };
+          }
+          return { code: "NOT_FOUND", data: null };
+        } catch (err) {
+          console.error("GET_SUBS_DETAILS_ERROR: ", err);
+          throw new Error("Error fetching subscription details");
         }
-        throw new Error("Error fetching subscription details");
-      } catch (err) {
-        console.error("GET_SUBS_DETAILS_ERROR: ", err);
-        throw new Error("Error fetching subscription details");
       }
-    }),
+    ),
   updateQueryCount: procedure
     .input(
       z.object({

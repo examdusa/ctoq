@@ -256,7 +256,7 @@ export default function RenderProctoredTestForm({
           questions: formattedQuestions,
           formTitle:
             record.prompt +
-            ` Brought to you br ~ ${userProfile?.instituteName}`,
+            ` Brought to you by ~ ${userProfile?.instituteName}`,
           ownerEmail: userEmail,
           studentEmail: email,
           shareWithInvite: false,
@@ -267,7 +267,7 @@ export default function RenderProctoredTestForm({
       const formattedQuestions: GoogleDocSchema = {
         title:
           record.prompt +
-          ` Brought to you br ~ ${userProfile?.instituteName}`,
+          ` Brought to you by ~ ${userProfile?.instituteName}`,
         fromEmail: userEmail,
         toEmails: [email],
         requests: [
