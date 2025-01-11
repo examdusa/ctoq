@@ -32,7 +32,7 @@ interface State {
     }
   >;
   userProfile: UserProfileSchema | null;
-  institutesById: { [key: string]: Institute };
+  institutesById: { [key: string]: Institute } | null;
 }
 
 interface PendingJobDetail {
@@ -58,7 +58,7 @@ interface Actions {
   setUserProfile: (profile: UserProfileSchema) => void;
   updateQuestionsList: (questions: Record<string, SelectQuestionBank>) => void;
   deletePendingJob: (jobId: string) => void;
-  setInstitues: (institutes: { [key: string]: Institute }) => void;
+  setInstitues: (institutes: { [key: string]: Institute } | null) => void;
 }
 
 export type Store = State & Actions;
@@ -70,7 +70,7 @@ export const defaultStoreState: State = {
   generatingQuestions: false,
   pendingJobsWithId: {},
   userProfile: null,
-  institutesById: {},
+  institutesById: null,
 };
 
 export const useAppStore = create<Store>()(

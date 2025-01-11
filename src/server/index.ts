@@ -106,7 +106,7 @@ export const appRouter = router({
           }
           console.log("Profile data validation failed", error);
         }
-        throw new Error("USER_NOT_FOUND");
+        return { code: "USER_NOT_FOUND", data: null };
       } catch (err) {
         console.log("GetProfileDetails error: ", JSON.stringify(err, null, 2));
         throw new Error("USER_NOT_FOUND");

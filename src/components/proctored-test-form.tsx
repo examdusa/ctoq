@@ -427,7 +427,7 @@ export default function RenderProctoredTestForm({
   );
 
   async function handleInstructorIdInput(value: string) {
-    if (!userProfile) return;
+    if (!userProfile || !institutesById) return;
     const { instituteName } = userProfile;
     if (!instituteName) {
       form.setFieldError("instituteName", "Select institure first");

@@ -64,7 +64,7 @@ dayjs.extend(utc);
 
 interface Props {
   subscription: SelectSubscription | undefined;
-  isLoading: boolean;
+  questions: Record<string, SelectQuestionBank>
 }
 
 interface RenderQuestionRecordProps {
@@ -304,7 +304,7 @@ function RenderQuestionRecrod({
               }}
             >
               Brought to you by ~{" "}
-              {userProfile
+              {userProfile && institutesById
                 ? institutesById[userProfile.instituteName].instituteName
                 : null}
             </Badge>
@@ -506,11 +506,10 @@ function RenderQuestionRecrod({
   );
 }
 
-function QuestionContainer({ subscription, isLoading }: Props) {
+function QuestionContainer({ subscription, questions }: Props) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { user } = useUser();
-  const questions = useAppStore((state) => state.questions);
   const renderQIdx = useAppStore((state) => state.renderQIdx);
 
   const { mutateAsync: deleteQuestionBank, isLoading: deletingQBank } =
@@ -551,28 +550,7 @@ function QuestionContainer({ subscription, isLoading }: Props) {
   if (!subscription) {
     return (
       <Flex direction={"column"} w={"100%"} my={"xs"} align={"center"} gap={10}>
-        <OverlayModal opened={isLoading} width={80} height={80} />
         <Pricing subscriptionDetails={subscription} />
-      </Flex>
-    );
-  }
-
-  if (!question) {
-    return (
-      <Flex
-        direction={"column"}
-        w={"100%"}
-        styles={{
-          root: {
-            flexGrow: 1,
-          },
-        }}
-        align={"center"}
-        gap={10}
-        justify={"center"}
-      >
-        <OverlayModal opened={isLoading} width={80} height={80} />
-        <NoQuestion />
       </Flex>
     );
   }
@@ -602,8 +580,7 @@ function QuestionContainer({ subscription, isLoading }: Props) {
         px={"sm"}
         gap={10}
       >
-        <OverlayModal opened={isLoading} width={80} height={80} />
-        {user && user.primaryEmailAddressId && (
+        {user && user.primaryEmailAddressId && question && (
           <RenderQuestionRecrod
             record={question}
             planName={subscription.planName ?? ""}
