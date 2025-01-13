@@ -48,7 +48,6 @@ import AddTrueFalseQuestion from "./modals/add-truefalse-question-modal";
 import { AlertModal } from "./modals/alert-modal";
 import EditQuestionLabelModal from "./modals/edit-question-label";
 import { GoogleQuizModal } from "./modals/google-quiz-modal";
-import { OverlayModal } from "./modals/loader";
 import { ShareExam } from "./modals/share-exam";
 import { NoQuestion } from "./no-question";
 import { Pricing } from "./pricing";
@@ -64,7 +63,7 @@ dayjs.extend(utc);
 
 interface Props {
   subscription: SelectSubscription | undefined;
-  questions: Record<string, SelectQuestionBank>
+  questions: Record<string, SelectQuestionBank>;
 }
 
 interface RenderQuestionRecordProps {
@@ -563,12 +562,12 @@ function QuestionContainer({ subscription, questions }: Props) {
       p={3}
       viewportRef={viewportRef}
     >
+      <NoQuestion />
       <Flex
         direction={"column"}
         w={"100%"}
         h={"100%"}
         ref={containerRef}
-        p={0}
         id="question-container"
         styles={{
           root: {

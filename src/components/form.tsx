@@ -2,10 +2,7 @@
 import { trpc } from "@/app/_trpc/client";
 import { SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
-import {
-  GenerateQuestionsPayload,
-  pollGeneratedResult,
-} from "@/utllities/apiFunctions";
+import { GenerateQuestionsPayload } from "@/utllities/apiFunctions";
 import { encodeFileToBase64 } from "@/utllities/helpers";
 import {
   Button,
@@ -28,7 +25,6 @@ import "@mantine/dropzone/styles.css";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { IconFile3d, IconInfoCircle, IconX } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import z from "zod";
 import { PriceDetail } from "./criteria-form";
@@ -82,6 +78,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
   >("Keywords");
   const userProfile = useAppStore((state) => state.userProfile);
   const updateQuestionsList = useAppStore((state) => state.updateQuestionsList);
+  const addToPendingJobs = useAppStore((state) => state.addToPendingJobs);
   const theme = useMantineTheme();
   const [attempt, setAttempt] = useState(0);
 
@@ -94,9 +91,8 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
     showPendingAlert,
     { close: closePendingAlert, open: openPendingAlert },
   ] = useDisclosure();
-  const { mutateAsync: fetchGenerationResult } = useMutation({
-    mutationFn: pollGeneratedResult,
-  });
+  const { mutateAsync: fetchGenerationResult } =
+    trpc.fetchGeneratedQuestions.useMutation();
 
   const form = useForm<FormSchema>({
     mode: "controlled",
@@ -293,18 +289,26 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
         qCount,
         questionType: qType,
         userId,
-        contentType,
       },
       {
         onSettled: async (settledResult, error) => {
-          if (error) {
-            if ((error as any) === "TIMEOUT") {
-              openPendingAlert();
-              const closeInterval = setInterval(() => {
-                closePendingAlert();
-                clearInterval(closeInterval);
-              }, 2000);
-            }
+          if (error?.message === "PROCESSING") {
+            openPendingAlert();
+            const closeInterval = setInterval(() => {
+              closePendingAlert();
+              clearInterval(closeInterval);
+            }, 2000);
+            addToPendingJobs({
+              jobId: job_id,
+              userId: userId,
+              difficulty,
+              keyword,
+              outputType,
+              qCount,
+              questionType: qType,
+              contentType,
+            });
+            return;
           }
           if (settledResult) {
             const { code, data } = settledResult;
@@ -336,13 +340,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
           }
         },
         onError: (err) => {
-          if ((err as any) === "TIMEOUT") {
-            openPendingAlert();
-            const closeInterval = setInterval(() => {
-              closePendingAlert();
-              clearInterval(closeInterval);
-            }, 2000);
-          }
+          console.log("fetchResultsError: ", err);
         },
       }
     );
@@ -367,7 +365,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
           className="w-full"
         >
           <Grid p={"xs"} py={0} gutter={{ xs: "xs", md: "sm" }}>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ xs: 12, md: 6 }}>
               <Select
                 label="Content Type"
                 placeholder="Pick a type"
@@ -385,7 +383,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
                 ]}
               />
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ xs: 12, md: 6 }}>
               <Select
                 label="Output Type"
                 placeholder="Pick an output type"
@@ -399,7 +397,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
               />
             </Grid.Col>
             {form.values.outputType === "question" && (
-              <Grid.Col span={6}>
+              <Grid.Col span={{ xs: 12, md: 6 }}>
                 <Select
                   label="Question Type"
                   placeholder="Pick a type"
@@ -416,7 +414,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
               </Grid.Col>
             )}
             {form.values.outputType === "question" && (
-              <Grid.Col span={6}>
+              <Grid.Col span={{ xs: 12, md: 6 }}>
                 <Select
                   label="Difficulty"
                   styles={{
@@ -436,7 +434,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
               </Grid.Col>
             )}
             {form.values.outputType === "question" && (
-              <Grid.Col span={6}>
+              <Grid.Col span={{ xs: 12, md: 6 }}>
                 <NumberInput
                   label="# of Questions"
                   disabled={disableFields}
@@ -455,7 +453,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
             )}
             {form.values.outputType !== "question" &&
               contentType === "Resume" && (
-                <Grid.Col span={6}>
+                <Grid.Col span={{ xs: 12, md: 6 }}>
                   <DatePickerInput
                     label="Pick DOB"
                     placeholder="Pick DOB"

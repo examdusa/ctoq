@@ -70,7 +70,7 @@ function CriteriaForm({ subscription }: Props) {
       gap={"xs"}
       maw={{ xs: "30%", md: "25%" }}
       my={"xs"}
-      p={0}
+      p={"xs"}
       styles={{
         root: {
           border: `1.5px solid ${

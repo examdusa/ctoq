@@ -3,8 +3,6 @@
 import { trpc } from "@/app/_trpc/client";
 import { SelectQuestionBank } from "@/db/schema";
 import { PendingJobDetail, useAppStore } from "@/store/app-store";
-import { pollGeneratedResult } from "@/utllities/apiFunctions";
-import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 
 function PendingJobsHandler() {
@@ -16,16 +14,16 @@ function PendingJobsHandler() {
   const deletePendingJob = useAppStore((state) => state.deletePendingJob);
   const ongoingJobPolling = useRef<Set<string>>(new Set());
 
-  const { mutateAsync: pollResult } = useMutation({
-    mutationFn: pollGeneratedResult,
-    retry: (_, error) => {
-      if ((error as any) === "TIMEOUT") {
-        return true;
-      }
-      return false;
-    },
-    retryDelay: 5000,
-  });
+  const { mutateAsync: pollGeneratedResult } =
+    trpc.fetchGeneratedQuestions.useMutation({
+      retry: (_, error) => {
+        if (error.message === "PROCESSING") {
+          return true;
+        }
+        return false;
+      },
+      retryDelay: 2500,
+    });
 
   const addToQuestionsList = useCallback(
     (job_id: string, result: SelectQuestionBank) => {
@@ -37,10 +35,11 @@ function PendingJobsHandler() {
 
   const pollPendingJobsResult = useCallback(
     async (job: PendingJobDetail) => {
-      await pollResult(
+      await pollGeneratedResult(
         { ...job },
         {
           onSuccess: async (data) => {
+            if (!data) return;
             const { code, data: result } = data;
             if (code === "SUCCESS") {
               ongoingJobPolling.current.delete(job.jobId);
@@ -77,20 +76,10 @@ function PendingJobsHandler() {
               }
             }
           },
-          onError: async (err) => {
-            console.error(
-              `Error polling job ${job.jobId}:`,
-              JSON.stringify(err, null, 2)
-            );
-
-            if ((err as any) === "TIMEOUT") {
-              await pollResult({ ...job });
-            }
-          },
         }
       );
     },
-    [userProfile, addToQuestionsList, pollResult, addQBankRecord]
+    [userProfile, addToQuestionsList, pollGeneratedResult, addQBankRecord]
   );
 
   useEffect(() => {

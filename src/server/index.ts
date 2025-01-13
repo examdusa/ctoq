@@ -602,15 +602,18 @@ export const appRouter = router({
             },
           }
         );
+        console.log(response);
         const jsonResp = await response.json();
         const { error, data } =
           generateQuestionsResponseSchema.safeParse(jsonResp);
 
         if (error) {
+          console.log(error);
           throw new Error("Invalid response");
         }
         return data;
       } catch (err) {
+        console.log(err);
         throw err;
       }
     }),
@@ -645,7 +648,7 @@ export const appRouter = router({
 
       try {
         const response = await fetch(
-          `https://augmentbyai.com/job_status/job_status/${jobId}`,
+          `https://augmentbyai.com/redis/redis_get?job_id=${jobId}`,
           {
             method: "GET",
             headers: {
@@ -653,50 +656,34 @@ export const appRouter = router({
             },
           }
         );
-        console.log(response);
-        if (response.status === 504) {
-          return "TIMEOUT_ERROR";
-        }
 
         const jsonResp = await response.json();
-        if (typeof jsonResp === "string") {
-          return "pending";
+        const { error, data, success } = z
+          .union([
+            baseResultSchema,
+            z.object({
+              callback_url: z.string().nullable(),
+              job_id: z.string(),
+              status: z.string(),
+            }),
+          ])
+          .safeParse(jsonResp);
+
+        if (success) {
+          if (data.status === "processing") {
+            throw new Error('PROCESSING')
+          }
+          if ("summary" in data) {
+            return { code: "SUCCESS", data: data };
+          }
         }
-        const { error, data } = baseResultSchema.safeParse(jsonResp);
+
         if (error) {
           console.log("RESPONSE_VALIDATION_ERROR:: ", error);
-          throw error;
-        }
-
-        try {
-          const { guidance, summary } = data;
-          const updatedRecords = await db
-            .update(questionbank)
-            .set({
-              difficultyLevel: difficulty,
-              questions: data.questions,
-              questionsCount: qCount,
-              questionType: questionType,
-              withAnswer: true,
-              guidance: guidance,
-              summary: summary,
-              outputType: outputType,
-            })
-            .where(eq(questionbank.jobId, jobId))
-            .returning();
-
-          if (updatedRecords.length === 0) {
-            throw new Error("Record insertion failed");
-          }
-          const { data: questionRecord, error } = questionBankSchema.safeParse(
-            updatedRecords[0]
-          );
-          if (error) {
-            throw new Error("QUEST_REC_VALIDATTION_ERROR");
-          }
-          return questionRecord;
-        } catch (err) {
-          throw new Error("Insert failed");
+          return {
+            code: "RESPONSE_VALIDATION_ERROR",
+            data: null,
+          };
         }
       } catch (err) {
         throw err;
