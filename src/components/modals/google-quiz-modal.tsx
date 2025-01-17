@@ -29,14 +29,17 @@ export const googleQuizQuestions = z.object({
   answer: z.string(),
   points: z.number(),
   required: z.boolean(),
+  answers: z.array(z.string()).nullable()
 });
 
 const googleQuizPayloadSchema = z.object({
   formTitle: z.string(),
+  formRules: z.string(),
   ownerEmail: z.string().email(),
   studentEmail: z.string().email(),
   questions: z.array(googleQuizQuestions),
   shareWithInvite: z.boolean(),
+  studentEmails: z.array(z.string())
 });
 
 export type GoogleQuizPayloadSchema = z.infer<typeof googleQuizPayloadSchema>;

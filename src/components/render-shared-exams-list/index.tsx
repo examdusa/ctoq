@@ -4,7 +4,11 @@ import { useAppStore } from "@/store/app-store";
 import { SharedRecordSchema } from "@/utllities/zod-schemas-types";
 import { ActionIcon, Text, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconShare3 } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconChevronUp,
+  IconShare3,
+} from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { DataTable } from "mantine-datatable";
 import { useState } from "react";
@@ -25,23 +29,12 @@ function RenderSharedExamsList({ records }: Props) {
 
   const [row, setRow] = useState<SharedRecordSchema | null>(null);
 
-  function updateLocalRecords(data: {
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-    shareDate: Date;
-  }) {
-    const { firstName, lastName, email, shareDate } = data;
-
+  function updateLocalRecords(data: SharedRecordSchema) {
     const qBank = { ...localRecords };
     if (row && row.questionRecord) {
       const records = [...localRecords[row.questionRecord].records];
       records.push({
-        ...records[0],
-        firstName,
-        lastName,
-        email,
-        shareDate: shareDate,
+        ...data,
       });
       qBank[row.questionRecord].records = [...records];
 
@@ -75,10 +68,22 @@ function RenderSharedExamsList({ records }: Props) {
         }}
         columns={[
           {
+            accessor: "",
+            title: "",
+            noWrap: true,
+            render: ({ records: { records } }) => {
+              if (expandedRowIds.includes(records[0].questionRecord)) {
+                return <IconChevronUp />;
+              }
+              return <IconChevronDown />;
+            },
+          },
+          {
             accessor: "id",
             title: "Question Id",
             noWrap: true,
             width: 300,
+            toggleable: false,
           },
           {
             accessor: "prompt",
@@ -87,29 +92,14 @@ function RenderSharedExamsList({ records }: Props) {
           },
           {
             accessor: "gooleQuizkLink",
-            title: "Quiz link",
+            title: "Quiz/ Doc link",
             noWrap: true,
             defaultToggle: false,
             render: ({ gooleQuizkLink }) => {
               if (!gooleQuizkLink) {
                 return "N/A";
               }
-              return (
-                <ActionIcon variant="transparent" component="a" target="_blank">
-                  <IconShare3 />
-                </ActionIcon>
-              );
-            },
-          },
-          {
-            accessor: "gooleFormId",
-            title: "Doc link",
-            noWrap: true,
-            render: ({ gooleFormId }) => {
-              if (!gooleFormId) {
-                return "N/A";
-              }
-              return gooleFormId;
+              return gooleQuizkLink;
             },
           },
           {
@@ -224,13 +214,8 @@ function RenderSharedExamsList({ records }: Props) {
           }}
           record={row}
           userProfile={userProfile}
-          updateList={(firstName, lastName, email, createDate) => {
-            updateLocalRecords({
-              firstName,
-              lastName,
-              email,
-              shareDate: createDate,
-            });
+          updateList={(data: SharedRecordSchema) => {
+            updateLocalRecords(data);
           }}
         />
       )}

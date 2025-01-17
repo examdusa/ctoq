@@ -465,20 +465,16 @@ export const appRouter = router({
       z.object({
         recId: z.string(),
         gQuizLink: z.string(),
-        outputType: z.string(),
+        gId: z.string(),
       })
     )
     .mutation(async ({ input }) => {
-      const { recId, gQuizLink, outputType } = input;
+      const { recId, gQuizLink, gId } = input;
 
       try {
         const { rowsAffected } = await db
           .update(questionbank)
-          .set(
-            outputType === "question"
-              ? { googleQuizLink: gQuizLink }
-              : { googleFormId: gQuizLink }
-          )
+          .set({ googleQuizLink: gQuizLink, googleFormId: gId })
           .where(eq(questionbank.id, recId));
 
         if (rowsAffected === 0) {
@@ -602,7 +598,6 @@ export const appRouter = router({
             },
           }
         );
-        console.log(response);
         const jsonResp = await response.json();
         const { error, data } =
           generateQuestionsResponseSchema.safeParse(jsonResp);
@@ -621,30 +616,10 @@ export const appRouter = router({
     .input(
       z.object({
         jobId: z.string(),
-        userId: z.string(),
-        questionType: z.enum([
-          "mcq",
-          "mcq_similar",
-          "fill_blank",
-          "true_false",
-          "open_ended",
-        ]),
-        qCount: z.number(),
-        keyword: z.string(),
-        difficulty: z.enum(["easy", "medium", "hard"]),
-        outputType: z.enum(["question", "summary", "guidance"]),
       })
     )
     .mutation(async ({ input }) => {
-      const {
-        jobId,
-        userId,
-        difficulty,
-        keyword,
-        qCount,
-        questionType,
-        outputType,
-      } = input;
+      const { jobId } = input;
 
       try {
         const response = await fetch(
@@ -671,7 +646,7 @@ export const appRouter = router({
 
         if (success) {
           if (data.status === "processing") {
-            throw new Error('PROCESSING')
+            throw new Error("PROCESSING");
           }
           if ("summary" in data) {
             return { code: "SUCCESS", data: data };
@@ -789,9 +764,29 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ input }) => {
+      const { email, firstName, formId, lastName, questionRecordId, userId } =
+        input;
       try {
-        const { email, firstName, formId, lastName, questionRecordId, userId } =
-          input;
+        const result = await db
+          .select()
+          .from(sharedExams)
+          .where(eq(sharedExams.email, email));
+
+        if (result.length > 0) {
+          return {
+            code: "SUCCESS",
+            data: null,
+          };
+        }
+      } catch (err) {
+        console.log(err);
+        return {
+          code: "INSERT_FAILED",
+          data: null,
+        };
+      }
+
+      try {
         const insertedRecords = await db
           .insert(sharedExams)
           .values({
@@ -839,20 +834,10 @@ export const appRouter = router({
           userId,
           instituteName,
           keyword,
-          contentType,
         },
       } = input;
       const { guidance, summary, questions, resume_data } = result;
       try {
-        let prompt = keyword;
-
-        if (typeof resume_data !== "string" && "name" in resume_data) {
-          prompt = resume_data.name;
-        } else {
-          if (outputType !== "question") {
-            prompt = `Content based on URL`;
-          }
-        }
         const insertedRecords = await db
           .insert(questionbank)
           .values({
@@ -871,7 +856,7 @@ export const appRouter = router({
             googleFormId: "",
             googleQuizLink: "",
             instituteName,
-            prompt: prompt,
+            prompt: keyword,
             promptUrl: "",
           })
           .returning();

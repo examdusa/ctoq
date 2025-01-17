@@ -85,13 +85,13 @@ function ShareExam({ opened, close, record, userProfile }: Props) {
 
   async function handleSubmit(values: FormSchema) {
     const { email, firstName, lastName } = values;
-    const { googleFormId, id: qId, outputType, googleQuizLink } = record;
+    const { googleFormId, id: qId, outputType } = record;
     const { id } = userProfile;
     if (userProfile) {
       if (outputType === "question") {
-        if (googleQuizLink) {
+        if (googleFormId) {
           await shareGoogleForm(
-            { email, formId: googleQuizLink },
+            { email, formId: googleFormId },
             {
               onSuccess: async ({ code }) => {
                 if (code === "SUCCESS") {
@@ -99,7 +99,7 @@ function ShareExam({ opened, close, record, userProfile }: Props) {
                     email,
                     firstName,
                     lastName,
-                    formId: googleQuizLink,
+                    formId: googleFormId,
                     questionRecordId: qId,
                     userId: id,
                   });

@@ -3,6 +3,7 @@
 import { trpc } from "@/app/_trpc/client";
 import { SelectQuestionBank } from "@/db/schema";
 import { PendingJobDetail, useAppStore } from "@/store/app-store";
+import { extractHeadingFromMarkdown } from "@/utllities/helpers";
 import { useCallback, useEffect, useRef } from "react";
 
 function PendingJobsHandler() {
@@ -55,11 +56,35 @@ function PendingJobsHandler() {
                   userId,
                   contentType,
                 } = job;
+
+                const { resume_data } = result;
+
+                let kwd = keyword;
+                if ("name" in resume_data) {
+                  kwd = resume_data.name;
+                }
+
+                if (outputType === "guidance") {
+                  const heading = extractHeadingFromMarkdown(result.guidance);
+
+                  if (heading) {
+                    kwd = heading;
+                  }
+                }
+
+                if (outputType === "summary") {
+                  const heading = extractHeadingFromMarkdown(result.summary);
+
+                  if (heading) {
+                    kwd = heading;
+                  }
+                }
+
                 const { instituteName } = userProfile;
                 const { code, data } = await addQBankRecord({
                   data: {
                     jobId,
-                    keyword,
+                    keyword: kwd,
                     outputType,
                     qCount,
                     questionType,

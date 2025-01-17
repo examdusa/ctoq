@@ -283,12 +283,6 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
     await fetchGenerationResult(
       {
         jobId: job_id,
-        difficulty,
-        keyword,
-        outputType,
-        qCount,
-        questionType: qType,
-        userId,
       },
       {
         onSettled: async (settledResult, error) => {
@@ -298,11 +292,21 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
               closePendingAlert();
               clearInterval(closeInterval);
             }, 2000);
+            let kwd = keyword;
+            if (contentType === "Courses") {
+              if (courseUrl.length > 0) {
+                kwd = courseUrl
+              }
+            } else if (contentType === 'Resume') {
+              if (resumeUrl.length > 0) {
+                kwd = resumeUrl
+              }
+            }
             addToPendingJobs({
               jobId: job_id,
               userId: userId,
               difficulty,
-              keyword,
+              keyword: kwd,
               outputType,
               qCount,
               questionType: qType,
@@ -315,11 +319,23 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
             if (code !== "PENDING") {
               if (userProfile) {
                 if (data) {
+                  let kwd = keyword;
+                  if (contentType !== "Keywords") {
+                    const { resume_data } = data;
+
+                    if ("name" in resume_data) {
+                      kwd = resume_data.name;
+                    } else if (resumeUrl.length > 0) {
+                      kwd = resumeUrl;
+                    } else if (courseUrl.length > 0) {
+                      kwd = courseUrl;
+                    }
+                  }
                   const { code, data: record } = await addQBankRecord({
                     data: {
                       difficulty,
                       jobId: job_id,
-                      keyword,
+                      keyword: kwd,
                       outputType,
                       qCount,
                       questionType: qType,

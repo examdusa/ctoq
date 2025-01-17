@@ -10,6 +10,7 @@ import {
   Button,
   CSSProperties,
   Grid,
+  Group,
   Modal,
   TextInput,
 } from "@mantine/core";
@@ -23,12 +24,7 @@ interface Props {
   close: VoidFunction;
   record: SharedRecordSchema;
   userProfile: UserProfileSchema;
-  updateList: (
-    firstName: string | null,
-    lastName: string | null,
-    email: string,
-    shareDate: Date
-  ) => void;
+  updateList: (data: SharedRecordSchema) => void;
 }
 
 const formObject = z.object({
@@ -92,26 +88,36 @@ function ShareExam({ opened, close, record, userProfile, updateList }: Props) {
   async function handleSubmit(values: FormSchema) {
     const { email, firstName, lastName } = values;
 
-    const { outputType, googleQuizLink, googleFormId, questionRecord } = record;
+    const { outputType, googleFormId, questionRecord } = record;
 
-    if (outputType === "question" && googleQuizLink) {
+    if (outputType === "question" && googleFormId) {
       await shareGoogleForm(
         {
           email: email,
-          formId: googleQuizLink,
+          formId: googleFormId,
         },
         {
           onSuccess: async ({ code }) => {
             if (code === "SUCCESS") {
-              await addSharedExamRecord({
+              const { code, data } = await addSharedExamRecord({
                 email,
                 firstName,
                 lastName,
-                formId: googleQuizLink,
+                formId: googleFormId,
                 questionRecordId: questionRecord,
                 userId: userProfile.id,
               });
-              updateList(firstName, lastName, email, new Date());
+
+              if (code === "SUCCESS" && data) {
+                updateList({
+                  ...data,
+                  outputType: record.outputType ?? null,
+                  prompt: record.prompt ?? null,
+                  googleQuizLink: record.googleQuizLink ?? null,
+                  googleFormId: record.googleFormId ?? null,
+                  shareDate: data.shareDate ? new Date(data.shareDate) : null,
+                });
+              }
             }
           },
         }
@@ -124,16 +130,28 @@ function ShareExam({ opened, close, record, userProfile, updateList }: Props) {
             formId: googleFormId,
           },
           {
-            onSuccess: async (data) => {
-              await addSharedExamRecord({
-                email,
-                firstName,
-                lastName,
-                formId: googleFormId,
-                questionRecordId: questionRecord,
-                userId: userProfile.id,
-              });
-              updateList(firstName, lastName, email, new Date());
+            onSuccess: async ({ code }) => {
+              if (code === "SUCCESS") {
+                const { code, data } = await addSharedExamRecord({
+                  email,
+                  firstName,
+                  lastName,
+                  formId: googleFormId,
+                  questionRecordId: questionRecord,
+                  userId: userProfile.id,
+                });
+
+                if (code === "SUCCESS" && data) {
+                  updateList({
+                    ...data,
+                    outputType: record.outputType ?? null,
+                    prompt: record.prompt ?? null,
+                    googleQuizLink: record.googleQuizLink ?? null,
+                    googleFormId: record.googleFormId ?? null,
+                    shareDate: data.shareDate ? new Date(data.shareDate) : null,
+                  });
+                }
+              }
             },
           }
         );
@@ -195,7 +213,7 @@ function ShareExam({ opened, close, record, userProfile, updateList }: Props) {
       }}
     >
       <OverlayModal opened={sharingExam} message="Sharing exam ..." />
-      <Box py={"sm"} w={"100%"} h={"100%"}>
+      <Box w={"100%"} h={"100%"}>
         <form
           onSubmit={form.onSubmit((values) => handleSubmit(values))}
           style={{ width: "100%", height: "100%" }}
@@ -226,14 +244,15 @@ function ShareExam({ opened, close, record, userProfile, updateList }: Props) {
               />
             </Grid.Col>
           </Grid>
-          <Button
-            variant="filled"
-            type="submit"
-            loading={sharingExam || sharingForm || sharingDoc}
-            mt={"md"}
-          >
-            Share
-          </Button>
+          <Group justify="end" mt={"md"} w={'100%'}>
+            <Button
+              variant="filled"
+              type="submit"
+              loading={sharingExam || sharingForm || sharingDoc}
+            >
+              Share
+            </Button>
+          </Group>
         </form>
       </Box>
     </Modal>

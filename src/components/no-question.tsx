@@ -26,7 +26,7 @@ function NoQuestion() {
 
   if (!renderQIdx && questionsAvailable) {
     return (
-      <Flex h={"100%"} w={"100%"} align={"center"} justify={"center"}>
+      <Flex h={"100%"} w={"100%"} align={"center"} justify={"center"} direction={"column"}>
         <Card shadow="sm" padding="lg" radius="md" withBorder w={"50%"}>
           <Card.Section
             h={{ xs: 50, md: 80 }}

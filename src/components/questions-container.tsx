@@ -557,10 +557,16 @@ function QuestionContainer({ subscription, questions }: Props) {
   return (
     <ScrollArea
       style={{ height: "calc(100vh - 8vh)", width: "100%" }}
+      h={'100%'}
       offsetScrollbars={"x"}
       my={"xs"}
       p={3}
       viewportRef={viewportRef}
+      styles={{
+        viewport: {
+          height: "100%",
+        },
+      }}
     >
       <NoQuestion />
       <Flex

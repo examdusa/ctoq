@@ -207,10 +207,21 @@ const sharedRecordSchema = z.object({
   prompt: z.string().nullable(),
   googleQuizLink: z.string().nullable(),
   googleFormId: z.string().nullable(),
-  outputType: z.string().nullable()
+  outputType: z.string().nullable(),
 });
 
-type SharedRecordSchema = z.infer<typeof sharedRecordSchema>
+const genGoogleFormOrDocResponse = z.object({
+  message: z.string().optional(),
+  code: z.number(),
+  responseStatus: z.enum(["CONTINUE", "SUCCESS", "FAILURE"]).optional(), // Adjust the enum values as needed
+  data: z.record(z.unknown()).optional(), // Allows an empty or general object structure
+  errorData: z.record(z.unknown()).optional(),
+  formId: z.string(),
+  formUrl: z.string(),
+});
+
+type GenGoolgeFormOrDocResponse = z.infer<typeof genGoogleFormOrDocResponse>;
+type SharedRecordSchema = z.infer<typeof sharedRecordSchema>;
 type QuestionBankSchema = z.infer<typeof questionBankSchema>;
 type GoogleDocSchema = z.infer<typeof googleDocSchema>;
 type SubmitJobPayloadSchema = z.infer<typeof submitJobPayloadSchema>;
@@ -233,43 +244,45 @@ type BaseResultSchema = z.infer<typeof baseResultSchema>;
 type UserProfileSchema = z.infer<typeof userProfileSchema>;
 
 export {
+  baseResultSchema,
   fillBlankQuestionSchema,
-  userProfileSchema,
   fillBlankQuizResponseSchema,
+  generateQuestionsResponseSchema,
+  genGoogleFormOrDocResponse,
+  googleDocSchema,
   instituteSchema,
-  mcqQuestionSchema,
   institutesListSchema,
+  mcqQuestionSchema,
+  mcqQuestionsSchema,
   mcqSimilarQuestionSchema,
   openEndedQuestionSchema,
   openEndedQuestionsSchema,
-  trueFalseQuestionSchema,
-  submitJobPayloadSchema,
-  trueFalseQuestionsSchema,
-  mcqQuestionsSchema,
-  generateQuestionsResponseSchema,
-  baseResultSchema,
-  googleDocSchema,
   questionBankSchema,
-  sharedRecordSchema
+  sharedRecordSchema,
+  submitJobPayloadSchema,
+  trueFalseQuestionSchema,
+  trueFalseQuestionsSchema,
+  userProfileSchema,
 };
 export type {
+  BaseResultSchema,
   FillBlankQuestionSchema,
   FillBlankQuizResponseSchema,
-  UserProfileSchema,
+  GenerateQuestionsResponseSchema,
+  GenGoolgeFormOrDocResponse,
+  GoogleDocSchema,
   Institute,
   Institutes,
+  MCQQuestionSchema,
   MCQQuestionsSchema,
   McqSimilarQuestionScheam,
   MCQSimilarQuizResponseSchema,
   OpenendedQuestionSchema,
   OpenEndedQuizResponseSchema,
+  QuestionBankSchema,
+  SharedRecordSchema,
+  SubmitJobPayloadSchema,
   TrueFalseQuestionScheam,
   TrueFalseQuestionsSchema,
-  MCQQuestionSchema,
-  SubmitJobPayloadSchema,
-  GenerateQuestionsResponseSchema,
-  BaseResultSchema,
-  GoogleDocSchema,
-  QuestionBankSchema,
-  SharedRecordSchema
+  UserProfileSchema,
 };

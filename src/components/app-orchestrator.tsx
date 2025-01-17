@@ -62,7 +62,6 @@ function AppOrchestrator() {
           ]);
 
         const { code, data } = profileDetials;
-        console.log(code, data);
 
         if (code === "SUCCESS" && data) {
           setUserProfile({

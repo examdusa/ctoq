@@ -12,6 +12,7 @@ import {
 } from "@/utllities/apiFunctions";
 import {
   FillBlankQuestionSchema,
+  GenGoolgeFormOrDocResponse,
   GoogleDocSchema,
   MCQQuestionSchema,
   McqSimilarQuestionScheam,
@@ -36,11 +37,12 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
-import { useDebouncedCallback } from "@mantine/hooks";
+import { useDebouncedCallback, useDisclosure } from "@mantine/hooks";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { z } from "zod";
+import { AlertDialog } from "./alert-dialog";
 import {
   GoogleQuizPayloadSchema,
   GoogleQuizQuestionsSchema,
@@ -118,6 +120,15 @@ export default function RenderProctoredTestForm({
   const userProfile = useAppStore((state) => state.userProfile);
   const institutesById = useAppStore((state) => state.institutesById);
   const theme = useMantineTheme();
+  const [
+    alertDialogOpenned,
+    { close: closeAlertDialog, open: openAlertDialog },
+  ] = useDisclosure();
+  const [alertProps, setAlertProps] = useState<{
+    title: string;
+    message: string;
+    variant: "success" | "error" | "info";
+  }>({ title: "", message: "", variant: "success" });
   const {
     mutateAsync: addSharedExamRecord,
     isLoading: addingRecord,
@@ -181,12 +192,14 @@ export default function RenderProctoredTestForm({
   });
 
   const updateQuestionRecord = useCallback(
-    (quizLink: string) => {
+    (link: string, id: string) => {
       const updatedQuestionsList = { ...questions };
-      updatedQuestionsList[record.jobId].googleQuizLink = quizLink;
+      const { jobId } = record;
+      updatedQuestionsList[jobId].googleQuizLink = link;
+      updatedQuestionsList[jobId].googleFormId = id;
       setQuestions({ ...updatedQuestionsList });
     },
-    [questions, record.jobId, setQuestions]
+    [questions, record, setQuestions]
   );
 
   function formatQuestion(
@@ -203,6 +216,7 @@ export default function RenderProctoredTestForm({
           questionText: question.question,
           questionType: questionTypeMap[questionType],
           required: true,
+          answers: null,
         });
       });
     } else if (questionType === "true_false") {
@@ -214,6 +228,7 @@ export default function RenderProctoredTestForm({
           questionText: question.question,
           questionType: questionTypeMap[questionType],
           required: true,
+          answers: null,
         });
       });
     } else if (questionType === "fill_blank") {
@@ -225,6 +240,7 @@ export default function RenderProctoredTestForm({
           questionText: question.question,
           questionType: questionTypeMap[questionType],
           required: true,
+          answers: null,
         });
       });
     } else if (questionType === "open_ended") {
@@ -236,6 +252,7 @@ export default function RenderProctoredTestForm({
           questionText: question.question,
           questionType: questionTypeMap[questionType],
           required: true,
+          answers: null,
         });
       });
     }
@@ -246,28 +263,40 @@ export default function RenderProctoredTestForm({
     async (
       email: string,
       questionType: string,
-      outputType: string
-    ): Promise<string> => {
+      outputType: string,
+      onlyQuiz: boolean
+    ): Promise<GenGoolgeFormOrDocResponse | null> => {
       const { questions } = record;
       if (outputType === "question") {
         let formattedQuestions: GoogleQuizQuestionsSchema[] = [];
         formattedQuestions = formatQuestion(questions, questionType);
         const payload: GoogleQuizPayloadSchema = {
           questions: formattedQuestions,
+          formRules: "",
           formTitle:
             record.prompt +
             ` Brought to you by ~ ${userProfile?.instituteName}`,
           ownerEmail: userEmail,
           studentEmail: email,
           shareWithInvite: false,
+          studentEmails: onlyQuiz ? [] : [email],
         };
-        const quizLink = await createGQuiz(payload);
-        return quizLink;
+        const { code, data } = await createGQuiz(payload);
+
+        if (code === "FAILED") {
+          setAlertProps({
+            title: "Generation failed",
+            message: "Failed to generate google form",
+            variant: "error",
+          });
+          openAlertDialog();
+        }
+
+        return data;
       }
       const formattedQuestions: GoogleDocSchema = {
         title:
-          record.prompt +
-          ` Brought to you by ~ ${userProfile?.instituteName}`,
+          record.prompt + ` Brought to you by ~ ${userProfile?.instituteName}`,
         fromEmail: userEmail,
         toEmails: [email],
         requests: [
@@ -276,25 +305,39 @@ export default function RenderProctoredTestForm({
           },
         ],
       };
-      return await createDoc({ ...formattedQuestions });
+      const { code, data } = await createDoc({ ...formattedQuestions });
+      if (code === "FAILED") {
+        setAlertProps({
+          title: "Generation failed",
+          message: "Failed to generate google doc",
+          variant: "error",
+        });
+        openAlertDialog();
+      }
+      return data;
     },
-    [createGQuiz, record, userEmail, createDoc, userProfile?.instituteName]
+    [createGQuiz, record, userEmail, createDoc, userProfile?.instituteName, openAlertDialog]
   );
 
   async function createOnlyQuiz() {
     const { questionType, outputType } = record;
     if (questionType && outputType) {
-      const quizLink = await handleCreateQuiz(
+      const response = await handleCreateQuiz(
         userEmail,
         questionType,
-        outputType
-      );
-      updateQuestionRecord(quizLink);
-      addGoogleQuizLinkToRec({
-        recId: record.id,
-        gQuizLink: quizLink,
         outputType,
-      });
+        true
+      );
+
+      if (response) {
+        const { formId, formUrl } = response;
+        updateQuestionRecord(formUrl, formId);
+        addGoogleQuizLinkToRec({
+          recId: record.id,
+          gQuizLink: formUrl,
+          gId: formId,
+        });
+      }
     }
   }
 
@@ -318,96 +361,101 @@ export default function RenderProctoredTestForm({
       googleFormId,
     } = record;
     if (questionType && outputType && userProfile) {
-      let quizLink = googleQuizLink ?? googleFormId ?? "";
+      let gRes: GenGoolgeFormOrDocResponse | null = null;
       if (outputType === "question") {
         if (!googleQuizLink) {
-          quizLink = await handleCreateQuiz(
+          gRes = await handleCreateQuiz(
             userEmail,
             questionType,
-            outputType
+            outputType,
+            false
           );
         }
       } else {
         if (!googleFormId) {
-          quizLink = await handleCreateQuiz(
+          gRes = await handleCreateQuiz(
             userEmail,
             questionType,
-            outputType
+            outputType,
+            false
           );
         }
       }
 
-      const { instituteName } = userProfile;
-      const unifiedPayload: UnifiedSchema = {
-        instituteName: instituteName,
-        userEmail: userEmail,
-        userFirstName: userFirstName,
-        userLastName: userLastName,
-        userName: userEmail,
-        courseName: courseName,
-        quizName: quizName,
-        instructorId: "" + instructorId,
-        action: "STUDENT_UNIFIED",
-        proctorCode: "",
-        quizDetails: {
-          quizType: quizType,
-          quizContentFile: quizLink,
-          quizTime: quizDuration,
-          quizQuestionCount: (
-            record.questions as
-              | MCQQuestionSchema[]
-              | FillBlankQuestionSchema[]
-              | TrueFalseQuestionScheam[]
-              | OpenendedQuestionSchema[]
-              | McqSimilarQuestionScheam[]
-          ).length,
-        },
-        assignmentDetails: {
-          assignId: "",
-          assignName: quizName,
-        },
-        quizOverrideDetails: {
-          prompt1: record.prompt ?? "",
-          prompt2: "",
-          prompt3: "",
-          quizFileName: quizLink,
-          extraTime: "30",
-        },
-        userDetails: {
-          userPassword: userEmail,
-        },
-      };
-      await postStudentUnifiedData(unifiedPayload, {
-        onSuccess: async (data) => {
-          await addSharedExamRecord({
-            email: userEmail,
-            formId: quizLink,
-            questionRecordId: id,
-            userId: userId,
-            firstName: userFirstName,
-            lastName: userLastName,
-          });
-          if (outputType === "question") {
-            if (!googleQuizLink) {
-              await addGoogleQuizLinkToRec({
-                recId: record.id,
-                gQuizLink: quizLink,
-                outputType,
-              });
-              updateQuestionRecord(quizLink);
+      if (gRes) {
+        const { formUrl, formId } = gRes;
+        const { instituteName } = userProfile;
+        const unifiedPayload: UnifiedSchema = {
+          instituteName: instituteName,
+          userEmail: userEmail,
+          userFirstName: userFirstName,
+          userLastName: userLastName,
+          userName: userEmail,
+          courseName: courseName,
+          quizName: quizName,
+          instructorId: "" + instructorId,
+          action: "STUDENT_UNIFIED",
+          proctorCode: "",
+          quizDetails: {
+            quizType: quizType,
+            quizContentFile: formUrl,
+            quizTime: quizDuration,
+            quizQuestionCount: (
+              record.questions as
+                | MCQQuestionSchema[]
+                | FillBlankQuestionSchema[]
+                | TrueFalseQuestionScheam[]
+                | OpenendedQuestionSchema[]
+                | McqSimilarQuestionScheam[]
+            ).length,
+          },
+          assignmentDetails: {
+            assignId: "",
+            assignName: quizName,
+          },
+          quizOverrideDetails: {
+            prompt1: record.prompt ?? "",
+            prompt2: "",
+            prompt3: "",
+            quizFileName: formUrl,
+            extraTime: "30",
+          },
+          userDetails: {
+            userPassword: userEmail,
+          },
+        };
+        await postStudentUnifiedData(unifiedPayload, {
+          onSuccess: async (data) => {
+            await addSharedExamRecord({
+              email: userEmail,
+              formId: formUrl,
+              questionRecordId: id,
+              userId: userId,
+              firstName: userFirstName,
+              lastName: userLastName,
+            });
+            if (outputType === "question") {
+              if (!googleQuizLink) {
+                await addGoogleQuizLinkToRec({
+                  recId: record.id,
+                  gQuizLink: formUrl,
+                  gId: formId,
+                });
+                updateQuestionRecord(formUrl, formId);
+              }
+            } else {
+              if (!googleFormId) {
+                await addGoogleQuizLinkToRec({
+                  recId: record.id,
+                  gQuizLink: formUrl,
+                  gId: formId,
+                });
+                updateQuestionRecord(formUrl, formId);
+              }
             }
-          } else {
-            if (!googleFormId) {
-              await addGoogleQuizLinkToRec({
-                recId: record.id,
-                gQuizLink: quizLink,
-                outputType,
-              });
-              updateQuestionRecord(quizLink);
-            }
-          }
-        },
-      });
+          },
+        });
+      }
     }
   }
 
@@ -459,8 +507,10 @@ export default function RenderProctoredTestForm({
         h={"100%"}
         direction={"column"}
         justify={"space-between"}
+        align={"center"}
+        flex={1}
       >
-        <Center w={"100%"} h={"100%"}>
+        <Center w={"100%"} h={"100%"} flex={"1 1 0%"}>
           <Text size="md" c={"red"}>
             Something went wrong. Please try again later.
           </Text>
@@ -721,6 +771,13 @@ export default function RenderProctoredTestForm({
           </Group>
         </form>
       )}
+      <AlertDialog
+        opened={alertDialogOpenned}
+        close={closeAlertDialog}
+        title={alertProps.title}
+        message={alertProps.message}
+        variant="error"
+      />
     </Flex>
   );
 }

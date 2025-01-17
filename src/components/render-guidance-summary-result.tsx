@@ -1,5 +1,8 @@
 import { SelectQuestionBank } from "@/db/schema";
-import { Flex, Text } from "@mantine/core";
+import { Box, Flex } from "@mantine/core";
+import "github-markdown-css";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Props {
   record: SelectQuestionBank;
@@ -18,7 +21,13 @@ function RenderGuidanceOrSummaryResult({ record }: Props) {
         style={{ objectFit: "contain" }}
         flex={1}
       >
-        <Text fw={"bold"}>{summary}</Text>
+        <Box
+          className="markdown-body"
+          style={{ backgroundColor: "transparent", color: "black" }}
+          p={"sm"}
+        >
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{summary}</ReactMarkdown>
+        </Box>
       </Flex>
     );
   }
@@ -31,7 +40,13 @@ function RenderGuidanceOrSummaryResult({ record }: Props) {
       style={{ objectFit: "contain" }}
       flex={1}
     >
-      <Text fw={"bold"}>{guidance}</Text>
+      <Box
+        className="markdown-body"
+        style={{ backgroundColor: "transparent", color: "black" }}
+        p={"sm"}
+      >
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{guidance}</ReactMarkdown>
+      </Box>
     </Flex>
   );
 }

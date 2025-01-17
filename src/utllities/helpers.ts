@@ -49,9 +49,18 @@ function encodeFileToBase64(file: File): Promise<string> {
   });
 }
 
+const extractHeadingFromMarkdown = (markdown: string) => {
+  const match = markdown.match(/^#\s.+?\n([\s\S]*?)^##/m);
+  if (match && match[0]) {
+    return match[0].trim().replace(/[#*`>_-]/g, '').trim();
+  }
+  return null;
+};
+
 export {
   dateFormatter,
   encodeFileToBase64,
   generateAsciiCharFromNumber,
   updateQBankRecordScheam,
+  extractHeadingFromMarkdown
 };

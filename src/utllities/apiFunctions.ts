@@ -3,6 +3,7 @@ import z from "zod";
 import {
   fillBlankQuizResponseSchema,
   FillBlankQuizResponseSchema,
+  genGoogleFormOrDocResponse,
   GoogleDocSchema,
   Institutes,
   institutesListSchema,
@@ -327,9 +328,7 @@ async function uploadResume(
   }
 }
 
-async function createGoogleQuizForm(
-  payload: GoogleQuizPayloadSchema
-): Promise<string> {
+async function createGoogleQuizForm(payload: GoogleQuizPayloadSchema) {
   try {
     const response = await fetch(
       "https://autoproctor.com/canvaslms/api/v1/google-form/create",
@@ -342,14 +341,26 @@ async function createGoogleQuizForm(
         },
       }
     );
-    const parsedRes = await response.text();
-    return parsedRes;
+
+    if (!response.ok) {
+      throw new Error("GOOGLE_QUIZ_CREATE_FAILED");
+    }
+
+    const jsonResp = await response.json()
+
+    const { success, data, error } = genGoogleFormOrDocResponse.safeParse(jsonResp);
+
+    console.log(error)
+    if (success) {
+      return { code: "SUCCESS", data };
+    }
+    return { code: "FAILED", data: null };
   } catch (err) {
     throw err;
   }
 }
 
-async function createGoogleDoc(payload: GoogleDocSchema): Promise<string> {
+async function createGoogleDoc(payload: GoogleDocSchema) {
   try {
     const response = await fetch(
       "https://autoproctor.com/canvaslms/api/v1/google-doc",
@@ -362,9 +373,18 @@ async function createGoogleDoc(payload: GoogleDocSchema): Promise<string> {
         },
       }
     );
-    const parsedRes: { message: string; responseStatus: string; code: number } =
-      await response.json();
-    return parsedRes.message;
+
+    if (!response.ok) {
+      throw new Error("GOOGLE_DOC_CREATE_FAILED");
+    }
+
+    const jsonResp = await response.json()
+    const { success, data } = genGoogleFormOrDocResponse.safeParse(jsonResp);
+
+    if (success) {
+      return { code: "SUCCESS", data };
+    }
+    return { code: "FAILED", data: null };
   } catch (err) {
     throw err;
   }
