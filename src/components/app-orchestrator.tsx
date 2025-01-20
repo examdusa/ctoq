@@ -68,33 +68,34 @@ function AppOrchestrator() {
             ...data,
             createdAt: new Date(data.createdAt),
           });
-        } else if (code === "USER_NOT_FOUND" || !data) {
-          if (user) {
-            await saveUserDetails(
-              {
-                appTheme: "dark",
-                email: user.emailAddresses[0].emailAddress,
-                firstname: user.firstName,
-                googleid: "",
-                id: user.id,
-                lastname: user.lastName,
-                language: "english",
-                role: "instructor",
-              },
-              {
-                onSuccess: (data) => {
-                  setUserProfile({
-                    ...data,
-                    createdAt: new Date(data.createdAt),
-                  });
-                },
-                onError: (err) => {
-                  console.log(JSON.stringify(err, null, 2));
-                },
-              }
-            );
-          }
         }
+        // else if (code === "USER_NOT_FOUND" || !data) {
+        //   if (user) {
+        //     await saveUserDetails(
+        //       {
+        //         appTheme: "dark",
+        //         email: user.emailAddresses[0].emailAddress,
+        //         firstname: user.firstName,
+        //         googleid: "",
+        //         id: user.id,
+        //         lastname: user.lastName,
+        //         language: "english",
+        //         role: "instructor",
+        //       },
+        //       {
+        //         onSuccess: (data) => {
+        //           setUserProfile({
+        //             ...data,
+        //             createdAt: new Date(data.createdAt),
+        //           });
+        //         },
+        //         onError: (err) => {
+        //           console.log(JSON.stringify(err, null, 2));
+        //         },
+        //       }
+        //     );
+        //   }
+        // }
 
         if (questions) {
           const formattedQuestions: Record<string, SelectQuestionBank> = {};
