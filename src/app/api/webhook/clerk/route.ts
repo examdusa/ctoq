@@ -27,6 +27,7 @@ async function handleUserCreated(userData: UserJSON) {
       language: "english",
       googleid: googleId,
       createdAt: new Date(),
+      instituteName: 'https://www.content2quiz.com'
     });
   } catch (error) {
     console.error("Error handling user creation:", error);
