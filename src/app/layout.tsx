@@ -8,6 +8,7 @@ import Provider from "./_trpc/provider";
 import "./globals.css";
 import PendingJobsHandler from "@/components/pending-jobs-handler";
 import { AppOrchestrator } from "@/components/app-orchestrator";
+import '@mantine/notifications/styles.css';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",

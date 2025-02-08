@@ -2,7 +2,7 @@
 
 import { SelectSubscription } from "@/db/schema";
 import { createCheckoutSession } from "@/utllities/apiFunctions";
-import { PRICE_LIST, PriceDetail } from "@/utllities/constants";
+import { PRICE_MAP, PriceDetail } from "@/utllities/constants";
 import { useUser } from "@clerk/nextjs";
 import {
   Button,
@@ -23,7 +23,6 @@ import { useMutation } from "@tanstack/react-query";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-
 
 interface PriceItemProps {
   item: PriceDetail;
@@ -218,11 +217,12 @@ function Pricing({ subscriptionDetails }: Props) {
       <Flex
         direction={{ xs: "column", md: "row" }}
         w={"100%"}
+        maw={{ xs: "90%", md: "60%", xl: "40%" }}
         gap={{ xs: "xs", md: "lg" }}
         p={{ xs: "xs", md: "lg" }}
         justify={"space-around"}
       >
-        {PRICE_LIST.map((item, index) => (
+        {Object.values(PRICE_MAP).map((item, index) => (
           <RenderPriceItem
             key={index}
             item={item}

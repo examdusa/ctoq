@@ -57,10 +57,19 @@ const extractHeadingFromMarkdown = (markdown: string) => {
   return null;
 };
 
+function calculateAmountAfterDiscount(amount: number, discountPercentage: number) {
+  const discountValue = (amount * discountPercentage) / 100
+
+  return parseInt((amount - discountValue).toFixed(2))
+}
+
+
+
 export {
   dateFormatter,
   encodeFileToBase64,
   generateAsciiCharFromNumber,
   updateQBankRecordScheam,
-  extractHeadingFromMarkdown
+  extractHeadingFromMarkdown,
+  calculateAmountAfterDiscount
 };

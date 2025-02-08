@@ -220,6 +220,99 @@ const genGoogleFormOrDocResponse = z.object({
   formUrl: z.string(),
 });
 
+const priceSchema = z.object({
+  id: z.string(),
+  object: z.literal("price"),
+  active: z.boolean(),
+  billing_scheme: z.enum(["per_unit", "tiered"]),
+  created: z.number(),
+  currency: z.string(),
+  currency_options: z.object({}), // Define this further if you have specific properties
+  custom_unit_amount: z.nullable(z.number()),
+  livemode: z.boolean(),
+  lookup_key: z.nullable(z.string()),
+  metadata: z.object({}),
+  nickname: z.nullable(z.string()),
+  product: z.string(),
+  recurring: z.unknown(), // Changed to unknown object
+  tax_behavior: z.enum(["unspecified", "inclusive", "exclusive"]),
+  tiers_mode: z.nullable(z.string()),
+  transform_quantity: z.nullable(z.string()),
+  type: z.enum(["recurring"]),
+  unit_amount: z.number(),
+  unit_amount_decimal: z.string(),
+});
+
+const pricesListSchema = z.object({
+  object: z.literal("list"),
+  data: z.array(priceSchema),
+  has_more: z.boolean(),
+  url: z.string(),
+});
+
+const CouponSchema = z.object({
+  id: z.string(),
+  object: z.literal("coupon"),
+  amount_off: z.number().nullable(),
+  created: z.number(),
+  currency: z.string().nullable(),
+  duration: z.string(),
+  duration_in_months: z.number().nullable(),
+  livemode: z.boolean(),
+  max_redemptions: z.number().nullable(),
+  metadata: z.record(z.string()).default({}),
+  name: z.string(),
+  percent_off: z.number().nullable(),
+  redeem_by: z.number().nullable(),
+  times_redeemed: z.number(),
+  valid: z.boolean(),
+});
+
+const PromotionCodeSchema = z.object({
+  id: z.string(),
+  object: z.literal("promotion_code"),
+  active: z.boolean(),
+  code: z.string(),
+  coupon: CouponSchema,
+  created: z.number(),
+  customer: z.string().nullable(),
+  expires_at: z.number().nullable(),
+  livemode: z.boolean(),
+  max_redemptions: z.number().nullable(),
+  metadata: z.record(z.string()).default({}),
+  restrictions: z.object({
+    first_time_transaction: z.boolean(),
+    minimum_amount: z.number().nullable(),
+    minimum_amount_currency: z.string().nullable(),
+  }),
+  times_redeemed: z.number(),
+});
+
+const StripePromotionResponseSchema = z.object({
+  object: z.literal("list"),
+  data: z.array(PromotionCodeSchema),
+  has_more: z.boolean(),
+  url: z.string(),
+});
+
+const payCardSchema = z.object({
+  email: z.string()
+    .email("Invalid email format.")
+    .min(1, "Email is required."),
+  firstName: z.string()
+    .min(1, "First name is required."),
+  lastName: z.string()
+    .min(1, "Last name is required."),
+  addressLine1: z.string().min(1, "Address line is required."),
+  city: z.string().min(1, "City is required."),
+  state: z.string().min(1, "State is required."),
+  postalCode: z.string().min(1, "Postal code is required."),
+  country: z.string().min(1, "Country is required."),
+  consentAccepted: z.boolean().refine(val => val === true, {
+    message: "Authorization required.",
+  })
+})
+
 type GenGoolgeFormOrDocResponse = z.infer<typeof genGoogleFormOrDocResponse>;
 type SharedRecordSchema = z.infer<typeof sharedRecordSchema>;
 type QuestionBankSchema = z.infer<typeof questionBankSchema>;
@@ -245,6 +338,7 @@ type UserProfileSchema = z.infer<typeof userProfileSchema>;
 
 export {
   baseResultSchema,
+  CouponSchema,
   fillBlankQuestionSchema,
   fillBlankQuizResponseSchema,
   generateQuestionsResponseSchema,
@@ -257,12 +351,17 @@ export {
   mcqSimilarQuestionSchema,
   openEndedQuestionSchema,
   openEndedQuestionsSchema,
+  priceSchema,
+  pricesListSchema,
+  PromotionCodeSchema,
   questionBankSchema,
   sharedRecordSchema,
+  StripePromotionResponseSchema,
   submitJobPayloadSchema,
   trueFalseQuestionSchema,
   trueFalseQuestionsSchema,
   userProfileSchema,
+  payCardSchema
 };
 export type {
   BaseResultSchema,

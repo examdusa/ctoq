@@ -2,11 +2,18 @@
 
 import { ThemeWrapper } from "@/components/app-layout";
 import Footer from "@/components/footer";
+import {
+  CancelSubscription,
+  UpgradeSubscription,
+} from "@/components/modals/payments/alerts-modal";
+import { PaymentForm } from "@/components/payment-form";
 import { SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import { createCheckoutSession } from "@/utllities/apiFunctions";
+import { PRICE_MAP, PriceDetail } from "@/utllities/constants";
 import { useUser } from "@clerk/nextjs";
 import {
+  Badge,
   Button,
   Chip,
   Flex,
@@ -19,6 +26,8 @@ import {
   Title,
   useMantineTheme,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { IconCircleCheck } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
@@ -26,22 +35,42 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { trpc } from "../_trpc/client";
-import { PRICE_LIST, PriceDetail } from "@/utllities/constants";
-
 
 interface PriceItemProps {
   item: PriceDetail;
   subscriptionDetails: SelectSubscription | undefined;
   loading: boolean;
+  refetchSubscriptionDetails: (userId: string) => void;
 }
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
 
 function RenderPriceItem({
   item,
   subscriptionDetails,
   loading,
+  refetchSubscriptionDetails,
 }: PriceItemProps) {
-  const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
   const { user, isSignedIn } = useUser();
+  const [selectedPlan, setSelectedPlan] = useState<PriceDetail | null>(null);
+  const [plan, setPlan] = useState<PriceDetail | null>(null);
+  const [payFormOpen, { open: openPayForm, close: closePayForm }] =
+    useDisclosure(false);
+  const [
+    cancelModalOpen,
+    { open: openCancellationModal, close: closeCancellationModal },
+  ] = useDisclosure(false);
+  const [
+    upgradeModalOpen,
+    { open: openUpgradeModal, close: closeUpgradeModal },
+  ] = useDisclosure(false);
+
+  const isSubscribed = useMemo(() => {
+    if (subscriptionDetails) {
+      return subscriptionDetails.planId ? true : false;
+    }
+    return false;
+  }, [subscriptionDetails]);
 
   const {
     mutateAsync: creatPayIntent,
@@ -63,40 +92,22 @@ function RenderPriceItem({
     },
   });
 
-  async function handleSubmit(priceId: string, prdtName: string) {
-    if (user) {
-      const { sessionId } = await creatPayIntent({
-        userId: user.id,
-        email: user.emailAddresses[0].emailAddress,
-        priceId: priceId,
-        prdtName,
-      });
-
-      if (sessionId) {
-        const stripe = await stripePromise;
-
-        const response = await stripe?.redirectToCheckout({
-          sessionId: sessionId,
-        });
-        return response;
-      }
-    }
+  async function handleSubsCancel() {
+    openCancellationModal();
   }
 
-  async function handleSubscribe(priceId: string, prdtName: string) {
-    await handleSubmit(priceId, prdtName);
+  async function handleSubscribe(plan: PriceDetail) {
+    // await handleSubmit(priceId, prdtName);
+    setSelectedPlan(plan);
+    openPayForm();
   }
-
-  useEffect(() => {
-    setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!));
-  }, []);
 
   return (
     <Paper
       shadow="md"
       p="xs"
       w={"100%"}
-      maw={{ xs: "100%", md: "30%" }}
+      maw={{ xs: "100%", md: "20%" }}
       h={"100%"}
       radius={"md"}
       withBorder
@@ -106,7 +117,8 @@ function RenderPriceItem({
         w={"100%"}
         p={"xs"}
         align={"center"}
-        gap={"md"}
+        pos={"relative"}
+        gap={"sm"}
         styles={{
           root: {
             flexGrow: 1,
@@ -123,6 +135,32 @@ function RenderPriceItem({
             Requires signing in
           </Chip>
         )}
+        {subscriptionDetails?.planId === item.priceId &&
+          subscriptionDetails.status === "paid" && (
+            <Badge
+              size="lg"
+              pos={"absolute"}
+              top={0}
+              right={0}
+              variant="gradient"
+              gradient={{ from: "blue", to: "cyan", deg: 90 }}
+            >
+              Subscribed
+            </Badge>
+          )}
+        {subscriptionDetails?.planId === item.priceId &&
+          subscriptionDetails.status === "requested_cancellation" && (
+            <Badge
+              size="lg"
+              pos={"absolute"}
+              top={0}
+              right={0}
+              variant="gradient"
+              gradient={{ from: "blue", to: "cyan", deg: 90 }}
+            >
+              Cancellation requested
+            </Badge>
+          )}
         <Image src={item.imageUrl} alt="base-pack" height={80} width={80} />
         <Title order={3} pt={"md"} c={"cyan"}>
           {item.label}
@@ -177,15 +215,68 @@ function RenderPriceItem({
           mt={"lg"}
           disabled={
             !isSignedIn ||
-            (subscriptionDetails?.planId === item.priceId ? true : false)
+            (subscriptionDetails?.status === "requested_cancellation" &&
+              subscriptionDetails.planId === item.priceId)
+              ? true
+              : false
           }
-          onClick={() => handleSubscribe(item.priceId, item.label)}
+          onClick={() => {
+            if (!isSubscribed) {
+              handleSubscribe(item);
+              return;
+            }
+
+            if (isSubscribed && subscriptionDetails?.planId === item.priceId) {
+              handleSubsCancel();
+            }
+            if (isSubscribed && subscriptionDetails?.planId !== item.priceId) {
+              setPlan(item);
+              openUpgradeModal();
+            }
+          }}
         >
           {subscriptionDetails?.planId === item.priceId
-            ? "You have already subscribed"
+            ? "Cancel"
+            : isSubscribed
+            ? "Upgrade"
             : "Subscribe"}
         </Button>
       </Flex>
+      {selectedPlan && payFormOpen && (
+        <PaymentForm
+          open={payFormOpen}
+          close={() => {
+            closePayForm();
+            if (user) {
+              refetchSubscriptionDetails(user.id);
+            }
+          }}
+          plan={selectedPlan}
+        />
+      )}
+      {cancelModalOpen && subscriptionDetails && (
+        <CancelSubscription
+          close={() => {
+            closeCancellationModal();
+            if (user) refetchSubscriptionDetails(user.id);
+          }}
+          open={cancelModalOpen}
+          subscriptionDetails={subscriptionDetails}
+        />
+      )}
+      {upgradeModalOpen && subscriptionDetails && user && plan && (
+        <UpgradeSubscription
+          open={upgradeModalOpen}
+          close={() => {
+            closeUpgradeModal();
+            setPlan(null);
+            if (user) refetchSubscriptionDetails(user.id);
+          }}
+          subscriptionDetails={subscriptionDetails}
+          userEmail={user.emailAddresses[0].emailAddress}
+          priceId={plan.priceId}
+        />
+      )}
     </Paper>
   );
 }
@@ -202,6 +293,9 @@ export default function Pricing() {
     isLoading: fetchingSubsDetails,
   } = trpc.getUserSubscriptionDetails.useMutation();
 
+  const { refetch, data: subscriptionPlans } =
+    trpc.fetchSubscriptionPlans.useQuery(undefined, { enabled: false });
+
   const fetchSubscriptionDetails = useCallback(
     async (userId: string) => {
       await fetchSubsDetails(
@@ -216,11 +310,35 @@ export default function Pricing() {
     [fetchSubsDetails, setSubscription]
   );
 
-  useEffect(() => {
-    if (user && !subscriptionData && !subscription) {
-      fetchSubscriptionDetails(user.id);
+  const planItems = useMemo(() => {
+    const plans: PriceDetail[] = [];
+
+    if (subscriptionPlans) {
+      const { code, data } = subscriptionPlans;
+
+      if (code === "SUCCESS" && data) {
+        data.data.forEach((item) => {
+          if (PRICE_MAP[item.id]) {
+            const { description, features, imageUrl, regularPrice, label } =
+              PRICE_MAP[item.id];
+            const details: PriceDetail = {
+              amount: item.unit_amount,
+              label,
+              description,
+              features,
+              imageUrl,
+              regularPrice,
+              priceId: item.id,
+              currencyOptions: item.currency_options,
+            };
+            plans.push(details);
+          }
+        });
+      }
     }
-  }, [fetchSubscriptionDetails, subscriptionData, user, subscription]);
+
+    return plans;
+  }, [subscriptionPlans]);
 
   const title = useMemo(() => {
     if (pathName.includes("/chat")) {
@@ -240,42 +358,58 @@ export default function Pricing() {
     return <Title order={2}>Monthly Pricing</Title>;
   }, [pathName]);
 
+  useEffect(() => {
+    if (user && !subscriptionData && !subscription) {
+      fetchSubscriptionDetails(user.id);
+    }
+  }, [fetchSubscriptionDetails, subscriptionData, user, subscription]);
+
+  useEffect(() => {
+    if (!subscriptionPlans) refetch();
+  }, [refetch, subscriptionPlans]);
+
   return (
     <ThemeWrapper>
-      <Flex
-        direction={"column"}
-        w={"100%"}
-        my={{ xl: pathName.includes("/chat") ? 0 : "5%" }}
-        align={"center"}
-        className="rounded-md"
-        styles={{
-          root: {
-            padding: `${theme.spacing.lg}`,
-            flexGrow: 1,
-          },
-        }}
-      >
-        {title}
-        <ScrollArea style={{ height: "calc(100vh- 20vh)", width: "100%" }}>
-          <Flex
-            direction={{ xs: "column", md: "row" }}
-            w={"100%"}
-            gap={{ xs: "xs", md: "lg" }}
-            h={"100%"}
-            p={{ xs: "xs", md: "lg" }}
-            justify={"space-around"}
-          >
-            {PRICE_LIST.map((item, index) => (
-              <RenderPriceItem
-                key={index}
-                item={item}
-                subscriptionDetails={subscription}
-                loading={fetchingSubsDetails}
-              />
-            ))}
-          </Flex>
-        </ScrollArea>
-      </Flex>
+      <Elements stripe={stripePromise}>
+        <Flex
+          direction={"column"}
+          w={"100%"}
+          my={{ xl: pathName.includes("/chat") ? 0 : "5%" }}
+          align={"center"}
+          className="rounded-md"
+          gap={"md"}
+          styles={{
+            root: {
+              padding: `${theme.spacing.lg}`,
+              flexGrow: 1,
+            },
+          }}
+        >
+          {title}
+          <ScrollArea style={{ height: "calc(100vh- 20vh)", width: "100%" }}>
+            <Flex
+              direction={{ xs: "column", md: "row" }}
+              w={"100%"}
+              gap={{ xs: "xs", md: "md" }}
+              h={"100%"}
+              p={{ xs: "xs", md: "lg" }}
+              justify={"space-around"}
+            >
+              {planItems.map((item, index) => (
+                <RenderPriceItem
+                  key={index}
+                  item={item}
+                  subscriptionDetails={subscription}
+                  loading={fetchingSubsDetails}
+                  refetchSubscriptionDetails={(userId: string) =>
+                    fetchSubsDetails({ userId })
+                  }
+                />
+              ))}
+            </Flex>
+          </ScrollArea>
+        </Flex>
+      </Elements>
       <Footer />
     </ThemeWrapper>
   );

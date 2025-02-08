@@ -19,7 +19,9 @@ import {
   mcqSimilarQuestionSchema,
   OpenendedQuestionSchema,
   openEndedQuestionSchema,
+  pricesListSchema,
   questionBankSchema,
+  StripePromotionResponseSchema,
   submitJobPayloadSchema,
   TrueFalseQuestionScheam,
   trueFalseQuestionSchema,
@@ -888,6 +890,397 @@ export const appRouter = router({
         };
       }
     }),
+  fetchSubscriptionPlans: procedure.query(async () => {
+    try {
+      const response = await fetch(
+        "https://api.stripe.com/v1/prices?expand[]=data.currency_options&active=true",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        return {
+          code: "FAILED",
+          data: null,
+        } as const;
+      }
+
+      const jsonResp = await response.json();
+      const { error, data } = pricesListSchema.safeParse(jsonResp);
+
+      if (error) {
+        console.log("PARSE ERROR: ", error);
+        return {
+          code: "FAILED",
+          data: null,
+        } as const;
+      }
+      return {
+        code: "SUCCESS",
+        data,
+      } as const;
+    } catch (err) {
+      console.log("fetchSubscriptionPlans error: ", err);
+      return {
+        code: "FAILED",
+        data: null,
+      } as const;
+    }
+  }),
+  cancelSubscription: procedure
+    .input(z.string())
+    .mutation(async ({ input }) => {
+      try {
+        const { current_period_start, current_period_end } =
+          await stripe.subscriptions.update(input, {
+            cancel_at_period_end: true,
+            cancellation_details: {
+              comment: "User demanded cancellation",
+            },
+          });
+
+        try {
+          const { rowsAffected } = await db
+            .update(subscription)
+            .set({
+              status: "requested_cancellation",
+            })
+            .where(eq(subscription.id, input));
+          if (rowsAffected > 0) {
+            console.log(
+              "Cancellation requested at: ",
+              dayjs().format("MMM-DD-YYYY | hh:mm a")
+            );
+          } else {
+            console.log("Cancellation data update failed");
+          }
+        } catch (err) {
+          console.log(err);
+        }
+
+        return {
+          code: "SUCCESS",
+        } as const;
+      } catch (err) {
+        console.log("cancellation error: ", err);
+        return {
+          code: "FAILED",
+        } as const;
+      }
+    }),
+  validatePromoCode: procedure.input(z.string()).mutation(async ({ input }) => {
+    try {
+      const url = new URL("https://api.stripe.com/v1/promotion_codes");
+      url.searchParams.append("code", input);
+
+      const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      if (!response.ok) {
+        return { code: "FAILED", data: null } as const;
+      }
+
+      const jsonResp = await response.json();
+
+      const { error, data } = StripePromotionResponseSchema.safeParse(jsonResp);
+
+      if (error) {
+        return { code: "FAILED", data: null } as const;
+      } else {
+        if (data.data.length === 0) {
+          return { code: "FAILED", data: null } as const;
+        }
+        return { code: "SUCCESS", data } as const;
+      }
+    } catch (err) {
+      console.log(err);
+      return { code: "FAILED", data: null } as const;
+    }
+  }),
+  createCustomer: procedure
+    .input(
+      z.object({
+        paymentMethodId: z.string(),
+        firstName: z.string(),
+        lastName: z.string(),
+        email: z.string(),
+        addressLine1: z.string(),
+        city: z.string(),
+        state: z.string(),
+        postalCode: z.string(),
+        country: z.string(),
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const {
+        paymentMethodId,
+        firstName,
+        lastName,
+        email,
+        addressLine1,
+        city,
+        state,
+        postalCode,
+        country,
+        userId,
+      } = input;
+      try {
+        const customer = await stripe.customers.create({
+          payment_method: paymentMethodId,
+          name: `${firstName} ${lastName}`,
+          email: email,
+          description: `Payment from ${firstName} ${lastName} at ${dayjs().format(
+            "MMM-DD-YYYY | hh:mm a"
+          )}`,
+          address: {
+            line1: addressLine1,
+            city: city,
+            state: state,
+            postal_code: postalCode,
+            country: country,
+          },
+          metadata: {
+            userId,
+          },
+        });
+
+        return {
+          code: "SUCCESS",
+          data: customer,
+        } as const;
+      } catch (err) {
+        console.error("Create Customer error: ", err);
+        return {
+          code: "FAILED",
+          data: null,
+        } as const;
+      }
+    }),
+
+  createSubscription: procedure
+    .input(
+      z.object({
+        customerId: z.string(),
+        priceId: z.string(),
+        paymentMethodId: z.string(),
+        currency: z.string(),
+        couponCode: z.string(),
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const {
+        currency,
+        customerId,
+        paymentMethodId,
+        priceId,
+        couponCode,
+        userId,
+      } = input;
+      const payload: Stripe.SubscriptionCreateParams = {
+        customer: customerId,
+        default_payment_method: paymentMethodId,
+        items: [
+          {
+            price: priceId,
+          },
+        ],
+        currency,
+        metadata: {
+          userId,
+        },
+      };
+
+      if (couponCode) {
+        payload.discounts = [
+          {
+            promotion_code: couponCode,
+          },
+        ];
+      }
+
+      try {
+        const subscription = await stripe.subscriptions.create({
+          ...payload,
+        });
+
+        return {
+          code: "SUCCESS",
+          data: subscription,
+        } as const;
+      } catch (err) {
+        console.log("create subscription error: ", err);
+        return {
+          code: "FAILED",
+          data: null,
+        } as const;
+      }
+    }),
+  upgradeSubscription: procedure
+    .input(
+      z.object({
+        subscriptionId: z.string(),
+        priceId: z.string(),
+        userEmail: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { subscriptionId, priceId, userEmail } = input;
+
+      const [fsoResult, fceResult] = await Promise.all([
+        fetchSubscriptionObject(subscriptionId),
+        fetchCustomerByEmail(userEmail),
+      ]);
+
+      const { code: fsoCode, data: fsoData } = fsoResult;
+      const { code: fceCode, data: fceData } = fceResult;
+
+      if (fsoCode === "SUCCESS" && fsoData && fceData) {
+        const payload: Stripe.SubscriptionScheduleCreateParams = {
+          customer: fceData.id,
+          start_date: fsoData.current_period_end,
+          phases: [
+            {
+              items: [{ price: priceId }],
+            },
+          ],
+        };
+
+        try {
+          await stripe.subscriptionSchedules.create({
+            ...payload,
+          });
+
+          return {
+            code: "WILL_UPGRADE",
+            data: null,
+          } as const;
+        } catch (err) {
+          console.log("Upgrade error: ", err);
+          return {
+            code: "UPGRADE_ERROR",
+            data: null,
+          } as const;
+        }
+      } else {
+        if (fceCode === "SUCCESS" && fceData) {
+          const { id } = fceData;
+          const { code, data } = await fetchPaymentMethod(id);
+
+          if (code === "SUCCESS" && data) {
+            const payload: Stripe.SubscriptionCreateParams = {
+              customer: id,
+              default_payment_method: data.id,
+              items: [
+                {
+                  price: priceId,
+                },
+              ],
+              currency: fceData.currency || "usd",
+              metadata: {
+                userId: fceData.metadata.userId,
+              },
+            };
+
+            try {
+              await stripe.subscriptions.create({
+                ...payload,
+              });
+
+              return {
+                code: "SUCCESS",
+                data: null,
+              } as const;
+            } catch (err) {
+              console.log("new subscription create error: ", err);
+              return {
+                code: "FAILED",
+                data: null,
+              } as const;
+            }
+          }
+        }
+      }
+    }),
 });
+
+async function fetchPaymentMethod(customerId: string) {
+  try {
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: customerId,
+      type: "card",
+    });
+    if (paymentMethods.data.length === 0) {
+      return {
+        code: "NO_PAYMENT_METHOD",
+        data: null,
+      } as const;
+    }
+
+    return {
+      code: "SUCCESS",
+      data: paymentMethods.data[0],
+    } as const;
+  } catch (err) {
+    console.error("Error fetching payment method: ", err);
+    return {
+      code: "FAILED",
+      data: null,
+    } as const;
+  }
+}
+
+async function fetchSubscriptionObject(subscriptionId: string) {
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    return {
+      code: "SUCCESS",
+      data: subscription,
+    } as const;
+  } catch (err) {
+    console.error("Error fetching subscription: ", err);
+    return {
+      code: "FAILED",
+      data: null,
+    } as const;
+  }
+}
+
+async function fetchCustomerByEmail(email: string) {
+  try {
+    const customers = await stripe.customers.list({
+      email: email,
+      limit: 1,
+    });
+    if (customers.data.length === 0) {
+      return {
+        code: "NO_CUSTOMER",
+        data: null,
+      } as const;
+    }
+
+    return {
+      code: "SUCCESS",
+      data: customers.data[0],
+    } as const;
+  } catch (err) {
+    console.error("Error fetching customer by email: ", err);
+    return {
+      code: "FAILED",
+      data: null,
+    } as const;
+  }
+}
 
 export type AppRouter = typeof appRouter;
