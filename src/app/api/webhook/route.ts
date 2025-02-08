@@ -92,7 +92,7 @@ async function handlePlanChange(
         planName: priceList[planId].label,
         queries: priceList[planId].queries,
         currency: currency,
-        amountPaid: amount / 100,
+        amountPaid: amount,
         startDate: dayjs(planStart * 1000).toISOString(),
         endDate: dayjs(planEnd * 1000).toISOString(),
       })
