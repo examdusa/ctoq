@@ -4,10 +4,12 @@ import { trpc } from "@/app/_trpc/client";
 import { SelectQuestionBank } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import {
+  Alert,
   Button,
   Flex,
   ScrollArea,
   Stack,
+  Text,
   Tooltip,
   UnstyledButton,
   useMantineTheme,
@@ -22,6 +24,7 @@ dayjs.extend(isBetween);
 
 function QBankCreateHistory() {
   const questions = useAppStore((state) => state.questions);
+  const subscription = useAppStore((state) => state.subscription);
   const userProfile = useAppStore((state) => state.userProfile);
   const theme = useMantineTheme();
   const renderQIdx = useAppStore((state) => state.renderQIdx);
@@ -159,8 +162,8 @@ function QBankCreateHistory() {
                   arrowSize={6}
                   multiline
                   w={"100%"}
-                  maw={'30%'}
-                  h={'auto'}
+                  maw={"30%"}
+                  h={"auto"}
                   withArrow
                   transitionProps={{ duration: 200 }}
                 >
@@ -194,6 +197,15 @@ function QBankCreateHistory() {
             })}
           </Stack>
         </ScrollArea>
+      )}
+      {subscription?.queries === 0 && (
+        <Alert variant="light" color={"red"} mt={"auto"} radius={"md"}>
+          <Text size="sm">
+            It looks like you&apos;ve run out of available query counts. If you
+            want to reset your account or upgrade please contact{" "}
+            <span className="text-blue-600"> help@content2quiz.com</span>
+          </Text>
+        </Alert>
       )}
     </Flex>
   );

@@ -159,6 +159,8 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
       }
     }
 
+    if (!subscription) return true;
+
     if (!attempt) return false;
 
     if (isGenerating) return true;
@@ -295,11 +297,11 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
             let kwd = keyword;
             if (contentType === "Courses") {
               if (courseUrl.length > 0) {
-                kwd = courseUrl
+                kwd = courseUrl;
               }
-            } else if (contentType === 'Resume') {
+            } else if (contentType === "Resume") {
               if (resumeUrl.length > 0) {
-                kwd = resumeUrl
+                kwd = resumeUrl;
               }
             }
             addToPendingJobs({

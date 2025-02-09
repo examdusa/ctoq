@@ -549,7 +549,7 @@ function QuestionContainer({ subscription, questions }: Props) {
   if (!subscription) {
     return (
       <Flex direction={"column"} w={"100%"} my={"xs"} align={"center"} gap={10}>
-        <Pricing subscriptionDetails={subscription} />
+        <Pricing />
       </Flex>
     );
   }
@@ -557,7 +557,7 @@ function QuestionContainer({ subscription, questions }: Props) {
   return (
     <ScrollArea
       style={{ height: "calc(100vh - 8vh)", width: "100%" }}
-      h={'100%'}
+      h={"100%"}
       offsetScrollbars={"x"}
       my={"xs"}
       p={3}
