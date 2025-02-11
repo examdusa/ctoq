@@ -58,7 +58,7 @@ function CriteriaForm({ subscription }: Props) {
 
   const disableFields = useMemo(() => {
     if (subscription) {
-      return subscription.queries === 0;
+      return subscription.queries === 0 || subscription.status !== 'paid';
     }
     return false;
   }, [subscription]);
