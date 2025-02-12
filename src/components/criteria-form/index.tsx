@@ -2,14 +2,7 @@
 
 import { SelectSubscription } from "@/db/schema";
 import { useUser } from "@clerk/nextjs";
-import {
-  Alert,
-  Flex,
-  Text,
-  useMantineColorScheme,
-  useMantineTheme,
-} from "@mantine/core";
-import { IconInfoCircle } from "@tabler/icons-react";
+import { Flex, useMantineColorScheme, useMantineTheme } from "@mantine/core";
 import { useMemo } from "react";
 import { Form } from "../form";
 
@@ -58,7 +51,7 @@ function CriteriaForm({ subscription }: Props) {
 
   const disableFields = useMemo(() => {
     if (subscription) {
-      return subscription.queries === 0 || subscription.status !== 'paid';
+      return subscription.queries === 0 || subscription.status !== "paid";
     }
     return false;
   }, [subscription]);
@@ -90,26 +83,6 @@ function CriteriaForm({ subscription }: Props) {
           subscription={subscription}
           userId={user.id}
         />
-      )}
-      {disableFields && (
-        <Alert
-          variant="light"
-          color={"blue"}
-          title={"Info"}
-          icon={<IconInfoCircle />}
-          mt={"auto"}
-          radius={"md"}
-        >
-          <Flex direction={"column"} w={"auto"} align={"start"} gap={"xs"}>
-            <Text size="sm">
-              It looks like you&apos;ve run out of available query counts.
-            </Text>
-            <Text size="sm">
-              If you want to reset your account or upgrade please contact
-              <span className="text-blue-600"> help@content2quiz.com</span>
-            </Text>
-          </Flex>
-        </Alert>
       )}
     </Flex>
   );

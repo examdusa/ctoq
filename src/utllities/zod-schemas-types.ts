@@ -203,7 +203,7 @@ const sharedRecordSchema = z.object({
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
   email: z.string().email(),
-  shareDate: z.date().nullable(),
+  shareDate: z.union([z.date(), z.null()]),
   prompt: z.string().nullable(),
   googleQuizLink: z.string().nullable(),
   googleFormId: z.string().nullable(),

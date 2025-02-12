@@ -21,6 +21,7 @@ import {
   openEndedQuestionSchema,
   pricesListSchema,
   questionBankSchema,
+  sharedRecordSchema,
   StripePromotionResponseSchema,
   submitJobPayloadSchema,
   TrueFalseQuestionScheam,
@@ -1213,6 +1214,53 @@ export const appRouter = router({
         }
       }
     }),
+  getSharedExams: procedure.input(z.string()).mutation(async ({ input }) => {
+    try {
+      const records = await db
+        .select({
+          id: sharedExams.id,
+          userId: sharedExams.userId,
+          formId: sharedExams.formId,
+          firstName: sharedExams.firstName,
+          lastName: sharedExams.lastName,
+          email: sharedExams.email,
+          shareDate: sharedExams.shareDate,
+          prompt: questionbank.prompt,
+          googleQuizLink: questionbank.googleQuizLink,
+          googleFormId: questionbank.googleFormId,
+          outputType: questionbank.outputType,
+          questionRecord: sharedExams.questionRecord,
+        })
+        .from(sharedExams)
+        .innerJoin(
+          questionbank,
+          eq(sharedExams.questionRecord, questionbank.jobId)
+        )
+        .innerJoin(userProfile, eq(questionbank.userId, userProfile.id))
+        .where(eq(sharedExams.userId, input));
+
+      const { error, data } = z.array(sharedRecordSchema).safeParse(records);
+
+      if (error) {
+        console.log("getSharedExams error: ", error);
+        return {
+          code: "FAILED",
+          data: null,
+        } as const;
+      }
+      return {
+        code: "SUCCESS",
+        data: data,
+      } as const;
+
+    } catch (err) {
+      console.log("getSharedExams error: ", err);
+      return {
+        code: "FAILED",
+        data: null,
+      } as const;
+    }
+  }),
 });
 
 async function fetchPaymentMethod(customerId: string) {

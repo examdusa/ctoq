@@ -154,7 +154,11 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
 
   const disableActionButton = useMemo(() => {
     if (subscription) {
-      if (subscription.queries === 0) {
+      if (
+        subscription.queries === 0 ||
+        (subscription.status !== "paid" &&
+          subscription.status !== "requested_cancellation")
+      ) {
         return true;
       }
     }
@@ -389,6 +393,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
                 placeholder="Pick a type"
                 value={contentType}
                 disabled={disableFields}
+                checkIconPosition="right"
                 onChange={(value) => {
                   if (value) {
                     setContentType(value as "Resume" | "Courses" | "Keywords");
@@ -396,7 +401,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
                 }}
                 data={[
                   { label: "Keywords", value: "Keywords" },
-                  { label: "Courses", value: "Courses" },
+                  { label: "Book / Website URL / Content", value: "Courses" },
                   { label: "Resume", value: "Resume" },
                 ]}
               />
