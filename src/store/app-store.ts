@@ -1,5 +1,6 @@
 import { SelectQuestionBank, SelectSubscription } from "@/db/schema";
 import { Institute, UserProfileSchema } from "@/utllities/zod-schemas-types";
+import Stripe from "stripe";
 import { create } from "zustand";
 import {
   createJSONStorage,
@@ -7,6 +8,10 @@ import {
   persist,
   subscribeWithSelector,
 } from "zustand/middleware";
+
+interface PlanDetails extends Stripe.Product {
+  amount: number;
+}
 
 interface State {
   questions: Record<string, SelectQuestionBank>;
@@ -33,6 +38,7 @@ interface State {
   >;
   userProfile: UserProfileSchema | null;
   institutesById: { [key: string]: Institute } | null;
+  subscriptionPlans: PlanDetails[];
 }
 
 interface PendingJobDetail {
@@ -59,6 +65,7 @@ interface Actions {
   updateQuestionsList: (questions: Record<string, SelectQuestionBank>) => void;
   deletePendingJob: (jobId: string) => void;
   setInstitues: (institutes: { [key: string]: Institute } | null) => void;
+  setSubscrptionPlans: (plans: PlanDetails[]) => void;
 }
 
 export type Store = State & Actions;
@@ -71,6 +78,7 @@ export const defaultStoreState: State = {
   pendingJobsWithId: {},
   userProfile: null,
   institutesById: null,
+  subscriptionPlans: [],
 };
 
 export const useAppStore = create<Store>()(
@@ -111,6 +119,9 @@ export const useAppStore = create<Store>()(
           setInstitues: (institutes) => {
             set({ institutesById: institutes });
           },
+          setSubscrptionPlans: (plans) => {
+            set({ subscriptionPlans: [...plans] });
+          },
         }),
         {
           name: "app-store",
@@ -125,4 +136,4 @@ export const useAppStore = create<Store>()(
   )
 );
 
-export type { PendingJobDetail };
+export type { PendingJobDetail, PlanDetails };

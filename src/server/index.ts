@@ -891,7 +891,7 @@ export const appRouter = router({
         };
       }
     }),
-  fetchSubscriptionPlans: procedure.query(async () => {
+  fetchProductPrices: procedure.query(async () => {
     try {
       const response = await fetch(
         "https://api.stripe.com/v1/prices?expand[]=data.currency_options&active=true",
@@ -933,11 +933,29 @@ export const appRouter = router({
       } as const;
     }
   }),
+  fetchProducts: procedure.query(async () => {
+    try {
+      const products = await stripe.products.list({
+        active: true,
+      });
+
+      const productsById: {[key: string]: Stripe.Product} = {}
+
+      products.data.forEach((item) => {
+        productsById[item.id] = {...item}
+      })
+
+      return { data: productsById, code: "SUCCESS" } as const;
+    } catch (err) {
+      console.log("fetchProducts error: ", err);
+      return { data: null, code: "FAILED" } as const;
+    }
+  }),
   cancelSubscription: procedure
     .input(z.string())
     .mutation(async ({ input }) => {
       try {
-        const { current_period_start, current_period_end } =
+        
           await stripe.subscriptions.update(input, {
             cancel_at_period_end: true,
             cancellation_details: {
@@ -1252,7 +1270,6 @@ export const appRouter = router({
         code: "SUCCESS",
         data: data,
       } as const;
-
     } catch (err) {
       console.log("getSharedExams error: ", err);
       return {

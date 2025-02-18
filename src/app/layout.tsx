@@ -1,14 +1,15 @@
+import { AppOrchestrator } from "@/components/app-orchestrator";
 import { ClerkAuthWrapper } from "@/components/clerk-auth-wapper";
+import PendingJobsHandler from "@/components/pending-jobs-handler";
 import { MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
+import { Notifications } from "@mantine/notifications";
+import "@mantine/notifications/styles.css";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Script from "next/script";
 import Provider from "./_trpc/provider";
 import "./globals.css";
-import PendingJobsHandler from "@/components/pending-jobs-handler";
-import { AppOrchestrator } from "@/components/app-orchestrator";
-import '@mantine/notifications/styles.css';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -46,6 +47,7 @@ export default function RootLayout({
               {children}
               <PendingJobsHandler />
               <AppOrchestrator />
+              <Notifications />
             </ClerkAuthWrapper>
           </MantineProvider>
         </Provider>

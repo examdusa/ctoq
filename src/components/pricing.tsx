@@ -9,9 +9,8 @@ import {
 } from "@/components/modals/payments/alerts-modal";
 import { PaymentForm } from "@/components/payment-form";
 import { SelectSubscription } from "@/db/schema";
-import { useAppStore } from "@/store/app-store";
+import { PlanDetails, useAppStore } from "@/store/app-store";
 import { createCheckoutSession } from "@/utllities/apiFunctions";
-import { PRICE_MAP, PriceDetail } from "@/utllities/constants";
 import { useUser } from "@clerk/nextjs";
 import {
   Badge,
@@ -37,7 +36,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface PriceItemProps {
-  item: PriceDetail;
+  item: PlanDetails;
   subscriptionDetails: SelectSubscription | undefined;
   loading: boolean;
   refetchSubscriptionDetails: (userId: string) => void;
@@ -52,8 +51,8 @@ function RenderPriceItem({
   refetchSubscriptionDetails,
 }: PriceItemProps) {
   const { user, isSignedIn } = useUser();
-  const [selectedPlan, setSelectedPlan] = useState<PriceDetail | null>(null);
-  const [plan, setPlan] = useState<PriceDetail | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
+  const [plan, setPlan] = useState<PlanDetails | null>(null);
   const [payFormOpen, { open: openPayForm, close: closePayForm }] =
     useDisclosure(false);
   const [
@@ -96,7 +95,7 @@ function RenderPriceItem({
     openCancellationModal();
   }
 
-  async function handleSubscribe(plan: PriceDetail) {
+  async function handleSubscribe(plan: PlanDetails) {
     // await handleSubmit(priceId, prdtName);
     setSelectedPlan(plan);
     openPayForm();
@@ -108,13 +107,20 @@ function RenderPriceItem({
       p="xs"
       w={"100%"}
       maw={{ xs: "100%", md: "40%" }}
-      h={"100%"}
+      styles={{
+        root: {
+          display: "flex",
+          flexDirection: "column",
+          flexGrow: 1,
+        },
+      }}
       radius={"md"}
       withBorder
     >
       <Flex
         direction={"column"}
         w={"100%"}
+        flex={1}
         p={"xs"}
         align={"center"}
         pos={"relative"}
@@ -135,7 +141,8 @@ function RenderPriceItem({
             Requires signing in
           </Chip>
         )}
-        {subscriptionDetails?.planId === item.priceId &&
+        {subscriptionDetails &&
+          subscriptionDetails?.planId === item.default_price &&
           subscriptionDetails.status === "paid" && (
             <Badge
               size="lg"
@@ -148,7 +155,8 @@ function RenderPriceItem({
               Subscribed
             </Badge>
           )}
-        {subscriptionDetails?.planId === item.priceId &&
+        {subscriptionDetails &&
+          subscriptionDetails?.planId === item.default_price &&
           subscriptionDetails.status === "requested_cancellation" && (
             <Badge
               size="lg"
@@ -161,19 +169,13 @@ function RenderPriceItem({
               Cancellation requested
             </Badge>
           )}
-        <Image src={item.imageUrl} alt="base-pack" height={80} width={80} />
+        {item.images.length > 0 && (
+          <Image src={item.images[0]} alt="base-pack" height={80} width={80} />
+        )}
         <Title order={3} pt={"md"} c={"cyan"}>
-          {item.label}
+          {item.name}
         </Title>
         <Title order={3} pt={"lg"}>
-          {item.regularPrice && (
-            <NumberFormatter
-              prefix="$ "
-              value={item.regularPrice}
-              thousandSeparator
-              className="line-through"
-            />
-          )}
           &nbsp;&nbsp;
           <NumberFormatter
             prefix="$ "
@@ -201,9 +203,7 @@ function RenderPriceItem({
             </ThemeIcon>
           }
         >
-          {item.features.map((feature, idx) => (
-            <List.Item key={idx}>{feature}</List.Item>
-          ))}
+          <List.Item>{item.description}</List.Item>
         </List>
         <Button
           variant="filled"
@@ -212,11 +212,11 @@ function RenderPriceItem({
           loaderProps={{
             textRendering: creatingPayIntent ? "Processing..." : "Error",
           }}
-          mt={"lg"}
+          mt={"auto"}
           disabled={
             !isSignedIn ||
             (subscriptionDetails?.status === "requested_cancellation" &&
-              subscriptionDetails.planId === item.priceId)
+              subscriptionDetails.planId === item.default_price)
               ? true
               : false
           }
@@ -226,16 +226,22 @@ function RenderPriceItem({
               return;
             }
 
-            if (isSubscribed && subscriptionDetails?.planId === item.priceId) {
+            if (
+              isSubscribed &&
+              subscriptionDetails?.planId === item.default_price
+            ) {
               handleSubsCancel();
             }
-            if (isSubscribed && subscriptionDetails?.planId !== item.priceId) {
+            if (
+              isSubscribed &&
+              subscriptionDetails?.planId !== item.default_price
+            ) {
               setPlan(item);
               openUpgradeModal();
             }
           }}
         >
-          {subscriptionDetails?.planId === item.priceId
+          {subscriptionDetails?.planId === item.default_price
             ? "Cancel"
             : isSubscribed
             ? "Upgrade"
@@ -274,7 +280,7 @@ function RenderPriceItem({
           }}
           subscriptionDetails={subscriptionDetails}
           userEmail={user.emailAddresses[0].emailAddress}
-          priceId={plan.priceId}
+          priceId={plan.default_price as string}
         />
       )}
     </Paper>
@@ -287,14 +293,12 @@ function Pricing() {
   const { user } = useUser();
   const setSubscription = useAppStore((state) => state.setSubscription);
   const subscription = useAppStore((state) => state.subscription);
+  const subscriptionPlans = useAppStore((state) => state.subscriptionPlans);
   const {
     mutateAsync: fetchSubsDetails,
     data: subscriptionData,
     isLoading: fetchingSubsDetails,
   } = trpc.getUserSubscriptionDetails.useMutation();
-
-  const { refetch, data: subscriptionPlans } =
-    trpc.fetchSubscriptionPlans.useQuery(undefined, { enabled: false });
 
   const fetchSubscriptionDetails = useCallback(
     async (userId: string) => {
@@ -309,36 +313,6 @@ function Pricing() {
     },
     [fetchSubsDetails, setSubscription]
   );
-
-  const planItems = useMemo(() => {
-    const plans: PriceDetail[] = [];
-
-    if (subscriptionPlans) {
-      const { code, data } = subscriptionPlans;
-
-      if (code === "SUCCESS" && data) {
-        data.data.forEach((item) => {
-          if (PRICE_MAP[item.id]) {
-            const { description, features, imageUrl, regularPrice, label } =
-              PRICE_MAP[item.id];
-            const details: PriceDetail = {
-              amount: item.unit_amount,
-              label,
-              description,
-              features,
-              imageUrl,
-              regularPrice,
-              priceId: item.id,
-              currencyOptions: item.currency_options,
-            };
-            plans.push(details);
-          }
-        });
-      }
-    }
-
-    return plans;
-  }, [subscriptionPlans]);
 
   const title = useMemo(() => {
     if (pathName.includes("/chat")) {
@@ -363,10 +337,6 @@ function Pricing() {
       fetchSubscriptionDetails(user.id);
     }
   }, [fetchSubscriptionDetails, subscriptionData, user, subscription]);
-
-  useEffect(() => {
-    if (!subscriptionPlans) refetch();
-  }, [refetch, subscriptionPlans]);
 
   return (
     <ThemeWrapper>
@@ -395,7 +365,7 @@ function Pricing() {
               p={{ xs: "xs", md: "lg" }}
               justify={"space-around"}
             >
-              {planItems.map((item, index) => (
+              {subscriptionPlans.map((item, index) => (
                 <RenderPriceItem
                   key={index}
                   item={item}

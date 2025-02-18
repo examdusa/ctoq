@@ -2,7 +2,7 @@
 
 import { trpc } from "@/app/_trpc/client";
 import { SelectQuestionBank } from "@/db/schema";
-import { defaultStoreState, useAppStore } from "@/store/app-store";
+import { defaultStoreState, PlanDetails, useAppStore } from "@/store/app-store";
 import { getInstitutes } from "@/utllities/apiFunctions";
 import { Institute } from "@/utllities/zod-schemas-types";
 import { useUser } from "@clerk/nextjs";
@@ -15,6 +15,7 @@ function AppOrchestrator() {
   const setUserProfile = useAppStore((state) => state.setUserProfile);
   const setQuestions = useAppStore((state) => state.setQuestions);
   const setSubscription = useAppStore((state) => state.setSubscription);
+  const setSubscrptionPlans = useAppStore((state) => state.setSubscrptionPlans);
   const institutesById = useAppStore((state) => state.institutesById);
   const userProfile = useAppStore((state) => state.userProfile);
   const questions = useAppStore((state) => state.questions);
@@ -27,6 +28,13 @@ function AppOrchestrator() {
     trpc.getQuestions.useMutation();
   const { mutateAsync: getSubscriptionDetails } =
     trpc.getSubscriptionDetails.useMutation();
+  const { refetch: fetchSubscriptionPlans } = trpc.fetchProductPrices.useQuery(
+    undefined,
+    { enabled: false }
+  );
+  const { refetch: fetchProducts } = trpc.fetchProducts.useQuery(undefined, {
+    enabled: false,
+  });
 
   const { mutateAsync: getAllInstitute } = useMutation({
     mutationFn: getInstitutes,
@@ -52,14 +60,21 @@ function AppOrchestrator() {
   useEffect(() => {
     if (user && isLoaded && isSignedIn && !userProfile && !institutesById) {
       const { id } = user;
-      async function fetchUserProfileDetails() {
-        const [profileDetials, questions, subscriptionDetails] =
-          await Promise.all([
-            getProfileDetails({ userId: id }),
-            fetchUserQuestionBank({ userId: id }),
-            getSubscriptionDetails({ userId: id }),
-            getAllInstitute(),
-          ]);
+      async function initData() {
+        const [
+          profileDetials,
+          questions,
+          subscriptionDetails,
+          subscriptionPlans,
+          products,
+        ] = await Promise.all([
+          getProfileDetails({ userId: id }),
+          fetchUserQuestionBank({ userId: id }),
+          getSubscriptionDetails({ userId: id }),
+          fetchSubscriptionPlans(),
+          fetchProducts(),
+          getAllInstitute(),
+        ]);
 
         const { code, data } = profileDetials;
 
@@ -118,9 +133,27 @@ function AppOrchestrator() {
         ) {
           setSubscription(subscriptionDetails.data);
         }
+
+        if (
+          subscriptionPlans.data?.code === "SUCCESS" &&
+          products.data?.code === "SUCCESS"
+        ) {
+          const productsById = { ...products.data.data };
+          const plans: PlanDetails[] = [];
+          subscriptionPlans.data.data.data.forEach((item) => {
+            if (item.product in productsById) {
+              plans.push({
+                ...productsById[item.product],
+                amount: item.unit_amount,
+              });
+            }
+          });
+
+          setSubscrptionPlans(plans);
+        }
       }
 
-      fetchUserProfileDetails();
+      initData();
     }
 
     if (!isSignedIn) {
@@ -138,10 +171,13 @@ function AppOrchestrator() {
     questions,
     subscription,
     fetchUserQuestionBank,
+    fetchProducts,
     getAllInstitute,
     getSubscriptionDetails,
     setQuestions,
     setSubscription,
+    fetchSubscriptionPlans,
+    setSubscrptionPlans,
   ]);
 
   return null;

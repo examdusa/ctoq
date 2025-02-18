@@ -296,22 +296,20 @@ const StripePromotionResponseSchema = z.object({
 });
 
 const payCardSchema = z.object({
-  email: z.string()
-    .email("Invalid email format.")
-    .min(1, "Email is required."),
-  firstName: z.string()
-    .min(1, "First name is required."),
-  lastName: z.string()
-    .min(1, "Last name is required."),
+  email: z.string().email("Invalid email format.").min(1, "Email is required."),
+  firstName: z.string().min(1, "First name is required."),
+  lastName: z.string().min(1, "Last name is required."),
   addressLine1: z.string().min(1, "Address line is required."),
   city: z.string().min(1, "City is required."),
   state: z.string().min(1, "State is required."),
   postalCode: z.string().min(1, "Postal code is required."),
   country: z.string().min(1, "Country is required."),
-  consentAccepted: z.boolean().refine(val => val === true, {
+  consentAccepted: z.boolean().refine((val) => val === true, {
     message: "Authorization required.",
-  })
-})
+  }),
+});
+
+const subscriptionPlans = z.array(priceSchema);
 
 type GenGoolgeFormOrDocResponse = z.infer<typeof genGoogleFormOrDocResponse>;
 type SharedRecordSchema = z.infer<typeof sharedRecordSchema>;
@@ -335,6 +333,7 @@ type Institutes = z.infer<typeof institutesListSchema>;
 type MCQQuestionSchema = z.infer<typeof mcqQuestionSchema>;
 type BaseResultSchema = z.infer<typeof baseResultSchema>;
 type UserProfileSchema = z.infer<typeof userProfileSchema>;
+type SubscriptionPlans = z.infer<typeof subscriptionPlans>;
 
 export {
   baseResultSchema,
@@ -351,6 +350,7 @@ export {
   mcqSimilarQuestionSchema,
   openEndedQuestionSchema,
   openEndedQuestionsSchema,
+  payCardSchema,
   priceSchema,
   pricesListSchema,
   PromotionCodeSchema,
@@ -358,10 +358,10 @@ export {
   sharedRecordSchema,
   StripePromotionResponseSchema,
   submitJobPayloadSchema,
+  subscriptionPlans,
   trueFalseQuestionSchema,
   trueFalseQuestionsSchema,
   userProfileSchema,
-  payCardSchema
 };
 export type {
   BaseResultSchema,
@@ -381,6 +381,7 @@ export type {
   QuestionBankSchema,
   SharedRecordSchema,
   SubmitJobPayloadSchema,
+  SubscriptionPlans,
   TrueFalseQuestionScheam,
   TrueFalseQuestionsSchema,
   UserProfileSchema,

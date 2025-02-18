@@ -666,7 +666,7 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
                 </Grid.Col>
               </>
             )}
-            {form.values.outputType !== "question" && (
+            {form.values.outputType !== "question" && form.values.outputType !== "summary" && (
               <>
                 <Grid.Col span={12}>
                   <Textarea

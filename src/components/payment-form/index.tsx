@@ -1,10 +1,9 @@
 "use client";
 
 import { trpc } from "@/app/_trpc/client";
+import { PlanDetails } from "@/store/app-store";
 import {
   CARD_ELEMENT_OPTIONS,
-  PRICE_MAP,
-  PriceDetail,
   stripeSupportedCountries,
 } from "@/utllities/constants";
 import { calculateAmountAfterDiscount } from "@/utllities/helpers";
@@ -45,7 +44,7 @@ import { ErrorAlert, SuccessAlert } from "./payment-alerts";
 interface Props {
   open: boolean;
   close: VoidFunction;
-  plan: PriceDetail;
+  plan: PlanDetails;
 }
 
 const promoCodeFormSchema = z.object({
@@ -110,7 +109,7 @@ function PaymentForm({ open, close, plan }: Props) {
     },
   });
 
-  const { label } = PRICE_MAP[plan.priceId];
+  const { name } = plan;
 
   async function validateInputPromoCode(code: string) {
     const { code: resCode, data } = await validatePromoCode(code);
@@ -131,7 +130,7 @@ function PaymentForm({ open, close, plan }: Props) {
         }
       }
     } else {
-      promoCodeForm.setFieldError("code", "Invalid coupon code")
+      promoCodeForm.setFieldError("code", "Invalid coupon code");
     }
   }
 
@@ -168,6 +167,15 @@ function PaymentForm({ open, close, plan }: Props) {
     setLoading(false);
 
     if (error) {
+      notifications.show({
+        message: error.message,
+        title:
+          error.code === "card_declined"
+            ? "Card Declined"
+            : "Something went wrong",
+        withCloseButton: true,
+        color: "red",
+      });
       return;
     }
     const { code: ccCode, data: ccData } = await createCustomer({
@@ -196,7 +204,7 @@ function PaymentForm({ open, close, plan }: Props) {
       currency: currency,
       customerId: ccData.id,
       paymentMethodId: paymentMethod.id,
-      priceId: plan.priceId,
+      priceId: plan.default_price as string,
       userId: user.id,
     });
 
@@ -286,7 +294,7 @@ function PaymentForm({ open, close, plan }: Props) {
                 <Title order={6}>Payment summary</Title>
                 <Flex w={"100%"} justify={"space-between"} my={"md"}>
                   <Title order={5} fw={"normal"}>
-                    {label}
+                    {name}
                   </Title>
                   <Title order={5}>$ {plan.amount / 100}</Title>
                 </Flex>
@@ -497,7 +505,10 @@ function PaymentForm({ open, close, plan }: Props) {
         <SuccessAlert closeHanlder={close} message="Payment Successful" />
       )}
       {(createCustomerError || createSubscriptionError) && (
-        <ErrorAlert closeHanlder={close} message="Payment Failed. Try again later" />
+        <ErrorAlert
+          closeHanlder={close}
+          message="Payment Failed. Try again later"
+        />
       )}
       <LoadingOverlay
         visible={creatingCustomer || creatingSubscription}
