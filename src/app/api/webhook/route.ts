@@ -1,11 +1,18 @@
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
+import { useAppStore } from "@/store/app-store";
 import dayjs from "dayjs";
 import { DrizzleError, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export interface PriceDetail {
   [key: string]: {
@@ -16,26 +23,28 @@ export interface PriceDetail {
   };
 }
 
-const priceList: PriceDetail = {
-  price_1QGNbZBpYrMQUMR14RX1iZVQ: {
+const priceList = {
+  Starter: {
     amount: 0,
     label: "Starter",
     queries: 4,
     questionCount: 10,
   },
-  price_1QH7gtBpYrMQUMR1GNUV8E6W: {
+  Premium: {
     amount: 4999,
     label: "Premium",
     queries: 200,
     questionCount: 30,
   },
-  price_1QKM8OBpYrMQUMR17Lk1ZR7D: {
+  Integrated: {
     amount: 9999,
     label: "Integrated",
     queries: -1,
     questionCount: -1,
   },
 };
+
+const plans = useAppStore.getState().subscriptionPlans;
 
 async function handleInvoiceEvent(event: any) {
   const {
@@ -83,14 +92,15 @@ async function handlePlanChange(
   planStart: number,
   planEnd: number
 ) {
+  const plan = plans.find((p) => p.id === planId);
   try {
     const { rowsAffected } = await db
       .update(subscription)
       .set({
         planId: planId,
         id: subsId,
-        planName: priceList[planId].label,
-        queries: priceList[planId].queries,
+        planName: plan ? plan.name : "Unknown",
+        queries: plan? priceList[plan.name as keyof typeof priceList].queries: 0,
         currency: currency,
         amountPaid: amount,
         startDate: dayjs(planStart * 1000).toISOString(),
@@ -133,7 +143,7 @@ async function handleSubscriptionCreateEvent(event: any) {
   } = event.data.object;
 
   try {
-
+    const plan = plans.find((p) => p.id === id);
     const { rowsAffected } = await db.insert(subscription).values({
       id: subscriptionId,
       userId: userId,
@@ -141,8 +151,8 @@ async function handleSubscriptionCreateEvent(event: any) {
       amountPaid: amount,
       currency: currency,
       planId: id,
-      planName: priceList[id].label,
-      queries: priceList[id].queries,
+      planName: plan ? plan.name: "Unknown",
+      queries: plan? priceList[plan.name as keyof typeof priceList].queries: 0,
       startDate: dayjs(current_period_start * 1000).toISOString(),
       endDate: dayjs(current_period_end * 1000).toISOString(),
       customerId: customer,
@@ -200,6 +210,7 @@ export async function POST(req: NextRequest) {
   // Handle the event
   switch (event.type) {
     case "invoice.payment_succeeded": {
+      console.log("signature: ", sig);
       await handleInvoiceEvent(event);
       break;
     }
@@ -218,6 +229,7 @@ export async function POST(req: NextRequest) {
         plan: { id, amount, currency },
         current_period_end,
         current_period_start,
+        product,
       } = data;
       await handlePlanChange(
         id,
