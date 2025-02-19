@@ -60,7 +60,7 @@ const extractHeadingFromMarkdown = (markdown: string) => {
 function calculateAmountAfterDiscount(amount: number, discountPercentage: number) {
   const discountValue = (amount * discountPercentage) / 100
 
-  return parseInt((amount - discountValue).toFixed(2))
+  return parseFloat((amount - discountValue).toFixed(2))
 }
 
 

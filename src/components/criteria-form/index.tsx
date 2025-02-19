@@ -20,30 +20,6 @@ export interface PriceDetail {
   };
 }
 
-const priceList: PriceDetail = {
-  price_1QGNbZBpYrMQUMR14RX1iZVQ: {
-    amount: 0,
-    label: "Starter",
-    queries: 4,
-    questionCount: 10,
-    features: ["Generate 4 question set of 10 question each per month"],
-  },
-  price_1QH7gtBpYrMQUMR1GNUV8E6W: {
-    amount: 4999,
-    label: "Premium",
-    queries: 200,
-    questionCount: 30,
-    features: ["200 sets of question for up to 30 questions per month"],
-  },
-  price_1QKM8OBpYrMQUMR17Lk1ZR7D: {
-    amount: 9999,
-    label: "Integrated",
-    queries: -1,
-    questionCount: -1,
-    features: ["Generate unlimited sets of question each month"],
-  },
-};
-
 function CriteriaForm({ subscription }: Props) {
   const { user, isLoaded, isSignedIn } = useUser();
   const colorScheme = useMantineColorScheme();
@@ -79,7 +55,6 @@ function CriteriaForm({ subscription }: Props) {
     >
       {user && isLoaded && isSignedIn && (
         <Form
-          priceDetails={priceList}
           subscription={subscription}
           userId={user.id}
         />

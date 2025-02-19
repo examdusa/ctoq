@@ -1,6 +1,5 @@
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
-import { useAppStore } from "@/store/app-store";
 import dayjs from "dayjs";
 import { DrizzleError, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -17,28 +16,26 @@ export interface PriceDetail {
   };
 }
 
-const priceList = {
-  Starter: {
+const priceList: PriceDetail = {
+  price_1QGKzxBpYrMQUMR178WJADpc: {
     amount: 0,
     label: "Starter",
     queries: 4,
     questionCount: 10,
   },
-  Premium: {
+  price_1QGL1DBpYrMQUMR1brEMeTuH: {
     amount: 4999,
     label: "Premium",
     queries: 200,
     questionCount: 30,
   },
-  Integrated: {
+  price_1QSjqgBpYrMQUMR1erxLlufq: {
     amount: 9999,
     label: "Integrated",
     queries: -1,
     questionCount: -1,
   },
 };
-
-const plans = useAppStore.getState().subscriptionPlans;
 
 async function handleInvoiceEvent(event: any) {
   const {
@@ -86,15 +83,14 @@ async function handlePlanChange(
   planStart: number,
   planEnd: number
 ) {
-  const plan = plans.find((p) => p.id === planId);
   try {
     const { rowsAffected } = await db
       .update(subscription)
       .set({
         planId: planId,
         id: subsId,
-        planName: plan ? plan.name : "Unknown",
-        queries: plan? priceList[plan.name as keyof typeof priceList].queries: 0,
+        planName: priceList[planId as keyof typeof priceList] ? priceList[planId as keyof typeof priceList].label : "Unknown",
+        queries: priceList[planId as keyof typeof priceList]? priceList[planId as keyof typeof priceList].queries: 0,
         currency: currency,
         amountPaid: amount,
         startDate: dayjs(planStart * 1000).toISOString(),
@@ -137,7 +133,6 @@ async function handleSubscriptionCreateEvent(event: any) {
   } = event.data.object;
 
   try {
-    const plan = plans.find((p) => p.id === id);
     const { rowsAffected } = await db.insert(subscription).values({
       id: subscriptionId,
       userId: userId,
@@ -145,8 +140,8 @@ async function handleSubscriptionCreateEvent(event: any) {
       amountPaid: amount,
       currency: currency,
       planId: id,
-      planName: plan ? plan.name: "Unknown",
-      queries: plan? priceList[plan.name as keyof typeof priceList].queries: 0,
+      planName: priceList[id] ? priceList[id].label: "Unknown",
+      queries: priceList[id]? priceList[id].queries: 0,
       startDate: dayjs(current_period_start * 1000).toISOString(),
       endDate: dayjs(current_period_end * 1000).toISOString(),
       customerId: customer,

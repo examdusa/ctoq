@@ -1,5 +1,6 @@
 "use client";
 import { trpc } from "@/app/_trpc/client";
+import { PriceDetail } from "@/app/api/webhook/route";
 import { SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import { GenerateQuestionsPayload } from "@/utllities/apiFunctions";
@@ -27,7 +28,6 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconFile3d, IconInfoCircle, IconX } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import z from "zod";
-import { PriceDetail } from "./criteria-form";
 import { ResetIcon, WithAnswersIcon } from "./icons";
 import { AlertModal } from "./modals/alert-modal";
 import { roles } from "./user-profile";
@@ -67,20 +67,48 @@ export const formObject = z
 export type FormSchema = z.infer<typeof formObject>;
 
 interface CriteriaFormProps {
-  priceDetails: PriceDetail;
   subscription: SelectSubscription | undefined;
   userId: string;
 }
 
-function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
+const priceList: PriceDetail = {
+  price_1QGKzxBpYrMQUMR178WJADpc: {
+    amount: 0,
+    label: "Starter",
+    queries: 4,
+    questionCount: 10,
+  },
+  price_1QGL1DBpYrMQUMR1brEMeTuH: {
+    amount: 4999,
+    label: "Premium",
+    queries: 200,
+    questionCount: 30,
+  },
+  price_1QSjqgBpYrMQUMR1erxLlufq: {
+    amount: 9999,
+    label: "Integrated",
+    queries: -1,
+    questionCount: -1,
+  },
+};
+
+function Form({ subscription, userId }: CriteriaFormProps) {
   const [contentType, setContentType] = useState<
     "Resume" | "Courses" | "Keywords"
   >("Keywords");
   const userProfile = useAppStore((state) => state.userProfile);
   const updateQuestionsList = useAppStore((state) => state.updateQuestionsList);
   const addToPendingJobs = useAppStore((state) => state.addToPendingJobs);
+  const subscriptionPlans = useAppStore((state) => state.subscriptionPlans);
   const theme = useMantineTheme();
   const [attempt, setAttempt] = useState(0);
+  const planDetails = useMemo(() => {
+    if (subscription) {
+      const { planId } = subscription;
+      return priceList[planId as keyof typeof priceList];
+    }
+    return undefined;
+  }, [subscription, subscriptionPlans]);
 
   const { mutateAsync: generateQuestions, isLoading: isGenerating } =
     trpc.generateQuestions.useMutation();
@@ -118,9 +146,8 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
           return "Invalid email";
         }
         if (subscription) {
-          const { planId } = subscription;
-          if (planId) {
-            const { questionCount, label } = priceDetails[planId];
+          if (planDetails) {
+            const { questionCount, label } = planDetails;
             if (label === "Integrated") {
               return null;
             }
@@ -465,8 +492,8 @@ function Form({ subscription, userId, priceDetails }: CriteriaFormProps) {
                   {...form.getInputProps("qCount")}
                   min={1}
                   max={
-                    subscription && subscription.planId
-                      ? priceDetails[subscription.planId].label === "Integrated"
+                    planDetails
+                      ? planDetails.label === "Integrated"
                         ? 50
                         : 10
                       : 10

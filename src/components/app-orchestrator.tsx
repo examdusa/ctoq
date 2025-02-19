@@ -65,14 +65,10 @@ function AppOrchestrator() {
           profileDetials,
           questions,
           subscriptionDetails,
-          subscriptionPlans,
-          products,
         ] = await Promise.all([
           getProfileDetails({ userId: id }),
           fetchUserQuestionBank({ userId: id }),
           getSubscriptionDetails({ userId: id }),
-          fetchSubscriptionPlans(),
-          fetchProducts(),
           getAllInstitute(),
         ]);
 
@@ -84,33 +80,6 @@ function AppOrchestrator() {
             createdAt: new Date(data.createdAt),
           });
         }
-        // else if (code === "USER_NOT_FOUND" || !data) {
-        //   if (user) {
-        //     await saveUserDetails(
-        //       {
-        //         appTheme: "dark",
-        //         email: user.emailAddresses[0].emailAddress,
-        //         firstname: user.firstName,
-        //         googleid: "",
-        //         id: user.id,
-        //         lastname: user.lastName,
-        //         language: "english",
-        //         role: "instructor",
-        //       },
-        //       {
-        //         onSuccess: (data) => {
-        //           setUserProfile({
-        //             ...data,
-        //             createdAt: new Date(data.createdAt),
-        //           });
-        //         },
-        //         onError: (err) => {
-        //           console.log(JSON.stringify(err, null, 2));
-        //         },
-        //       }
-        //     );
-        //   }
-        // }
 
         if (questions) {
           const formattedQuestions: Record<string, SelectQuestionBank> = {};
@@ -133,27 +102,32 @@ function AppOrchestrator() {
         ) {
           setSubscription(subscriptionDetails.data);
         }
-
-        if (
-          subscriptionPlans.data?.code === "SUCCESS" &&
-          products.data?.code === "SUCCESS"
-        ) {
-          const productsById = { ...products.data.data };
-          const plans: PlanDetails[] = [];
-          subscriptionPlans.data.data.data.forEach((item) => {
-            if (item.product in productsById) {
-              plans.push({
-                ...productsById[item.product],
-                amount: item.unit_amount,
-              });
-            }
-          });
-
-          setSubscrptionPlans(plans);
-        }
       }
 
       initData();
+    } else {
+      (async() => {
+        const [subscriptionPlans,
+          products] = await Promise.all([fetchSubscriptionPlans(),
+          fetchProducts()])
+          if (
+            subscriptionPlans.data?.code === "SUCCESS" &&
+            products.data?.code === "SUCCESS"
+          ) {
+            const productsById = { ...products.data.data };
+            const plans: PlanDetails[] = [];
+            subscriptionPlans.data.data.data.forEach((item) => {
+              if (item.product in productsById) {
+                plans.push({
+                  ...productsById[item.product],
+                  amount: item.unit_amount,
+                });
+              }
+            });
+  
+            setSubscrptionPlans(plans);
+          }
+      })()
     }
 
     if (!isSignedIn) {
