@@ -64,6 +64,14 @@ function PaymentForm({ open, close, plan }: Props) {
   const [couponApplied, setCouponApplied] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const showDiscountMenu = useMemo(() => {
+    const {name} = plan
+    if (name === 'Starter') {
+      return false;
+    }
+    return true;
+  }, [plan]);
+
   const stripe = useStripe();
   const elements = useElements();
 
@@ -243,7 +251,7 @@ function PaymentForm({ open, close, plan }: Props) {
       title="Payment details"
       centered
       closeOnEscape={false}
-      size={"65%"}
+      size={showDiscountMenu ? "65%": "45%"}
       radius={theme.radius.md}
       closeOnClickOutside={false}
       mih={"30pc"}
@@ -259,7 +267,7 @@ function PaymentForm({ open, close, plan }: Props) {
       {showForm && (
         <Flex direction={"column"} h={"100%"} w={"100%"} gap={"sm"} flex={1}>
           <Flex direction={"row"} w={"100%"} gap={"sm"} flex={1}>
-            <Paper
+            {showDiscountMenu && <Paper
               bg={"#F0F8FF"}
               w={"30%"}
               p={"xs"}
@@ -354,7 +362,7 @@ function PaymentForm({ open, close, plan }: Props) {
                 <Title order={5}>Final amount</Title>
                 <Title order={5}>$ {finalAmount}</Title>
               </Flex>
-            </Paper>
+            </Paper>}
             <Flex direction={"column"} gap={"md"} flex={1} h={"100%"}>
               <Image
                 bg={"#F0F8FF"}
