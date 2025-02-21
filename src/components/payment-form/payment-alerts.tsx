@@ -32,7 +32,7 @@ function SuccessAlert({ closeHanlder, message }: Props) {
           },
         }}
       />
-      <Title order={3}>{message}</Title>
+      <Title order={3} ta={"center"}>{message}</Title>
       <Button variant="filled" mt={"md"} onClick={closeHanlder}>
         Close
       </Button>
@@ -61,7 +61,7 @@ function ErrorAlert({ closeHanlder, message }: Props) {
           },
         }}
       />
-      <Title order={3}>{message}</Title>
+      <Title order={3} ta={"center"}>{message}</Title>
       <Button variant="filled" mt={"md"} onClick={closeHanlder}>
         Close
       </Button>

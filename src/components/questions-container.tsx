@@ -15,7 +15,6 @@ import {
   ActionIcon,
   Avatar,
   Badge,
-  Button,
   Divider,
   Flex,
   Grid,
@@ -24,7 +23,7 @@ import {
   Text,
   Tooltip,
   UnstyledButton,
-  useMantineTheme,
+  useMantineTheme
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -45,7 +44,6 @@ import AddMcqQuestion from "./modals/add-mcq-question-model";
 import AddMcqSimilarQuestion from "./modals/add-mcqsimilar-question-modal";
 import AddOpenEndedQuestion from "./modals/add-openended-question-modal";
 import AddTrueFalseQuestion from "./modals/add-truefalse-question-modal";
-import { AlertModal } from "./modals/alert-modal";
 import EditQuestionLabelModal from "./modals/edit-question-label";
 import { GoogleQuizModal } from "./modals/google-quiz-modal";
 import { ShareExam } from "./modals/share-exam";
@@ -154,7 +152,6 @@ function RenderQuestionRecrod({
   deleteQuestionBank,
   deletingQBank,
 }: RenderQuestionRecordProps) {
-  const [opened, { close, open }] = useDisclosure();
   const [
     headingModalOpened,
     { close: closeHeadingModal, open: openHeadingModal },
@@ -197,10 +194,6 @@ function RenderQuestionRecrod({
   }, [record]);
 
   function handleGoogleQuiz() {
-    if (planName === "Starter") {
-      open();
-      return;
-    }
     openGQuizModal();
   }
 
@@ -425,23 +418,6 @@ function RenderQuestionRecrod({
               );
             })}
         </Grid>
-        <AlertModal
-          close={close}
-          open={opened}
-          message="This feature is available only in Integrated and premium plan. Do you want to Upgrade?"
-          showCloseButton={false}
-          title="Alert"
-          footer={
-            <>
-              <Button variant="filled" size="sm" onClick={close}>
-                No
-              </Button>
-              <Button variant="filled" size="sm" onClick={handleRedirect}>
-                Yes
-              </Button>
-            </>
-          }
-        />
       </Flex>
       {headingModalOpened && (
         <EditQuestionLabelModal

@@ -19,12 +19,7 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import {
-  IconDownload,
-  IconEye,
-  IconSettings,
-  IconTool,
-} from "@tabler/icons-react";
+import { IconDownload, IconEye, IconTool } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -115,16 +110,9 @@ function AppHeader() {
                     <IconEye style={{ width: rem(14), height: rem(14) }} />
                   }
                 >
-                  <Link href={"/pricing"}>See plans</Link>
-                </Menu.Item>
-                <Menu.Item
-                  disabled={!subscriptionDetail}
-                  leftSection={
-                    <IconSettings style={{ width: rem(14), height: rem(14) }} />
-                  }
-                  onClick={handleManageSubs}
-                >
-                  Manage
+                  <Link href={"/pricing"}>
+                    {user ? "Manage plans" : "See plans"}
+                  </Link>
                 </Menu.Item>
                 <Menu.Item
                   disabled={!subscriptionDetail}
@@ -192,4 +180,3 @@ function AppHeader() {
 }
 
 export { AppHeader };
-

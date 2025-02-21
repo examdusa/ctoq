@@ -22,6 +22,7 @@ import {
   LoadingOverlay,
   Modal,
   Paper,
+  Pill,
   Select,
   Text,
   TextInput,
@@ -65,8 +66,8 @@ function PaymentForm({ open, close, plan }: Props) {
   const [loading, setLoading] = useState(false);
 
   const showDiscountMenu = useMemo(() => {
-    const {name} = plan
-    if (name === 'Starter') {
+    const { amount } = plan;
+    if (amount === 0) {
       return false;
     }
     return true;
@@ -251,7 +252,7 @@ function PaymentForm({ open, close, plan }: Props) {
       title="Payment details"
       centered
       closeOnEscape={false}
-      size={showDiscountMenu ? "65%": "45%"}
+      size={showDiscountMenu ? "65%" : "45%"}
       radius={theme.radius.md}
       closeOnClickOutside={false}
       mih={"30pc"}
@@ -267,117 +268,137 @@ function PaymentForm({ open, close, plan }: Props) {
       {showForm && (
         <Flex direction={"column"} h={"100%"} w={"100%"} gap={"sm"} flex={1}>
           <Flex direction={"row"} w={"100%"} gap={"sm"} flex={1}>
-            {showDiscountMenu && <Paper
-              bg={"#F0F8FF"}
-              w={"30%"}
-              p={"xs"}
-              radius={theme.radius.md}
-              styles={{
-                root: {
-                  display: "flex",
-                  flexDirection: "column",
-                  width: "100%",
-                  alignItems: "center",
-                  gap: theme.spacing.sm,
-                },
-              }}
-            >
-              <Title order={5}>Total amount</Title>
-              <Title order={1} c={theme.colors.teal[6]}>
-                $ {finalAmount}
-              </Title>
-              <Divider my={"md"} orientation="horizontal" w={"80%"} />
-              <Container
-                fluid
-                pt={"md"}
-                m={0}
-                w={"100%"}
+            {showDiscountMenu && (
+              <Paper
+                bg={"#F0F8FF"}
+                w={"30%"}
+                p={"xs"}
+                radius={theme.radius.md}
                 styles={{
                   root: {
-                    alignItems: "start",
-                    gap: theme.spacing.md,
+                    display: "flex",
+                    flexDirection: "column",
+                    width: "100%",
+                    alignItems: "center",
+                    gap: theme.spacing.sm,
                   },
                 }}
               >
-                <Title order={6}>Payment summary</Title>
-                <Flex w={"100%"} justify={"space-between"} my={"md"}>
-                  <Title order={5} fw={"normal"}>
-                    {name}
-                  </Title>
-                  <Title order={5}>$ {plan.amount / 100}</Title>
-                </Flex>
-
-                {!couponApplied && (
-                  <form
-                    onSubmit={promoCodeForm.onSubmit((values) =>
-                      validateInputPromoCode(values.code)
-                    )}
-                  >
-                    <TextInput
-                      key={promoCodeForm.key("code")}
-                      {...promoCodeForm.getInputProps("code")}
-                      label="Promo code"
-                    />
-                    <Button
-                      type="submit"
-                      size="sm"
-                      mt={"md"}
-                      fullWidth
-                      loading={validatingPromoCode}
-                      disabled={!promoCodeForm.getValues().code}
-                    >
-                      Apply
-                    </Button>
-                  </form>
-                )}
-                {couponApplied && couponData && couponData.data && (
-                  <Flex justify={"space-between"} w={"auto"}>
-                    <Flex direction={"column"} gap={"sm"}>
-                      <Text size="sm">Coupon applied</Text>
-                      <Flex gap={"sm"} align={"center"}>
-                        <Badge
-                          leftSection={<IconRosetteDiscountCheck size={15} />}
-                          size="lg"
-                        >
-                          {couponData.data.data[0].code}
-                        </Badge>
-                        <Button
-                          variant="subtle"
-                          onClick={() => {
-                            setCouponApplied(false);
-                            setFinalAmount(plan.amount / 100);
-                          }}
-                        >
-                          Change
-                        </Button>
-                      </Flex>
-                    </Flex>
-                    <Text size="sm" fw={"bold"}>
-                      {couponData.data.data[0].coupon.percent_off} %
-                    </Text>
+                <Title order={5}>Total amount</Title>
+                <Title order={1} c={theme.colors.teal[6]}>
+                  $ {finalAmount}
+                </Title>
+                <Divider my={"md"} orientation="horizontal" w={"80%"} />
+                <Container
+                  fluid
+                  pt={"md"}
+                  m={0}
+                  w={"100%"}
+                  styles={{
+                    root: {
+                      alignItems: "start",
+                      gap: theme.spacing.md,
+                    },
+                  }}
+                >
+                  <Title order={6}>Payment summary</Title>
+                  <Flex w={"100%"} justify={"space-between"} my={"md"}>
+                    <Title order={5} fw={"normal"}>
+                      {name}
+                    </Title>
+                    <Title order={5}>$ {plan.amount / 100}</Title>
                   </Flex>
-                )}
-              </Container>
-              <Flex w={"100%"} justify={"space-between"} px={"xs"} mt={"md"}>
-                <Title order={5}>Final amount</Title>
-                <Title order={5}>$ {finalAmount}</Title>
-              </Flex>
-            </Paper>}
+
+                  {!couponApplied && (
+                    <form
+                      onSubmit={promoCodeForm.onSubmit((values) =>
+                        validateInputPromoCode(values.code)
+                      )}
+                    >
+                      <TextInput
+                        key={promoCodeForm.key("code")}
+                        {...promoCodeForm.getInputProps("code")}
+                        label="Promo code"
+                      />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        mt={"md"}
+                        fullWidth
+                        loading={validatingPromoCode}
+                        disabled={!promoCodeForm.getValues().code}
+                      >
+                        Apply
+                      </Button>
+                    </form>
+                  )}
+                  {couponApplied && couponData && couponData.data && (
+                    <Flex justify={"space-between"} w={"auto"}>
+                      <Flex direction={"column"} gap={"sm"}>
+                        <Text size="sm">Coupon applied</Text>
+                        <Flex gap={"sm"} align={"center"}>
+                          <Badge
+                            leftSection={<IconRosetteDiscountCheck size={15} />}
+                            size="lg"
+                          >
+                            {couponData.data.data[0].code}
+                          </Badge>
+                          <Button
+                            variant="subtle"
+                            onClick={() => {
+                              setCouponApplied(false);
+                              setFinalAmount(plan.amount / 100);
+                            }}
+                          >
+                            Change
+                          </Button>
+                        </Flex>
+                      </Flex>
+                      <Text size="sm" fw={"bold"}>
+                        {couponData.data.data[0].coupon.percent_off} %
+                      </Text>
+                    </Flex>
+                  )}
+                </Container>
+                <Flex w={"100%"} justify={"space-between"} px={"xs"} mt={"md"}>
+                  <Title order={5}>Final amount</Title>
+                  <Title order={5}>$ {finalAmount}</Title>
+                </Flex>
+              </Paper>
+            )}
             <Flex direction={"column"} gap={"md"} flex={1} h={"100%"}>
-              <Image
-                bg={"#F0F8FF"}
-                src={CardsLogo.src}
-                radius={theme.radius.md}
-                fit="cover"
-                alt="cards-logo"
-                ml={"auto"}
-                className="w-full h-10 max-w-xs"
-                styles={{
-                  root: {
-                    flex: "none",
-                  },
-                }}
-              />
+              <Flex
+                direction={"row"}
+                w={"100%"}
+                justify={"space-between"}
+                align={"center"}
+              >
+                <Pill
+                  size="lg"
+                  styles={{
+                    root: {
+                      backgroundColor: theme.colors.teal[5],
+                      color: "white",
+                    },
+                  }}
+                >
+                  You&apos;re paying $ {finalAmount}
+                </Pill>
+                <Image
+                  bg={"#F0F8FF"}
+                  src={CardsLogo.src}
+                  radius={theme.radius.md}
+                  fit="cover"
+                  alt="cards-logo"
+                  ml={"auto"}
+                  className="w-full h-10 max-w-xs"
+                  styles={{
+                    root: {
+                      flex: "none",
+                    },
+                  }}
+                />
+              </Flex>
               <form
                 onSubmit={payCardForm.onSubmit((values) => handlePay(values))}
               >

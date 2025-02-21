@@ -71,6 +71,15 @@ function RenderPriceItem({
     return false;
   }, [subscriptionDetails]);
 
+  const action = useMemo(() => {
+    if (subscriptionDetails && subscriptionDetails.amountPaid) {
+      if (item.amount > subscriptionDetails.amountPaid) {
+        return "Upgrade";
+      }
+    }
+    return "Downgrade";
+  }, [subscriptionDetails, item]);
+
   const {
     mutateAsync: creatPayIntent,
     isLoading: creatingPayIntent,
@@ -243,9 +252,7 @@ function RenderPriceItem({
         >
           {subscriptionDetails?.planId === item.default_price
             ? "Cancel"
-            : isSubscribed
-            ? "Upgrade"
-            : "Subscribe"}
+            : action}
         </Button>
       </Flex>
       {selectedPlan && payFormOpen && (
@@ -280,7 +287,8 @@ function RenderPriceItem({
           }}
           subscriptionDetails={subscriptionDetails}
           userEmail={user.emailAddresses[0].emailAddress}
-          priceId={plan.default_price as string}
+          plan={plan}
+          action={action as "Upgrade" | "Downgrade"}
         />
       )}
     </Paper>

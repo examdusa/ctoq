@@ -64,6 +64,15 @@ function RenderPriceItem({
     { open: openUpgradeModal, close: closeUpgradeModal },
   ] = useDisclosure(false);
 
+  const action = useMemo(() => {
+    if (subscriptionDetails && subscriptionDetails.amountPaid) {
+      if (item.amount > subscriptionDetails.amountPaid) {
+        return "Upgrade";
+      }
+    }
+    return "Downgrade";
+  }, [subscriptionDetails, item]);
+
   const isSubscribed = useMemo(() => {
     if (subscriptionDetails) {
       return subscriptionDetails.planId ? true : false;
@@ -241,9 +250,7 @@ function RenderPriceItem({
         >
           {subscriptionDetails?.planId === item.default_price
             ? "Cancel"
-            : isSubscribed
-            ? "Upgrade"
-            : "Subscribe"}
+            : action}
         </Button>
       </Flex>
       {selectedPlan && payFormOpen && (
@@ -278,7 +285,8 @@ function RenderPriceItem({
           }}
           subscriptionDetails={subscriptionDetails}
           userEmail={user.emailAddresses[0].emailAddress}
-          priceId={plan.default_price as string}
+          plan={plan}
+          action={action as "Upgrade" | "Downgrade"}
         />
       )}
     </Paper>

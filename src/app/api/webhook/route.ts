@@ -16,27 +16,6 @@ export interface PriceDetail {
   };
 }
 
-const priceList: PriceDetail = {
-  price_1QGKzxBpYrMQUMR178WJADpc: {
-    amount: 0,
-    label: "Starter",
-    queries: 4,
-    questionCount: 10,
-  },
-  price_1QGL1DBpYrMQUMR1brEMeTuH: {
-    amount: 4999,
-    label: "Premium",
-    queries: 200,
-    questionCount: 30,
-  },
-  price_1QSjqgBpYrMQUMR1erxLlufq: {
-    amount: 9999,
-    label: "Integrated",
-    queries: -1,
-    questionCount: -1,
-  },
-};
-
 async function handleInvoiceEvent(event: any) {
   const {
     id,
@@ -81,16 +60,26 @@ async function handlePlanChange(
   currency: string,
   subsId: string,
   planStart: number,
-  planEnd: number
+  planEnd: number,
+  products: Stripe.Response<Stripe.ApiList<Stripe.Product>>
 ) {
+  const plan = products.data.find((p) => p.default_price === planId);
+  if (!plan) {
+    return NextResponse.json(
+      {
+        message: "Plan not found",
+      },
+      { status: 400 }
+    );
+  }
   try {
     const { rowsAffected } = await db
       .update(subscription)
       .set({
         planId: planId,
         id: subsId,
-        planName: priceList[planId as keyof typeof priceList] ? priceList[planId as keyof typeof priceList].label : "Unknown",
-        queries: priceList[planId as keyof typeof priceList]? priceList[planId as keyof typeof priceList].queries: 0,
+        planName: plan.name,
+        queries: Number(plan.metadata.queryCount),
         currency: currency,
         amountPaid: amount,
         startDate: dayjs(planStart * 1000).toISOString(),
@@ -122,7 +111,10 @@ async function updateSubscriptionCancellationDetail(customerId: string) {
   }
 }
 
-async function handleSubscriptionCreateEvent(event: any) {
+async function handleSubscriptionCreateEvent(
+  event: any,
+  products: Stripe.Response<Stripe.ApiList<Stripe.Product>>
+) {
   const {
     id: subscriptionId,
     current_period_end,
@@ -132,6 +124,16 @@ async function handleSubscriptionCreateEvent(event: any) {
     plan: { id, amount, currency },
   } = event.data.object;
 
+  const plan = products.data.find((p) => p.default_price === id);
+  if (!plan) {
+    return NextResponse.json(
+      {
+        message: "Plan not found",
+      },
+      { status: 400 }
+    );
+  }
+
   try {
     const { rowsAffected } = await db.insert(subscription).values({
       id: subscriptionId,
@@ -140,8 +142,8 @@ async function handleSubscriptionCreateEvent(event: any) {
       amountPaid: amount,
       currency: currency,
       planId: id,
-      planName: priceList[id] ? priceList[id].label: "Unknown",
-      queries: priceList[id]? priceList[id].queries: 0,
+      planName: plan.name,
+      queries: Number(plan.metadata.queryCount),
       startDate: dayjs(current_period_start * 1000).toISOString(),
       endDate: dayjs(current_period_end * 1000).toISOString(),
       customerId: customer,
@@ -183,7 +185,19 @@ export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
 
   let event: Stripe.Event;
-  console.log(dayjs().format("MMM-DD-YYYY | hh:mm a"));
+
+  const products = await stripe.products.list();
+
+  console.log("products: ", products);
+
+  if (products.data.length === 0) {
+    return NextResponse.json(
+      {
+        message: "No products found",
+      },
+      { status: 400 }
+    );
+  }
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -199,7 +213,6 @@ export async function POST(req: NextRequest) {
   // Handle the event
   switch (event.type) {
     case "invoice.payment_succeeded": {
-      console.log("signature: ", sig);
       await handleInvoiceEvent(event);
       break;
     }
@@ -208,7 +221,7 @@ export async function POST(req: NextRequest) {
       break;
     }
     case "customer.subscription.created": {
-      await handleSubscriptionCreateEvent(event);
+      await handleSubscriptionCreateEvent(event, products);
       break;
     }
     case "customer.subscription.updated": {
@@ -218,7 +231,6 @@ export async function POST(req: NextRequest) {
         plan: { id, amount, currency },
         current_period_end,
         current_period_start,
-        product,
       } = data;
       await handlePlanChange(
         id,
@@ -226,7 +238,8 @@ export async function POST(req: NextRequest) {
         currency,
         subsId,
         current_period_start,
-        current_period_end
+        current_period_end,
+        products
       );
       break;
     }

@@ -3,7 +3,6 @@
 import { SelectSubscription } from "@/db/schema";
 import { useUser } from "@clerk/nextjs";
 import { Flex, useMantineColorScheme, useMantineTheme } from "@mantine/core";
-import { useMemo } from "react";
 import { Form } from "../form";
 
 interface Props {
@@ -24,13 +23,6 @@ function CriteriaForm({ subscription }: Props) {
   const { user, isLoaded, isSignedIn } = useUser();
   const colorScheme = useMantineColorScheme();
   const theme = useMantineTheme();
-
-  const disableFields = useMemo(() => {
-    if (subscription) {
-      return subscription.queries === 0 || subscription.status !== "paid";
-    }
-    return false;
-  }, [subscription]);
 
   return (
     <Flex

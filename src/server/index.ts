@@ -939,11 +939,11 @@ export const appRouter = router({
         active: true,
       });
 
-      const productsById: {[key: string]: Stripe.Product} = {}
+      const productsById: { [key: string]: Stripe.Product } = {};
 
       products.data.forEach((item) => {
-        productsById[item.id] = {...item}
-      })
+        productsById[item.id] = { ...item };
+      });
 
       return { data: productsById, code: "SUCCESS" } as const;
     } catch (err) {
@@ -955,13 +955,12 @@ export const appRouter = router({
     .input(z.string())
     .mutation(async ({ input }) => {
       try {
-        
-          await stripe.subscriptions.update(input, {
-            cancel_at_period_end: true,
-            cancellation_details: {
-              comment: "User demanded cancellation",
-            },
-          });
+        await stripe.subscriptions.update(input, {
+          cancel_at_period_end: true,
+          cancellation_details: {
+            comment: "User demanded cancellation",
+          },
+        });
 
         try {
           const { rowsAffected } = await db
@@ -1166,23 +1165,20 @@ export const appRouter = router({
       const { code: fceCode, data: fceData } = fceResult;
 
       if (fsoCode === "SUCCESS" && fsoData && fceData) {
-        const payload: Stripe.SubscriptionScheduleCreateParams = {
-          customer: fceData.id,
-          start_date: fsoData.current_period_end,
-          phases: [
-            {
-              items: [{ price: priceId }],
-            },
-          ],
-        };
-
         try {
-          await stripe.subscriptionSchedules.create({
-            ...payload,
-          });
+          const updateResponse = await stripe.subscriptions.update(
+            subscriptionId,
+            {
+              proration_behavior: "always_invoice",
+              items: [{ id: fsoResult.data.items.data[0].id, price: priceId }],
+              proration_date: Math.floor(new Date().getTime() / 1000),
+            }
+          );
+
+          console.log("updateResponse: ", updateResponse);
 
           return {
-            code: "WILL_UPGRADE",
+            code: "UPGRADE_SUCCESS",
             data: null,
           } as const;
         } catch (err) {
@@ -1278,6 +1274,91 @@ export const appRouter = router({
       } as const;
     }
   }),
+  getProratedAmount: procedure
+    .input(
+      z.object({
+        subscriptionId: z.string(),
+        newPriceId: z.string(),
+        customerId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const { subscriptionId, newPriceId, customerId } = input;
+        const subscription = await stripe.subscriptions.retrieve(
+          subscriptionId
+        );
+        if (subscription.status === "active") {
+          const invoice = await stripe.invoices.retrieveUpcoming({
+            subscription: subscriptionId,
+            customer: customerId,
+            subscription_items: [
+              {
+                id: subscription.items.data[0].id,
+                price: newPriceId,
+              },
+            ],
+            subscription_proration_date: Math.floor(Date.now() / 1000),
+          });
+          console.log("upcoming invoice: ", JSON.stringify(invoice));
+          return {
+            code: "SUCCESS",
+            data: invoice.amount_due,
+          } as const;
+        }
+        return {
+          code: "NO_ACTIVE_SUBSCRIPTION",
+          data: null,
+        } as const;
+      } catch (err) {
+        console.log("getProratedAmount error: ", err);
+        return {
+          code: "FAILED",
+          data: null,
+        } as const;
+      }
+    }),
+  downgradeSubscription: procedure
+    .input(
+      z.object({
+        subscriptionId: z.string(),
+        priceId: z.string(),
+        userEmail: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { subscriptionId, priceId, userEmail } = input;
+
+      const [fsoResult, fceResult] = await Promise.all([
+        fetchSubscriptionObject(subscriptionId),
+        fetchCustomerByEmail(userEmail),
+      ]);
+      if (fsoResult.data && fceResult.data) {
+        const {id, current_period_end} = fsoResult.data;
+        const {id: customerId} = fceResult.data;
+        try {
+          const payload: Stripe.SubscriptionScheduleCreateParams = {
+            customer: customerId,
+            start_date: current_period_end,
+            phases: [
+              {
+                items: [{ price: priceId }],
+              },
+            ],
+          };
+          await stripe.subscriptionSchedules.create({
+            ...payload,
+          });
+  
+          return { code: "WILL_CHANGE", data: null } as const;
+        } catch (err) {
+          console.log("Downgrade error: ", err);
+          return { code: "FAILED", data: null } as const;
+        }
+      } else {
+        return { code: "FAILED", data: null } as const;
+      }
+    }),
 });
 
 async function fetchPaymentMethod(customerId: string) {

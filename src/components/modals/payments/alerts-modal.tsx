@@ -6,17 +6,21 @@ import {
   SuccessAlert,
 } from "@/components/payment-form/payment-alerts";
 import { SelectSubscription } from "@/db/schema";
+import { PlanDetails, useAppStore } from "@/store/app-store";
 import {
   Alert,
   Button,
+  Divider,
   Flex,
   Group,
   LoadingOverlay,
   Modal,
+  Text,
   Title,
   useMantineTheme,
 } from "@mantine/core";
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
+import { useMemo } from "react";
 
 interface Props {
   open: boolean;
@@ -28,8 +32,9 @@ interface UpgradeSubscriptionProps {
   open: boolean;
   close: VoidFunction;
   subscriptionDetails: SelectSubscription;
-  priceId: string;
   userEmail: string;
+  plan: PlanDetails;
+  action: "Downgrade" | "Upgrade";
 }
 
 function CancelSubscription({ open, close, subscriptionDetails }: Props) {
@@ -143,22 +148,44 @@ function UpgradeSubscription({
   close,
   open,
   subscriptionDetails,
-  priceId,
   userEmail,
+  plan,
+  action,
 }: UpgradeSubscriptionProps) {
   const theme = useMantineTheme();
+  const setSubscriptionDetails = useAppStore((state) => state.setSubscription);
+
+  const { mutateAsync: getSubscriptionDetails } =
+    trpc.getSubscriptionDetails.useMutation({
+      onSuccess: (data) => {
+        if (data.code === "SUCCESS" && data.data) {
+          setSubscriptionDetails({...data.data});
+        }
+      },
+    });
 
   const {
     mutateAsync: upgradeSubscription,
     isLoading: upgradingSubscription,
     isError: upgradeError,
-    data,
-  } = trpc.upgradeSubscription.useMutation();
+    data: upgradeData,
+  } = trpc.upgradeSubscription.useMutation({
+    onSuccess: async (data) => {
+      if (data && data.code === "UPGRADE_SUCCESS") {
+        await getSubscriptionDetails({ userId: subscriptionDetails.userId });
+      }
+    },
+  });
 
-  let status = 'SUCCESS'
+  const {
+    mutateAsync: downgradeSubscription,
+    isLoading: downgradingSubscription,
+    isError: errorDowngradingSubscription,
+    data: downgradeData,
+  } = trpc.downgradeSubscription.useMutation();
 
-  if (data) {
-    status = data.code
+  if (upgradeData) {
+    status = upgradeData.code;
   }
 
   return (
@@ -167,11 +194,10 @@ function UpgradeSubscription({
       closeButtonProps={{
         display: "none",
       }}
-      title="Upgrade alert"
+      title={action}
       onClose={() => {}}
       closeOnClickOutside={false}
       closeOnEscape={false}
-      size={"md"}
       centered
       radius={theme.radius.md}
       mih={"40vh"}
@@ -180,47 +206,115 @@ function UpgradeSubscription({
           display: "flex",
           flexDirection: "column",
           width: "100%",
+          height: "100%",
         },
       }}
     >
-      {(!upgradeError && status === 'SUCCESS') && (
-        <Flex
-          direction={"column"}
-          flex={1}
-          w={"100%"}
-          align={"center"}
-          justify={"center"}
-          gap={"md"}
-        >
-          <Alert title="Upgrade Notice" color="blue">
-            Your subscription upgrade will take effect at the end of the billing
-            cycle. An upgrade request will be submitted.
-          </Alert>
-          <Group justify="flex-end" mt={"auto"} w={"100%"}>
+      {!upgradeData && !downgradeData && (
+        <>
+          <Title order={4}>Subscription {action.toLowerCase()} summary</Title>
+          <Divider w={"auto"} my={"xs"} />
+          <Flex
+            direction={"column"}
+            gap={"sm"}
+            w={"100%"}
+            justify={"start"}
+            my={"md"}
+          >
+            <Title order={5}>Current plan</Title>
+            <Flex
+              direction={"row"}
+              w={"100%"}
+              justify={"space-between"}
+              align={"center"}
+              bg={theme.colors.gray[3]}
+              p={"sm"}
+              styles={{
+                root: {
+                  borderRadius: theme.radius.sm,
+                },
+              }}
+            >
+              <Text>{subscriptionDetails.planName}</Text>
+              {subscriptionDetails.amountPaid && (
+                <Text fs={theme.fontSizes.lg} fw={"bold"}>
+                  $ {subscriptionDetails.amountPaid / 100}
+                </Text>
+              )}
+            </Flex>
+            <Title order={5} mt={"md"}>
+              {action} to plan
+            </Title>
+            <Flex
+              direction={"row"}
+              w={"100%"}
+              justify={"space-between"}
+              align={"center"}
+              bg={theme.colors.gray[3]}
+              p={"sm"}
+              styles={{
+                root: {
+                  borderRadius: theme.radius.sm,
+                },
+              }}
+            >
+              <Text>{plan.name}</Text>
+              <Text fs={theme.fontSizes.lg} fw={"bold"}>
+                $ {plan.amount / 100}
+              </Text>
+            </Flex>
+          </Flex>
+          {action !== "Downgrade" && (
+            <Alert
+              title="Proration Notice"
+              color="blue"
+              icon={<IconInfoCircle />}
+              mt={"md"}
+            >
+              If proration applies, the amount will be adjusted and charged
+              accordingly. The saved payment method will be used to process the
+              payment.
+            </Alert>
+          )}
+          <Group justify="flex-end" mt={"md"} w={"100%"}>
             <Button variant="outline" onClick={close}>
               Close
             </Button>
             <Button
               variant="filled"
               onClick={() => {
-                upgradeSubscription({
-                  subscriptionId: subscriptionDetails.id,
-                  priceId,
-                  userEmail,
-                });
+                if (action === "Downgrade") {
+                  downgradeSubscription({
+                    subscriptionId: subscriptionDetails.id,
+                    priceId: plan.default_price as string,
+                    userEmail,
+                  });
+                } else {
+                  upgradeSubscription({
+                    subscriptionId: subscriptionDetails.id,
+                    priceId: plan.default_price as string,
+                    userEmail,
+                  });
+                }
               }}
             >
-              Ok
+              {action}
             </Button>
           </Group>
-        </Flex>
+        </>
       )}
       <LoadingOverlay
-        visible={upgradingSubscription}
+        visible={upgradingSubscription || downgradingSubscription}
         zIndex={1000}
         overlayProps={{ radius: "sm", blur: 2 }}
-        flex={1}
-        display={"flex"}
+        styles={{
+          root: {
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            flexGrow: 1,
+          },
+        }}
         loaderProps={{
           type: "oval",
           color: "blue",
@@ -239,18 +333,27 @@ function UpgradeSubscription({
                 stroke={1}
                 color={theme.colors.blue[5]}
               />
-              <Title order={4}>Cancelling subscription...</Title>
+              {upgradingSubscription ? (
+                <Title order={4}>Upgrading subscription...</Title>
+              ) : (
+                <Title order={4}>Downgrading subscription...</Title>
+              )}
             </Flex>
           ),
         }}
       />
-      {(data?.code === "SUCCESS" || data?.code === "WILL_UPGRADE") && (
+      {(upgradeData?.code === "SUCCESS" ||
+        upgradeData?.code === "UPGRADE_SUCCESS") && (
+        <SuccessAlert
+          closeHanlder={close}
+          message={"Your subscription has been successfully upgraded."}
+        />
+      )}
+      {downgradeData?.code === "WILL_CHANGE" && (
         <SuccessAlert
           closeHanlder={close}
           message={
-            data?.code === "SUCCESS"
-              ? "Your subscription has been successfully upgraded."
-              : "Your subscription will be upgraded at the end of the billing cycle."
+            "Your downgrade request has been successfully processed and will take effect on the next billing cycle."
           }
         />
       )}
@@ -258,6 +361,12 @@ function UpgradeSubscription({
         <ErrorAlert
           closeHanlder={close}
           message="Cancellation request failed. Try again later."
+        />
+      )}
+      {errorDowngradingSubscription && (
+        <ErrorAlert
+          closeHanlder={close}
+          message="Subscription downgrade request failed. Try again later."
         />
       )}
     </Modal>

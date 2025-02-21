@@ -105,7 +105,7 @@ function Form({ subscription, userId }: CriteriaFormProps) {
   const planDetails = useMemo(() => {
     if (subscription) {
       const { planId } = subscription;
-      return priceList[planId as keyof typeof priceList];
+      return subscriptionPlans.find((plan) => plan.default_price === planId);
     }
     return undefined;
   }, [subscription, subscriptionPlans]);
@@ -147,11 +147,11 @@ function Form({ subscription, userId }: CriteriaFormProps) {
         }
         if (subscription) {
           if (planDetails) {
-            const { questionCount, label } = planDetails;
-            if (label === "Integrated") {
+            const { questionCount, planName } = planDetails.metadata;
+            if (planName === "Integrated") {
               return null;
             }
-            if (value > questionCount) {
+            if (value > Number(questionCount)) {
               return "Invalid count";
             }
           }
@@ -493,7 +493,7 @@ function Form({ subscription, userId }: CriteriaFormProps) {
                   min={1}
                   max={
                     planDetails
-                      ? planDetails.label === "Integrated"
+                      ? planDetails.metadata.planName === "Integrated"
                         ? 50
                         : 10
                       : 10
