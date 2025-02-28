@@ -68,9 +68,11 @@ function RenderPriceItem({
     if (subscriptionDetails && subscriptionDetails.amountPaid) {
       if (item.amount > subscriptionDetails.amountPaid) {
         return "Upgrade";
+      } else {
+        return "Downgrade"
       }
     }
-    return "Downgrade";
+    return "Subscribe";
   }, [subscriptionDetails, item]);
 
   const isSubscribed = useMemo(() => {
