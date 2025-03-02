@@ -25,6 +25,7 @@ function AppLayout({ children }: Props) {
   return (
     <AppShell
       header={{ height: 60, offset: true }}
+      my={0}
       styles={{
         root: {
           display: "flex",
@@ -45,13 +46,12 @@ function AppLayout({ children }: Props) {
         <AppHeader />
       </AppShell.Header>
       <AppShell.Main
-        mx={2}
         styles={{
           main: {
             display: "flex",
             flexDirection: "column",
-            flexGrow: 1,
             width: "100%",
+            marginBottom: 0,
           },
         }}
       >

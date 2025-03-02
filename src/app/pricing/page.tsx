@@ -69,7 +69,7 @@ function RenderPriceItem({
       if (item.amount > subscriptionDetails.amountPaid) {
         return "Upgrade";
       } else {
-        return "Downgrade"
+        return "Downgrade";
       }
     }
     return "Subscribe";
@@ -348,47 +348,61 @@ export default function Pricing() {
 
   return (
     <ThemeWrapper>
-      <Elements stripe={stripePromise}>
-        <Flex
-          direction={"column"}
-          w={"100%"}
-          my={{ xl: pathName.includes("/chat") ? 0 : "5%" }}
-          align={"center"}
-          className="rounded-md"
-          gap={"md"}
-          styles={{
-            root: {
-              padding: `${theme.spacing.lg}`,
-              flexGrow: 1,
-            },
-          }}
-        >
-          {title}
-          <ScrollArea style={{ height: "calc(100vh- 20vh)", width: "100%" }}>
-            <Flex
-              direction={{ xs: "column", md: "row" }}
-              w={"100%"}
-              gap={{ xs: "xs", md: "md" }}
-              h={"100%"}
-              p={{ xs: "xs", md: "lg" }}
-              justify={"space-around"}
-            >
-              {subscriptionPlans.map((item, index) => (
-                <RenderPriceItem
-                  key={index}
-                  item={item}
-                  subscriptionDetails={subscription}
-                  loading={fetchingSubsDetails}
-                  refetchSubscriptionDetails={(userId: string) =>
-                    fetchSubsDetails({ userId })
-                  }
-                />
-              ))}
-            </Flex>
-          </ScrollArea>
-        </Flex>
-      </Elements>
-      <Footer />
+      <ScrollArea
+        styles={{
+          root: {
+            height: "calc(100vh - 64px)",
+            width: "100%",
+          },
+          viewport: {
+            height: "100%",
+            width: "100%",
+          },
+        }}
+        mx={"auto"}
+      >
+        <Elements stripe={stripePromise}>
+          <Flex
+            direction={"column"}
+            w={"100%"}
+            my={{ xl: pathName.includes("/chat") ? 0 : "5%" }}
+            align={"center"}
+            className="rounded-md"
+            gap={"md"}
+            styles={{
+              root: {
+                padding: `${theme.spacing.lg}`,
+                flexGrow: 1,
+              },
+            }}
+          >
+            {title}
+            <ScrollArea style={{ height: "calc(100vh- 20vh)", width: "100%" }}>
+              <Flex
+                direction={{ xs: "column", md: "row" }}
+                w={"100%"}
+                gap={{ xs: "xs", md: "md" }}
+                h={"100%"}
+                p={{ xs: "xs", md: "lg" }}
+                justify={"space-around"}
+              >
+                {subscriptionPlans.map((item, index) => (
+                  <RenderPriceItem
+                    key={index}
+                    item={item}
+                    subscriptionDetails={subscription}
+                    loading={fetchingSubsDetails}
+                    refetchSubscriptionDetails={(userId: string) =>
+                      fetchSubsDetails({ userId })
+                    }
+                  />
+                ))}
+              </Flex>
+            </ScrollArea>
+          </Flex>
+        </Elements>
+        <Footer />
+      </ScrollArea>
     </ThemeWrapper>
   );
 }
