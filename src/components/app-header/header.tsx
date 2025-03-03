@@ -1,6 +1,5 @@
 "use client";
 
-import { trpc } from "@/app/_trpc/client";
 import { useAppStore } from "@/store/app-store";
 import {
   SignedIn,
@@ -17,47 +16,36 @@ import {
   rem,
   Text,
   UnstyledButton,
+  useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconDownload, IconEye, IconTool } from "@tabler/icons-react";
-import Image from "next/image";
+import {
+  IconBrain,
+  IconDownload,
+  IconEye,
+  IconTool,
+} from "@tabler/icons-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { AlertModal } from "../modals/alert-modal";
+import { usePathname, useRouter } from "next/navigation";
 
 function AppHeader() {
   const { user } = useUser();
-  const {
-    mutateAsync: generateBillPortalLink,
-    isLoading: generatingLink,
-    isError: generateLinkError,
-  } = trpc.generateBillingPortalLink.useMutation();
   const subscriptionDetail = useAppStore((state) => state.subscription);
-  const [opened, { open, close }] = useDisclosure();
   const [burgerOpened, { toggle }] = useDisclosure(false);
   const router = useRouter();
+  const pathname = usePathname();
 
-  useEffect(() => {
-    if (generateLinkError || generatingLink) {
-      open();
-    }
-  }, [generatingLink, generateLinkError, open]);
+  const theme = useMantineTheme();
 
-  async function handleManageSubs() {
-    if (user) {
-      await generateBillPortalLink(
-        { userId: user.id },
-        {
-          onSuccess: (data) => {
-            window.location.href = data.sessionUrl;
-          },
-          onError: (err) => {
-            console.error(err);
-          },
-        }
-      );
-    }
+  function linkStyle(path: string) {
+    return {
+      fontWeight:
+        pathname === path || pathname.includes(path) ? "bold" : "lighter",
+      color:
+        pathname === path || pathname.includes(path)
+          ? "#4B0082"
+          : theme.colors.dark[5],
+    };
   }
 
   return (
@@ -71,18 +59,13 @@ function AppHeader() {
       <Flex
         direction={"row"}
         w={"100%"}
-        gap={"xs"}
+        gap={2}
         align={"center"}
         justify={"start"}
       >
-        <Image
-          src={"/images/content2Quiz.png"}
-          width={60}
-          height={60}
-          alt="app_logo"
-        />
+        <IconBrain size={30} color="#4B0082" />
         <Link href={"/"}>
-          <Text w={"100%"} c={"blue"} fw={700}>
+          <Text fw={700} c={"#4B0082"} size="xl">
             Content2Quiz
           </Text>
         </Link>
@@ -96,13 +79,22 @@ function AppHeader() {
       >
         <Group visibleFrom="md" gap={"sm"}>
           <SignedIn>
-            <Link href={"/chat"}>Dashboard</Link>
+            <Link href={"/chat"} style={linkStyle("/chat")}>
+              Dashboard
+            </Link>
             {user && user.id && (
-              <Link href={`/shared-exams/${user.id}`}>Shared exams</Link>
+              <Link
+                href={`/shared-exams/${user.id}`}
+                style={linkStyle("/shared-exams")}
+              >
+                Shared exams
+              </Link>
             )}
             <Menu shadow="md" width={200}>
               <Menu.Target>
-                <UnstyledButton>Subscription</UnstyledButton>
+                <UnstyledButton style={linkStyle("/pricing")}>
+                  Subscription
+                </UnstyledButton>
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Item
@@ -133,10 +125,16 @@ function AppHeader() {
               </Menu.Dropdown>
             </Menu>
           </SignedIn>
-          <Link href={"/about"}>About us</Link>
-          <Link href={"/support"}>Support</Link>
+          <Link href={"/about"} style={linkStyle("/about")}>
+            About us
+          </Link>
+          <Link href={"/support"} style={linkStyle("/support")}>
+            Support
+          </Link>
           <SignedOut>
-            <Link href={"/pricing"}>See plans</Link>
+            <Link href={"/pricing"} style={linkStyle("/pricing")}>
+              See plans
+            </Link>
           </SignedOut>
         </Group>
         <Burger
@@ -162,19 +160,6 @@ function AppHeader() {
           <SignInButton mode="modal" />
         </SignedOut>
       </Flex>
-      <AlertModal
-        title="Please wait"
-        close={close}
-        showCloseButton={generateLinkError}
-        message={
-          generatingLink
-            ? "Give us a moment..."
-            : generateLinkError
-            ? "Couldn't process the request"
-            : "Redirecting..."
-        }
-        open={opened}
-      />
     </Flex>
   );
 }

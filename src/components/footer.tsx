@@ -70,11 +70,8 @@ export default function Footer() {
           <Text size={"xl"} fw={"bolder"}>
             Contact
           </Text>
-          <Text size="md" c={"dimmed"} fw={"bold"}>
+          <Text size="md" c={"#F5F5F5"} fw={"bold"}>
             support@content2quiz.com
-          </Text>
-          <Text size="md" c={"dimmed"} fw={"bold"}>
-            1-800-QUIZ-PRO
           </Text>
         </Flex>
         <Flex direction={"column"} w={"100%"} gap={"md"}>

@@ -2,6 +2,7 @@
 import { ThemeWrapper } from "@/components/app-layout";
 import { HowItWorks } from "@/components/faq";
 import Footer from "@/components/footer";
+import { WatchVideo } from "@/components/watch-video";
 import { useClerk, useUser } from "@clerk/nextjs";
 import {
   Button,
@@ -11,20 +12,24 @@ import {
   ScrollArea,
   Text,
   Title,
-  useMantineTheme
+  useMantineTheme,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import {
   IconAdjustments,
   IconChartHistogram,
   IconFileIsr,
   IconShare,
 } from "@tabler/icons-react";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 
 export default function Home() {
   const { user } = useUser();
   const { openSignIn } = useClerk();
   const theme = useMantineTheme();
+  const [demoVideoOpenned, { open: openDemoVideo, close: closeDemoVideo }] =
+    useDisclosure();
 
   function handleSignIn() {
     if (!user) {
@@ -52,14 +57,16 @@ export default function Home() {
           direction={"column"}
           flex={1}
           w={"100%"}
-          pt={"10%"}
+          pt={"5%"}
           align={"center"}
         >
           <Flex
             direction={"row"}
             w={"100%"}
             maw={{ xs: "90%", md: "80%", xl: "80%" }}
-            gap={"md"}
+            gap={"lg"}
+            justify={"space-between"}
+            align={"center"}
           >
             <Group
               styles={{
@@ -81,9 +88,22 @@ export default function Home() {
                 <Button variant="filled" bg={"#4B0082"} onClick={handleSignIn}>
                   Get started free
                 </Button>
-                <Button variant="default">Watch demo</Button>
+                <Button variant="default" onClick={openDemoVideo}>
+                  Watch demo
+                </Button>
               </Flex>
             </Group>
+            <Image
+              src={"/images/app_banner.jpeg"}
+              width={600}
+              height={600}
+              alt="app-banner"
+              style={{
+                borderRadius: theme.radius.md,
+                boxShadow: theme.shadows.md,
+                filter: "drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25))",
+              }}
+            />
           </Flex>
           <Flex
             direction={"row"}
@@ -106,8 +126,18 @@ export default function Home() {
               gap={"md"}
             >
               <Card shadow="sm" padding="xl" maw={"25%"} radius={"md"}>
-                <Group>
-                  <IconFileIsr size={40} />
+                <Group
+                  styles={{
+                    root: {
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "start",
+                      alignItems: "start",
+                      gap: theme.spacing.sm,
+                    },
+                  }}
+                >
+                  <IconFileIsr size={40} color="#4B0082" />
                   <Text fw={"bold"} size="lg">
                     Effortless quiz creation
                   </Text>
@@ -119,8 +149,18 @@ export default function Home() {
                 </Text>
               </Card>
               <Card shadow="sm" padding="xl" maw={"25%"} radius={"md"}>
-                <Group>
-                  <IconAdjustments size={40} />
+                <Group
+                  styles={{
+                    root: {
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "start",
+                      alignItems: "start",
+                      gap: theme.spacing.sm,
+                    },
+                  }}
+                >
+                  <IconAdjustments size={40} color="#4B0082" />
                   <Text fw={"bold"} size="lg">
                     Customizable and interactive
                   </Text>
@@ -132,8 +172,18 @@ export default function Home() {
                 </Text>
               </Card>
               <Card shadow="sm" padding="xl" maw={"25%"} radius={"md"}>
-                <Group>
-                  <IconChartHistogram size={40} />
+                <Group
+                  styles={{
+                    root: {
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "start",
+                      alignItems: "start",
+                      gap: theme.spacing.sm,
+                    },
+                  }}
+                >
+                  <IconChartHistogram size={40} color="#4B0082" />
                   <Text fw={"bold"} size="lg">
                     Data driven insights
                   </Text>
@@ -145,10 +195,20 @@ export default function Home() {
                 </Text>
               </Card>
               <Card shadow="sm" padding="xl" maw={"25%"} radius={"md"}>
-                <Group>
-                  <IconShare size={40} />
+                <Group
+                  styles={{
+                    root: {
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "start",
+                      alignItems: "start",
+                      gap: theme.spacing.sm,
+                    },
+                  }}
+                >
+                  <IconShare size={40} color="#4B0082" />
                   <Text fw={"bold"} size="lg">
-                    Effortless quiz creation
+                    Seemless integration
                   </Text>
                 </Group>
 
@@ -210,6 +270,7 @@ export default function Home() {
           </Flex>
           <Footer />
         </Flex>
+        <WatchVideo open={demoVideoOpenned} close={closeDemoVideo} />
       </ScrollArea>
     </ThemeWrapper>
   );
