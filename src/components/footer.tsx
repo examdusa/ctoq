@@ -29,12 +29,17 @@ export default function Footer() {
         maw={{ xs: "90%", md: "80%", xl: "80%" }}
         align={"start"}
         justify={"space-between"}
+        styles={{
+          root: {
+            color: "whitesmoke"
+          }
+        }}
       >
         <Flex direction={"column"} w={"100%"} gap={"md"}>
           <Flex
             direction={"row"}
             w={"auto"}
-            gap={"md"}
+            gap={3}
             align={"start"}
             h={"100%"}
           >

@@ -151,7 +151,7 @@ export default function Home() {
                   </Text>
                 </Group>
 
-                <Text mt="xs" c="dimmed" size="sm">
+                <Text mt="xs" size="sm">
                   Paste your content and let our AI extract key points to create
                   quiz questions instantly.
                 </Text>
@@ -179,7 +179,7 @@ export default function Home() {
                   </Text>
                 </Group>
 
-                <Text mt="xs" c="dimmed" size="sm">
+                <Text mt="xs" size="sm">
                   Tailor each quiz with your own style, edit questions, add
                   images or videos and choose from multiple formats.
                 </Text>
@@ -207,7 +207,7 @@ export default function Home() {
                   </Text>
                 </Group>
 
-                <Text mt="xs" c="dimmed" size="sm">
+                <Text mt="xs" size="sm">
                   Access performance analytics to see how your quizzes drive
                   engagement and learning outcomes.
                 </Text>
@@ -235,7 +235,7 @@ export default function Home() {
                   </Text>
                 </Group>
 
-                <Text mt="xs" c="dimmed" size="sm">
+                <Text mt="xs" size="sm">
                   Easily embed quizzes on your website, Learning management
                   system (LMS) or social media channels.
                 </Text>
@@ -257,8 +257,8 @@ export default function Home() {
             justify={"center"}
             styles={{
               root: {
-                background: "#6f00ff",
-                color: "white",
+                background: "#4B0082",
+                color: 'whitesmoke'
               },
             }}
           >

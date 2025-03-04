@@ -51,7 +51,7 @@ function HowItWorks() {
             Input your content
           </Text>
         </Flex>
-        <Text mt={"sm"} fw={"lighter"} c={"#868e96"} size="sm">
+        <Text mt={"sm"} fw={"lighter"} size="sm">
           Update any default parameter and simply type any keyword or copy/past
           any url or upload your pdf document (book, article).
         </Text>
@@ -80,7 +80,7 @@ function HowItWorks() {
             AI-Powered Output
           </Text>
         </Flex>
-        <Text mt={"sm"} fw={"lighter"} c={"#868e96"} size="sm">
+        <Text mt={"sm"} fw={"lighter"} size="sm">
           Based on your parameters AI will provide an output. It could be a
           question bank or it could be a guidance or document summary
         </Text>
@@ -109,7 +109,7 @@ function HowItWorks() {
             Customize
           </Text>
         </Flex>
-        <Text mt={"sm"} fw={"lighter"} c={"#868e96"} size="sm">
+        <Text mt={"sm"} fw={"lighter"} size="sm">
           Review the output. Fine tune your output based on your audience.
         </Text>
       </Paper>
@@ -137,7 +137,7 @@ function HowItWorks() {
             Publish and engage
           </Text>
         </Flex>
-        <Text mt={"sm"} fw={"lighter"} c={"#868e96"} size="sm">
+        <Text mt={"sm"} fw={"lighter"} size="sm">
           Create google form of the output (question bank of guidance). Share
           with intended audience. Track real time response and built in google
           analytics.
