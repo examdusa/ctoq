@@ -7,31 +7,31 @@ import { GenerateQuestionsPayload } from "@/utllities/apiFunctions";
 import { encodeFileToBase64 } from "@/utllities/helpers";
 import { useUser } from "@clerk/nextjs";
 import {
-    ActionIcon,
-    Button,
-    Card,
-    FileInput,
-    Flex,
-    Grid,
-    NumberInput,
-    Popover,
-    rem,
-    Select,
-    Text,
-    Textarea,
-    Tooltip,
-    UnstyledButton,
-    useMantineColorScheme,
-    useMantineTheme,
+  ActionIcon,
+  Button,
+  Card,
+  FileInput,
+  Flex,
+  Grid,
+  NumberInput,
+  Popover,
+  rem,
+  Select,
+  Text,
+  Textarea,
+  Tooltip,
+  UnstyledButton,
+  useMantineColorScheme,
+  useMantineTheme,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import {
-    IconAdjustments,
-    IconFile3d,
-    IconInfoCircle,
-    IconX
+  IconAdjustments,
+  IconFile3d,
+  IconInfoCircle,
+  IconX,
 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { z } from "zod";
@@ -409,7 +409,7 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
             className="w-full"
           >
             <Grid gutter={"xs"}>
-              <Grid.Col span={{ xs: 12, md: 6 }}>
+              <Grid.Col span={6}>
                 <Select
                   label="Content Type"
                   placeholder="Pick a type"
@@ -433,7 +433,7 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
                   ]}
                 />
               </Grid.Col>
-              <Grid.Col span={{ xs: 12, md: 6 }}>
+              <Grid.Col span={6}>
                 <Select
                   label="Output Type"
                   placeholder="Pick an output type"
@@ -573,206 +573,208 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
                   </ActionIcon>
                 </Popover.Target>
                 <Popover.Dropdown>
-                  {form.values.outputType === "question" && (
-                    <Grid.Col span={{ xs: 12, md: 6 }}>
-                      <Select
-                        label="Question Type"
-                        placeholder="Pick a type"
-                        disabled={disableFields}
-                        data={[
-                          { label: "Multiple Choice", value: "mcq" },
-                          { label: "Multiple Similar", value: "mcq_similar" },
-                          { label: "Fill blanks", value: "fill_blank" },
-                          { label: "True False", value: "true_false" },
-                          { label: "Short Answers", value: "open_ended" },
-                        ]}
-                        {...form.getInputProps("qType")}
-                      />
-                    </Grid.Col>
-                  )}
-                  {form.values.outputType === "question" && (
-                    <Grid.Col span={12}>
-                      <Select
-                        label="Difficulty"
-                        styles={{
-                          label: {
-                            fontSize: theme.fontSizes.sm,
-                          },
-                        }}
-                        disabled={disableFields}
-                        placeholder="Pick a difficulty level"
-                        data={[
-                          { label: "Easy", value: "easy" },
-                          { label: "Medium", value: "medium" },
-                          { label: "Hard", value: "hard" },
-                        ]}
-                        {...form.getInputProps("difficulty")}
-                      />
-                    </Grid.Col>
-                  )}
-                  {form.values.outputType === "question" && (
-                    <Grid.Col span={12}>
-                      <NumberInput
-                        label="# of Questions"
-                        disabled={disableFields}
-                        placeholder="eg: 10"
-                        {...form.getInputProps("qCount")}
-                        min={1}
-                        max={
-                          planDetails
-                            ? planDetails.metadata.planName === "Integrated"
-                              ? 50
-                              : 10
-                            : 10
-                        }
-                      />
-                    </Grid.Col>
-                  )}
-                  {form.values.outputType !== "question" &&
-                    contentType === "Resume" && (
-                      <Grid.Col span={{ xs: 12, md: 6 }}>
-                        <DatePickerInput
-                          label="Pick DOB"
-                          placeholder="Pick DOB"
-                          {...form.getInputProps("bDay")}
-                          defaultDate={new Date()}
-                          valueFormat="MM-DD-YYYY"
+                  <Grid>
+                    {form.values.outputType === "question" && (
+                      <Grid.Col span={6}>
+                        <Select
+                          label="Question Type"
+                          placeholder="Pick a type"
+                          disabled={disableFields}
+                          data={[
+                            { label: "Multiple Choice", value: "mcq" },
+                            { label: "Multiple Similar", value: "mcq_similar" },
+                            { label: "Fill blanks", value: "fill_blank" },
+                            { label: "True False", value: "true_false" },
+                            { label: "Short Answers", value: "open_ended" },
+                          ]}
+                          {...form.getInputProps("qType")}
                         />
                       </Grid.Col>
                     )}
-                  {contentType === "Resume" && (
-                    <Grid.Col>
-                      <FileInput
-                        label="Resume file"
-                        multiple={false}
-                        disabled={form.values.resumeUrl ? true : false}
-                        placeholder="Click to select file"
-                        leftSection={
-                          <IconFile3d
-                            style={{ width: rem(18), height: rem(18) }}
-                            stroke={1.5}
-                          />
-                        }
-                        rightSection={
-                          form.values.resumeFile && (
-                            <Tooltip label="Delete file">
-                              <UnstyledButton
-                                onClick={(event) => {
-                                  form.setFieldValue("resumeFile", null);
-                                }}
-                              >
-                                <IconX
-                                  color="red"
-                                  style={{
-                                    width: rem(18),
-                                    height: rem(18),
-                                    cursor: "pointer",
-                                  }}
-                                />
-                              </UnstyledButton>
-                            </Tooltip>
-                          )
-                        }
-                        styles={{
-                          input: {
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            width: 300,
-                          },
-                        }}
-                        leftSectionPointerEvents="none"
-                        {...form.getInputProps("resumeFile")}
-                        onChange={(file) => {
-                          if (file) {
-                            form.setFieldValue("resumeFile", file);
-                          }
-                        }}
-                      />
-                    </Grid.Col>
-                  )}
-                  {contentType === "Courses" && (
-                    <Grid.Col>
-                      <FileInput
-                        label="Course file"
-                        multiple={false}
-                        placeholder="Click to select file"
-                        leftSection={
-                          <IconFile3d
-                            style={{ width: rem(18), height: rem(18) }}
-                            stroke={1.5}
-                          />
-                        }
-                        styles={{
-                          input: {
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            width: 300,
-                          },
-                        }}
-                        rightSection={
-                          form.values.courseFile && (
-                            <Tooltip label="Delete file">
-                              <UnstyledButton
-                                onClick={(event) => {
-                                  form.setFieldValue("courseFile", null);
-                                }}
-                              >
-                                <IconX
-                                  color="red"
-                                  style={{
-                                    width: rem(18),
-                                    height: rem(18),
-                                    cursor: "pointer",
-                                  }}
-                                />
-                              </UnstyledButton>
-                            </Tooltip>
-                          )
-                        }
-                        leftSectionPointerEvents="none"
-                        {...form.getInputProps("courseFile")}
-                        onChange={(file) => {
-                          if (file) {
-                            form.setFieldValue("courseFile", file);
-                          }
-                        }}
-                      />
-                    </Grid.Col>
-                  )}
-                  {form.values.outputType !== "question" &&
-                    form.values.outputType !== "summary" && (
-                      <>
-                        <Grid.Col span={12}>
-                          <Textarea
-                            label="Career Goal"
-                            placeholder="Write your career goals"
-                            disabled={disableFields}
-                            rows={2}
-                            {...form.getInputProps("careerGoal")}
-                          />
-                        </Grid.Col>
-                        <Grid.Col span={12}>
-                          <Textarea
-                            label="Geography"
-                            placeholder=""
-                            disabled={disableFields}
-                            rows={2}
-                            {...form.getInputProps("geography")}
-                          />
-                        </Grid.Col>
-                      </>
+                    {form.values.outputType === "question" && (
+                      <Grid.Col span={6}>
+                        <Select
+                          label="Difficulty"
+                          styles={{
+                            label: {
+                              fontSize: theme.fontSizes.sm,
+                            },
+                          }}
+                          disabled={disableFields}
+                          placeholder="Pick a difficulty level"
+                          data={[
+                            { label: "Easy", value: "easy" },
+                            { label: "Medium", value: "medium" },
+                            { label: "Hard", value: "hard" },
+                          ]}
+                          {...form.getInputProps("difficulty")}
+                        />
+                      </Grid.Col>
                     )}
-                  <Grid.Col span={12}>
-                    <Textarea
-                      label="Instructions"
-                      placeholder="Write your instructions"
-                      disabled={disableFields}
-                      rows={2}
-                      {...form.getInputProps("instructions")}
-                    />
-                  </Grid.Col>
+                    {form.values.outputType === "question" && (
+                      <Grid.Col span={12}>
+                        <NumberInput
+                          label="# of Questions"
+                          disabled={disableFields}
+                          placeholder="eg: 10"
+                          {...form.getInputProps("qCount")}
+                          min={1}
+                          max={
+                            planDetails
+                              ? planDetails.metadata.planName === "Integrated"
+                                ? 50
+                                : 10
+                              : 10
+                          }
+                        />
+                      </Grid.Col>
+                    )}
+                    {form.values.outputType !== "question" &&
+                      contentType === "Resume" && (
+                        <Grid.Col span={{ xs: 12, md: 6 }}>
+                          <DatePickerInput
+                            label="Pick DOB"
+                            placeholder="Pick DOB"
+                            {...form.getInputProps("bDay")}
+                            defaultDate={new Date()}
+                            valueFormat="MM-DD-YYYY"
+                          />
+                        </Grid.Col>
+                      )}
+                    {contentType === "Resume" && (
+                      <Grid.Col>
+                        <FileInput
+                          label="Resume file"
+                          multiple={false}
+                          disabled={form.values.resumeUrl ? true : false}
+                          placeholder="Click to select file"
+                          leftSection={
+                            <IconFile3d
+                              style={{ width: rem(18), height: rem(18) }}
+                              stroke={1.5}
+                            />
+                          }
+                          rightSection={
+                            form.values.resumeFile && (
+                              <Tooltip label="Delete file">
+                                <UnstyledButton
+                                  onClick={(event) => {
+                                    form.setFieldValue("resumeFile", null);
+                                  }}
+                                >
+                                  <IconX
+                                    color="red"
+                                    style={{
+                                      width: rem(18),
+                                      height: rem(18),
+                                      cursor: "pointer",
+                                    }}
+                                  />
+                                </UnstyledButton>
+                              </Tooltip>
+                            )
+                          }
+                          styles={{
+                            input: {
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              width: 300,
+                            },
+                          }}
+                          leftSectionPointerEvents="none"
+                          {...form.getInputProps("resumeFile")}
+                          onChange={(file) => {
+                            if (file) {
+                              form.setFieldValue("resumeFile", file);
+                            }
+                          }}
+                        />
+                      </Grid.Col>
+                    )}
+                    {contentType === "Courses" && (
+                      <Grid.Col>
+                        <FileInput
+                          label="Course file"
+                          multiple={false}
+                          placeholder="Click to select file"
+                          leftSection={
+                            <IconFile3d
+                              style={{ width: rem(18), height: rem(18) }}
+                              stroke={1.5}
+                            />
+                          }
+                          styles={{
+                            input: {
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              width: 300,
+                            },
+                          }}
+                          rightSection={
+                            form.values.courseFile && (
+                              <Tooltip label="Delete file">
+                                <UnstyledButton
+                                  onClick={(event) => {
+                                    form.setFieldValue("courseFile", null);
+                                  }}
+                                >
+                                  <IconX
+                                    color="red"
+                                    style={{
+                                      width: rem(18),
+                                      height: rem(18),
+                                      cursor: "pointer",
+                                    }}
+                                  />
+                                </UnstyledButton>
+                              </Tooltip>
+                            )
+                          }
+                          leftSectionPointerEvents="none"
+                          {...form.getInputProps("courseFile")}
+                          onChange={(file) => {
+                            if (file) {
+                              form.setFieldValue("courseFile", file);
+                            }
+                          }}
+                        />
+                      </Grid.Col>
+                    )}
+                    {form.values.outputType !== "question" &&
+                      form.values.outputType !== "summary" && (
+                        <>
+                          <Grid.Col span={12}>
+                            <Textarea
+                              label="Career Goal"
+                              placeholder="Write your career goals"
+                              disabled={disableFields}
+                              rows={2}
+                              {...form.getInputProps("careerGoal")}
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={12}>
+                            <Textarea
+                              label="Geography"
+                              placeholder=""
+                              disabled={disableFields}
+                              rows={2}
+                              {...form.getInputProps("geography")}
+                            />
+                          </Grid.Col>
+                        </>
+                      )}
+                    <Grid.Col span={12}>
+                      <Textarea
+                        label="Instructions"
+                        placeholder="Write your instructions"
+                        disabled={disableFields}
+                        rows={2}
+                        {...form.getInputProps("instructions")}
+                      />
+                    </Grid.Col>
+                  </Grid>
                 </Popover.Dropdown>
               </Popover>
             </Grid>
