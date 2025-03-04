@@ -10,11 +10,14 @@ import {
 } from "@clerk/nextjs";
 import {
   Burger,
+  Drawer,
   Flex,
   Group,
   Menu,
   rem,
   Text,
+  Tree,
+  TreeNodeData,
   UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
@@ -27,6 +30,7 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useMemo } from "react";
 
 function AppHeader() {
   const { user } = useUser();
@@ -36,6 +40,61 @@ function AppHeader() {
   const pathname = usePathname();
 
   const theme = useMantineTheme();
+
+  const treeMenu = useMemo(() => {
+    let treeMenu: TreeNodeData[] = [];
+
+    if (!user) {
+    } else {
+      treeMenu = [
+        {
+          label: "Subscription",
+          value: "subscription",
+          children: [
+            {
+              label: (
+                <Menu.Item
+                  pl={0}
+                  leftSection={
+                    <IconEye style={{ width: rem(14), height: rem(14) }} />
+                  }
+                >
+                  <Link href={"/pricing"}>
+                    {user ? "Manage plans" : "See plans"}
+                  </Link>
+                </Menu.Item>
+              ),
+              value: "manageplans",
+            },
+            {
+              label: (
+                <Menu.Item
+                  pl={0}
+                  disabled={!subscriptionDetail}
+                  leftSection={
+                    <IconDownload style={{ width: rem(14), height: rem(14) }} />
+                  }
+                  onClick={() => {
+                    if (subscriptionDetail) {
+                      window.open(
+                        subscriptionDetail.invoicePdfUrl as string,
+                        "_blank"
+                      );
+                    }
+                  }}
+                >
+                  Invoice
+                </Menu.Item>
+              ),
+              value: "invoice",
+            },
+          ],
+        },
+      ];
+    }
+
+    return treeMenu;
+  }, [user, subscriptionDetail]);
 
   function linkStyle(path: string) {
     return {
@@ -136,6 +195,22 @@ function AppHeader() {
               See plans
             </Link>
           </SignedOut>
+          <SignedIn>
+            <UserButton>
+              <UserButton.MenuItems>
+                <UserButton.Action
+                  label="Edit profile"
+                  onClick={() => {
+                    router.push(`/profile/${user?.id}`);
+                  }}
+                  labelIcon={<IconTool width={rem(1)} height={rem(1)} />}
+                />
+              </UserButton.MenuItems>
+            </UserButton>
+          </SignedIn>
+          <SignedOut>
+            <SignInButton mode="modal" />
+          </SignedOut>
         </Group>
         <Burger
           opened={burgerOpened}
@@ -143,22 +218,72 @@ function AppHeader() {
           hiddenFrom="md"
           size="sm"
         />
-        <SignedIn>
-          <UserButton>
-            <UserButton.MenuItems>
-              <UserButton.Action
-                label="Edit profile"
-                onClick={() => {
-                  router.push(`/profile/${user?.id}`);
-                }}
-                labelIcon={<IconTool width={rem(1)} height={rem(1)} />}
-              />
-            </UserButton.MenuItems>
-          </UserButton>
-        </SignedIn>
-        <SignedOut>
-          <SignInButton mode="modal" />
-        </SignedOut>
+        <Drawer
+          opened={burgerOpened}
+          onClose={toggle}
+          title="Menu"
+          position="right"
+          size={"xs"}
+        >
+          <Group
+            gap={"sm"}
+            styles={{
+              root: {
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                alignItems: "start",
+              },
+            }}
+            px={"sm"}
+          >
+            <SignedIn>
+              <Link href={"/chat"} style={linkStyle("/chat")}>
+                Dashboard
+              </Link>
+              {user && user.id && (
+                <Link
+                  href={`/shared-exams/${user.id}`}
+                  style={linkStyle("/shared-exams")}
+                >
+                  Shared exams
+                </Link>
+              )}
+              <Menu shadow="md" width={200}>
+                <Menu.Target>
+                  <Tree data={treeMenu} style={linkStyle("/pricing")} />
+                </Menu.Target>
+              </Menu>
+            </SignedIn>
+            <Link href={"/about"} style={linkStyle("/about")}>
+              About us
+            </Link>
+            <Link href={"/support"} style={linkStyle("/support")}>
+              Support
+            </Link>
+            <SignedOut>
+              <Link href={"/pricing"} style={linkStyle("/pricing")}>
+                See plans
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <UserButton>
+                <UserButton.MenuItems>
+                  <UserButton.Action
+                    label="Edit profile"
+                    onClick={() => {
+                      router.push(`/profile/${user?.id}`);
+                    }}
+                    labelIcon={<IconTool width={rem(1)} height={rem(1)} />}
+                  />
+                </UserButton.MenuItems>
+              </UserButton>
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal" />
+            </SignedOut>
+          </Group>
+        </Drawer>
       </Flex>
     </Flex>
   );

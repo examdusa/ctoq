@@ -1,14 +1,12 @@
 import { ThemeWrapper } from "@/components/app-layout";
 import Footer from "@/components/footer";
 import {
-  Anchor,
   Card,
-  Center,
   Flex,
   Paper,
   ScrollArea,
   Text,
-  Title,
+  Title
 } from "@mantine/core";
 import Image from "next/image";
 
@@ -17,7 +15,6 @@ export default function AboutUs() {
     <ThemeWrapper>
       <ScrollArea
         h={"100%"}
-        offsetScrollbars
         styles={{
           viewport: {
             paddingTop: 0,
@@ -33,28 +30,31 @@ export default function AboutUs() {
           align={"center"}
           direction={"column"}
         >
-          <Flex direction={"column"} align={"center"} w={"100%"}>
-            <Title order={1}>Welcome to Content2Quiz</Title>
+          <Flex
+            direction={"column"}
+            align={"center"}
+            w={"100%"}
+            px={{ base: "xs", lg: 0 }}
+          >
+            <Title order={1} ta={"center"} lineClamp={2}>
+              Welcome to Content2Quiz
+            </Title>
             <Text mt={"xl"} size="lg">
               At Content2Quiz, we specialize in transforming any type of content
-              into engaging, interactive quizzes.
-            </Text>
-            <Text size="lg">
-              Whether you&apos;re a business looking to test knowledge, an
-              educator aiming to assess your student&apos;s understanding,
-            </Text>
-            <Text size="lg">
-              or a content creator wanting to enhance user engagement,
-              we&apos;ve got you covered.
+              into engaging, interactive quizzes. Whether you&apos;re a business
+              looking to test knowledge, an educator aiming to assess your
+              student&apos;s understanding, or a content creator wanting to
+              enhance user engagement, we&apos;ve got you covered.
             </Text>
           </Flex>
           <Card
             shadow="sm"
             w={"100%"}
-            maw={"50%"}
+            maw={{ base: "100%", lg: "50%" }}
             radius={"md"}
-            mih={"40%"}
+            mih={"35%"}
             my={40}
+            px={{ base: "xs", lg: 0 }}
             withBorder
             styles={{
               root: {
@@ -65,55 +65,65 @@ export default function AboutUs() {
               },
             }}
           >
-            <Center w={"100%"} h={"100%"} p={'xl'}>
+            <Flex
+              direction={"row"}
+              w={"100%"}
+              styles={{
+                root: {
+                  flexGrow: 1,
+                },
+              }}
+              justify={"center"}
+              align={"start"}
+              gap={"xl"}
+            >
               <Flex
-                direction={"row"}
+                direction={"column"}
                 w={"100%"}
-                styles={{
-                  root: {
-                    flexGrow: 1,
-                  },
-                }}
-                p={"md"}
-                justify={"center"}
-                align={"start"}
-                gap={"xl"}
+                h="100%"
+                gap={"lg"}
+                px={{ base: "xs", lg: 0 }}
               >
-                <Flex direction={"column"} w={"100%"} h="100%" gap={"lg"}>
-                  <Title order={3} w={"100%"}>
-                    Our Mission
-                  </Title>
-                  <Text size="md" fs={"italic"}>
-                    Our mission is simple: to make content more engaging and
-                    impactful through customized quizzes. We believe that
-                    quizzes are a powerful tool for reinforcing learning,
-                    boosting interactivity, and making content more enjoyable.
-                    With our easy-to-use platform, you can seamlessly convert
-                    any written content into quizzes, empowering you to engage
-                    your audience in a fun and meaningful way.
-                  </Text>
-                </Flex>
-                <Image
-                  src={"/images/mission.png"}
-                  alt="mission"
-                  width={350}
-                  height={350}
-                />
+                <Title order={3} w={"100%"}>
+                  Our Mission
+                </Title>
+                <Text size="md" fs={"italic"}>
+                  Our mission is simple: to make content more engaging and
+                  impactful through customized quizzes. We believe that quizzes
+                  are a powerful tool for reinforcing learning, boosting
+                  interactivity, and making content more enjoyable. With our
+                  easy-to-use platform, you can seamlessly convert any written
+                  content into quizzes, empowering you to engage your audience
+                  in a fun and meaningful way.
+                </Text>
               </Flex>
-            </Center>
+              <Image
+                src={"/images/mission.png"}
+                alt="mission"
+                width={350}
+                height={350}
+                className="hidden lg:block"
+              />
+            </Flex>
           </Card>
           <Flex
             direction={"column"}
             w={"100%"}
             gap={"lg"}
             mt={50}
-            maw={"50%"}
+            px={{ base: "xs", lg: 0 }}
+            maw={{ base: "100%", lg: "50%" }}
             align={"center"}
           >
             <Title order={2}>Why choose us?</Title>
-            <Flex direction={"row"} w={"100%"} h={"auto"} gap={"md"}>
+            <Flex
+              direction={{ base: "column", lg: "row" }}
+              w={"100%"}
+              h={"auto"}
+              gap={"md"}
+            >
               <Paper shadow="sm" radius="md" p="md" withBorder>
-                <Title order={3} lh={"sm"} c={"#f90"}>
+                <Title order={3} lh={"sm"} c={"#4B0082"}>
                   Easy & Efficient
                 </Title>
                 <Text mt={"md"}>
@@ -124,7 +134,7 @@ export default function AboutUs() {
                 </Text>
               </Paper>
               <Paper shadow="sm" radius="md" p="md" withBorder>
-                <Title order={3} lh={"sm"} c={"#f90"}>
+                <Title order={3} lh={"sm"} c={"#4B0082"}>
                   Customizable
                 </Title>
                 <Text mt={"md"}>
@@ -134,7 +144,7 @@ export default function AboutUs() {
                 </Text>
               </Paper>
               <Paper shadow="sm" radius="md" p="md" withBorder>
-                <Title order={3} lh={"sm"} c={"#f90"}>
+                <Title order={3} lh={"sm"} c={"#4B0082"}>
                   Engagement
                 </Title>
                 <Text mt={"md"}>
@@ -144,7 +154,7 @@ export default function AboutUs() {
                 </Text>
               </Paper>
               <Paper shadow="sm" radius="md" p="md" withBorder>
-                <Title order={3} lh={"sm"} c={"#f90"}>
+                <Title order={3} lh={"sm"} c={"#4B0082"}>
                   Versatile
                 </Title>
                 <Text mt={"md"}>
@@ -161,11 +171,12 @@ export default function AboutUs() {
             w={"100%"}
             gap={"lg"}
             mt={50}
-            maw={"50%"}
+            maw={{ base: "100%", lg: "50%" }}
+            px={{ base: "xs", lg: 0 }}
             align={"center"}
           >
             <Title order={2}>Our Vision</Title>
-            <Text ta={"center"}>
+            <Text>
               We envision a world where content and learning intersect
               seamlessly, where engagement is fostered through interactive
               experiences. Content2Quiz is dedicated to making this vision a
@@ -177,16 +188,16 @@ export default function AboutUs() {
             direction={"column"}
             w={"100%"}
             gap={"lg"}
-            mt={50}
-            maw={"50%"}
+            my={50}
+            maw={{ base: "100%", lg: "50%" }}
+            px={{ base: "xs", lg: 0 }}
             align={"center"}
           >
             <Title order={2}>Get in Touch</Title>
-            <Text ta={"center"}>
+            <Text>
               Have questions or need assistance? Our team is here to help! Reach
-              out to us at&nbsp;&nbsp;
-              <Anchor underline="never">sales@content2quiz.com</Anchor>
-              &nbsp;&nbsp;for support, inquiries, or feedback.
+              out to us at <span className="text-blue-500 font-semibold">sales@content2quiz.com</span> for
+              support, inquiries, or feedback.
             </Text>
           </Flex>
           <Footer />

@@ -22,9 +22,10 @@ export default function Footer() {
       align={"center"}
     >
       <Flex
-        direction={"row"}
+        direction={{ base: "column", lg: "row" }}
         w={"100%"}
         gap={"xl"}
+        px={{ base: "xs", lg: 0 }}
         maw={{ xs: "90%", md: "80%", xl: "80%" }}
         align={"start"}
         justify={"space-between"}

@@ -68,7 +68,7 @@ export default async function SharedExams({
         h={"100%"}
         w={"100%"}
         align={"center"}
-        p={"xl"}
+        p={"sm"}
       >
         <RenderSharedExamsList records={data} userId={id}/>
       </Flex>

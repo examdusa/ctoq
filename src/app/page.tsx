@@ -76,6 +76,7 @@ export default function Home() {
                   alignItems: "start",
                 },
               }}
+              px={{ base: "xs", lg: 0 }}
             >
               <Text fz={"h1"} fw={"bold"}>
                 Transform Your Content Into Engaing Quizzes
@@ -98,6 +99,7 @@ export default function Home() {
               width={600}
               height={600}
               alt="app-banner"
+              className="hidden md:block"
               style={{
                 borderRadius: theme.radius.md,
                 boxShadow: theme.shadows.md,
@@ -118,19 +120,25 @@ export default function Home() {
             }}
           >
             <Flex
-              direction={"row"}
+              direction={{ base: "column", lg: "row" }}
               py={"xl"}
               w={"100%"}
               maw={{ xs: "90%", md: "80%", xl: "80%" }}
               justify={"space-between"}
               gap={"md"}
+              px={{ base: "xs", lg: 0 }}
             >
-              <Card shadow="sm" padding="xl" maw={"25%"} radius={"md"}>
+              <Card
+                shadow="sm"
+                padding="xl"
+                maw={{ xs: "100%", lg: "25%" }}
+                radius={"md"}
+              >
                 <Group
                   styles={{
                     root: {
                       display: "flex",
-                      flexDirection: "column",
+                      flexDirection: "row",
                       justifyContent: "start",
                       alignItems: "start",
                       gap: theme.spacing.sm,
@@ -148,7 +156,12 @@ export default function Home() {
                   quiz questions instantly.
                 </Text>
               </Card>
-              <Card shadow="sm" padding="xl" maw={"25%"} radius={"md"}>
+              <Card
+                shadow="sm"
+                padding="xl"
+                maw={{ xs: "100%", lg: "25%" }}
+                radius={"md"}
+              >
                 <Group
                   styles={{
                     root: {
@@ -171,7 +184,12 @@ export default function Home() {
                   images or videos and choose from multiple formats.
                 </Text>
               </Card>
-              <Card shadow="sm" padding="xl" maw={"25%"} radius={"md"}>
+              <Card
+                shadow="sm"
+                padding="xl"
+                maw={{ xs: "100%", lg: "25%" }}
+                radius={"md"}
+              >
                 <Group
                   styles={{
                     root: {
@@ -194,7 +212,12 @@ export default function Home() {
                   engagement and learning outcomes.
                 </Text>
               </Card>
-              <Card shadow="sm" padding="xl" maw={"25%"} radius={"md"}>
+              <Card
+                shadow="sm"
+                padding="xl"
+                maw={{ xs: "100%", lg: "25%" }}
+                radius={"md"}
+              >
                 <Group
                   styles={{
                     root: {
@@ -227,6 +250,7 @@ export default function Home() {
             direction={"column"}
             w={"100%"}
             py={"8%"}
+            px={{ base: "xs", lg: 0 }}
             gap={"xl"}
             mt={"10%"}
             align={"center"}
@@ -245,7 +269,12 @@ export default function Home() {
               Join hundreds of educators, marketers, and trainers who are
               already boosting engagement with Content2Quiz
             </Text>
-            <Group justify="center" gap={"md"} align="center">
+            <Group
+              justify={theme.breakpoints.lg ? "center" : "start"}
+              gap={"md"}
+              align={"center"}
+              w={"100%"}
+            >
               <Button
                 variant="filled"
                 fullWidth={false}

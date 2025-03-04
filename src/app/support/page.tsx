@@ -6,7 +6,7 @@ export default function Support() {
   return (
     <ThemeWrapper>
       <ScrollArea
-        h={"100%"}
+        h={"100vh"}
         w={"100%"}
         offsetScrollbars
         my={"sm"}
@@ -26,6 +26,7 @@ export default function Support() {
               flexGrow: 1,
             },
           }}
+          h={'100%'}
           gap={"xl"}
         >
           <Title order={1}>Support</Title>

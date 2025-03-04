@@ -7,7 +7,13 @@ interface Props {
 
 function WatchVideo({ open, close }: Props) {
   return (
-    <Modal size={"xl"} title={undefined} opened={open} onClose={close} centered>
+    <Modal
+      size={"xl"}
+      title={"How it works"}
+      opened={open}
+      onClose={close}
+      centered
+    >
       <video
         src="/videos/intro.mp4"
         style={{

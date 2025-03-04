@@ -114,7 +114,6 @@ function RenderPriceItem({
 
   return (
     <Paper
-      shadow="md"
       p="xs"
       w={"100%"}
       maw={{ xs: "100%", md: "20%" }}
@@ -379,9 +378,9 @@ export default function Pricing() {
             {title}
             <ScrollArea style={{ height: "calc(100vh- 20vh)", width: "100%" }}>
               <Flex
-                direction={{ xs: "column", md: "row" }}
+                direction={{ base: "column", md: "row" }}
                 w={"100%"}
-                gap={{ xs: "xs", md: "md" }}
+                gap={{ base: "xs", md: "md" }}
                 h={"100%"}
                 p={{ xs: "xs", md: "lg" }}
                 justify={"space-around"}

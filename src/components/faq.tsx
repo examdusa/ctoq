@@ -12,7 +12,7 @@ import {
   IconCpu,
   IconFileIsr,
   IconPencil,
-  IconWorld
+  IconWorld,
 } from "@tabler/icons-react";
 
 function HowItWorks() {
@@ -20,16 +20,17 @@ function HowItWorks() {
 
   return (
     <Flex
-      direction={"row"}
+      direction={{ base: "column", lg: "row" }}
       w={"100%"}
       justify={"space-between"}
       gap={"md"}
       maw={{ xs: "90%", md: "80%", xl: "80%" }}
+      px={{ base: "xs", lg: 0 }}
     >
       <Paper
         radius="md"
         p="md"
-        maw={"25%"}
+        maw={{ base: "100%", lg: "25%" }}
         withBorder
         styles={{
           root: {
@@ -58,7 +59,7 @@ function HowItWorks() {
       <Paper
         radius="md"
         p="md"
-        maw={"25%"}
+        maw={{ base: "100%", lg: "25%" }}
         withBorder
         styles={{
           root: {
@@ -87,7 +88,7 @@ function HowItWorks() {
       <Paper
         radius="md"
         p="md"
-        maw={"25%"}
+        maw={{ base: "100%", lg: "25%" }}
         withBorder
         styles={{
           root: {
@@ -115,7 +116,7 @@ function HowItWorks() {
       <Paper
         radius="md"
         p="md"
-        maw={"25%"}
+        maw={{ base: "100%", lg: "25%" }}
         withBorder
         styles={{
           root: {
