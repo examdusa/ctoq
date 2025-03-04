@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeWrapper } from "@/components/app-layout";
+import { ChatContainerMobileView } from "@/components/chat-container-mobile-view";
 import { CriteriaForm } from "@/components/criteria-form";
 import DashboardLoader from "@/components/modals/loader/dashboard-loader";
 import { QBankCreateHistory } from "@/components/qbank-create-history";
@@ -28,10 +29,17 @@ export default function ChatContainer() {
   if (!userProfile || !institutesById) {
     return <DashboardLoader />;
   }
-  
+
   return (
     <ThemeWrapper>
-      <Flex direction={"row"} w={"100%"} h={"100%"} justify={"center"} gap={10}>
+      <Flex
+        direction={"row"}
+        w={"100%"}
+        h={"100%"}
+        justify={"center"}
+        gap={10}
+        visibleFrom="lg"
+      >
         <QBankCreateHistory />
         <QuestionContainer
           subscription={subscription ? subscription : undefined}
@@ -39,6 +47,7 @@ export default function ChatContainer() {
         />
         <CriteriaForm subscription={subscription ? subscription : undefined} />
       </Flex>
+      <ChatContainerMobileView />
     </ThemeWrapper>
   );
 }

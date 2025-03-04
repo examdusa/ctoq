@@ -1,6 +1,5 @@
 "use client";
 import { trpc } from "@/app/_trpc/client";
-import { PriceDetail } from "@/app/api/webhook/route";
 import { SelectSubscription } from "@/db/schema";
 import { useAppStore } from "@/store/app-store";
 import { GenerateQuestionsPayload } from "@/utllities/apiFunctions";
@@ -70,27 +69,6 @@ interface CriteriaFormProps {
   subscription: SelectSubscription | undefined;
   userId: string;
 }
-
-const priceList: PriceDetail = {
-  price_1QGKzxBpYrMQUMR178WJADpc: {
-    amount: 0,
-    label: "Starter",
-    queries: 4,
-    questionCount: 10,
-  },
-  price_1QGL1DBpYrMQUMR1brEMeTuH: {
-    amount: 4999,
-    label: "Premium",
-    queries: 200,
-    questionCount: 30,
-  },
-  price_1QSjqgBpYrMQUMR1erxLlufq: {
-    amount: 9999,
-    label: "Integrated",
-    queries: -1,
-    questionCount: -1,
-  },
-};
 
 function Form({ subscription, userId }: CriteriaFormProps) {
   const [contentType, setContentType] = useState<
