@@ -159,13 +159,16 @@ function UserProfileDetail({ userDetail }: Props) {
         </Text>
       </Flex>
       <Divider w={"90%"} my={"lg"} />
-      <Container w={"100%"} h={"100%"}>
-        <Tabs
-          variant="pills"
-          orientation="vertical"
-          defaultValue="basic"
-          h={"100%"}
-        >
+      <Container
+        w={"100%"}
+        h={"100%"}
+        styles={{
+          root: {
+            paddingInline: 0,
+          },
+        }}
+      >
+        <Tabs orientation="vertical" defaultValue="basic" h={"100%"}>
           <Tabs.List
             styles={{
               list: {
@@ -175,7 +178,7 @@ function UserProfileDetail({ userDetail }: Props) {
           >
             <Tabs.Tab value="basic">Basic settings</Tabs.Tab>
           </Tabs.List>
-          <Tabs.Panel value="basic">
+          <Tabs.Panel value="basic" px={{ base: 0, lg: "xs" }}>
             <form
               style={{
                 height: "100%",
@@ -184,8 +187,8 @@ function UserProfileDetail({ userDetail }: Props) {
               onSubmit={basicForm.onSubmit((values) => handleSubmit(values))}
             >
               <Paper withBorder radius={"md"} w={"100%"} h={"100%"} flex={1}>
-                <Grid p={"md"}>
-                  <Grid.Col span={6}>
+                <Grid p={{ base: 5, lg: "md" }}>
+                  <Grid.Col span={{ base: 12, lg: 6 }}>
                     <Select
                       placeholder="Select language"
                       label="Default language"
@@ -199,7 +202,7 @@ function UserProfileDetail({ userDetail }: Props) {
                       {...basicForm.getInputProps("language")}
                     />
                   </Grid.Col>
-                  <Grid.Col span={6}>
+                  <Grid.Col span={{ base: 12, lg: 6 }}>
                     <Select
                       label="User role"
                       placeholder="Select a role"
@@ -213,7 +216,7 @@ function UserProfileDetail({ userDetail }: Props) {
                       {...basicForm.getInputProps("role")}
                     />
                   </Grid.Col>
-                  <Grid.Col span={6}>
+                  <Grid.Col span={{ base: 12, lg: 6 }}>
                     <Select
                       data={instituteOptions}
                       label="Institute"
@@ -225,7 +228,7 @@ function UserProfileDetail({ userDetail }: Props) {
                 </Grid>
                 <Button
                   variant="filled"
-                  mx={"md"}
+                  mx={{ base: 3, lg: "md" }}
                   mt={"md"}
                   type="submit"
                   loading={updatingDetails}

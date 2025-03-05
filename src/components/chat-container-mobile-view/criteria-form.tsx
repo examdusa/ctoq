@@ -29,13 +29,14 @@ import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconAdjustments,
+  IconCaretDownFilled,
+  IconCaretUpFilled,
   IconFile3d,
   IconInfoCircle,
   IconX,
 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { ResetIcon, WithAnswersIcon } from "../icons";
 import { roles } from "../user-profile";
 
 interface Props {
@@ -94,6 +95,8 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
   const addToPendingJobs = useAppStore((state) => state.addToPendingJobs);
   const subscriptionPlans = useAppStore((state) => state.subscriptionPlans);
   const [attempt, setAttempt] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const planDetails = useMemo(() => {
     if (subscription) {
       const { planId } = subscription;
@@ -389,24 +392,40 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
 
   const { outputType } = form.values;
 
-  console.log(disableFields);
-
   return (
     <Card
       pos={"absolute"}
       radius={"md"}
       mx={"xs"}
-      mih={"30%"}
+      mih={isExpanded ? "30%" : "5%"}
       shadow="xl"
       withBorder
-      style={{ bottom: 0, right: 0, left: 0 }}
+      style={{
+        bottom: 0,
+        right: 0,
+        left: 0,
+        transition: "min-height 0.3s ease",
+      }}
       mb={"xs"}
     >
+      <ActionIcon
+        variant="outline"
+        radius="xl"
+        aria-label="Toggle Height"
+        pos={"absolute"}
+        top={0}
+        left={0}
+        m={3}
+        size={"sm"}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {isExpanded ? <IconCaretDownFilled /> : <IconCaretUpFilled />}
+      </ActionIcon>
       {user && isLoaded && isSignedIn && (
         <>
           <form
             onSubmit={form.onSubmit((values) => handleSubmit(values))}
-            className="w-full"
+            className={`w-full ${!isExpanded && "hidden"}`}
           >
             <Grid gutter={"xs"}>
               <Grid.Col span={6}>
@@ -529,20 +548,19 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
                   </Grid.Col>
                 </>
               )}
-              <Grid.Col span={12} mt={"xs"}>
+              <Grid.Col span={6} mt={"xs"}>
                 <Button
                   loading={isGenerating}
                   disabled={disableActionButton}
                   fullWidth
                   type="submit"
-                  leftSection={<WithAnswersIcon />}
                 >
                   {outputType === "question" && "Generate questions"}
                   {outputType === "guidance" && "Generate guidance"}
                   {outputType === "summary" && "Generate summary"}
                 </Button>
               </Grid.Col>
-              <Grid.Col span={12}>
+              <Grid.Col span={6} mt={"xs"}>
                 <Button
                   fullWidth
                   type="reset"
@@ -550,7 +568,6 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
                     form.reset();
                   }}
                   disabled={disableActionButton}
-                  leftSection={<ResetIcon />}
                 >
                   Reset
                 </Button>
@@ -558,8 +575,9 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
               <Popover width={"100%"} position="top" withArrow shadow="md">
                 <Popover.Target>
                   <ActionIcon
-                    variant="filled"
+                    variant="outline"
                     radius="xl"
+                    size={"sm"}
                     aria-label="Settings"
                     pos={"absolute"}
                     top={0}

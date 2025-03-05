@@ -543,7 +543,7 @@ function QuestionContainerMobilView({ subscription, questions }: Props) {
 
   return (
     <ScrollArea
-      style={{ height: "calc(70vh - 8vh)", width: "100%" }}
+      style={{ height: "calc(90vh - 8vh)", width: "100%" }}
       offsetScrollbars={"x"}
       my={"xs"}
       p={3}

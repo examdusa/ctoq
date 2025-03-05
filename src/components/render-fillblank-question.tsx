@@ -3,13 +3,13 @@ import { useAppStore } from "@/store/app-store";
 import { FillBlankQuestionSchema } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
+  Avatar,
   Badge,
-  Button,
   Flex,
   Group,
   Text,
   Tooltip,
-  useMantineTheme
+  useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
@@ -87,9 +87,9 @@ function RenderFillBlankQuestion({
         align={"start"}
         justify={"start"}
       >
-        <ActionIcon size={"sm"} variant="light">
+        <Avatar color="cyan" radius="xl" size={"sm"}>
           {index + 1}
-        </ActionIcon>
+        </Avatar>
         <Flex
           direction={"column"}
           h={"100%"}
@@ -101,12 +101,12 @@ function RenderFillBlankQuestion({
           }}
         >
           <Flex direction={"row"} w={"100%"} justify="space-between">
-            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]}>
+            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} size="sm">
               {question.question}
             </Text>
             <Group gap={"xs"}>
               <Tooltip label="Edit question">
-                <Button
+                <ActionIcon
                   variant="transparent"
                   size="xs"
                   onClick={(e) => {
@@ -115,10 +115,10 @@ function RenderFillBlankQuestion({
                   ml={"auto"}
                 >
                   <IconEdit />
-                </Button>
+                </ActionIcon>
               </Tooltip>
               <Tooltip label="Delete questions">
-                <Button
+                <ActionIcon
                   loading={deletingQuestion}
                   variant="transparent"
                   size="xs"
@@ -128,40 +128,10 @@ function RenderFillBlankQuestion({
                   ml={"auto"}
                 >
                   <IconTrash />
-                </Button>
+                </ActionIcon>
               </Tooltip>
             </Group>
           </Flex>
-          {/* <Flex
-            direction={"column"}
-            w={"auto"}
-            gap={3}
-            pl={"md"}
-            styles={{
-              root: {
-                flexGrow: 1,
-              },
-            }}
-          >
-            <List spacing="md" size="sm" center={true} mb={"sm"}>
-              {Object.entries(question.options).map(([key, value]) => {
-                return (
-                  <List.Item
-                    key={key}
-                    icon={
-                      <ThemeIcon color="blue" size={"sm"} radius="xl">
-                        {key}
-                      </ThemeIcon>
-                    }
-                  >
-                    <Text size="sm" lh={"xs"}>
-                      {value}
-                    </Text>
-                  </List.Item>
-                );
-              })}
-            </List>
-          </Flex> */}
           <Badge
             hidden={!!showAnswer}
             variant="outline"
@@ -188,4 +158,3 @@ function RenderFillBlankQuestion({
 }
 
 export { RenderFillBlankQuestion };
-

@@ -26,7 +26,16 @@ function RenderGuidanceOrSummaryResult({ record }: Props) {
           style={{ backgroundColor: "transparent", color: "black" }}
           p={"sm"}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{summary}</ReactMarkdown>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p: ({ node, ...props }) => (
+                <p style={{ fontSize: "16px" }} {...props} />
+              ),
+            }}
+          >
+            {summary}
+          </ReactMarkdown>
         </Box>
       </Flex>
     );
@@ -45,7 +54,16 @@ function RenderGuidanceOrSummaryResult({ record }: Props) {
         style={{ backgroundColor: "transparent", color: "black" }}
         p={"sm"}
       >
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{guidance}</ReactMarkdown>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            p: ({ node, ...props }) => (
+              <p style={{ fontSize: "16px" }} {...props} />
+            ),
+          }}
+        >
+          {guidance}
+        </ReactMarkdown>
       </Box>
     </Flex>
   );

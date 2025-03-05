@@ -3,8 +3,8 @@ import { useAppStore } from "@/store/app-store";
 import { MCQQuestionSchema } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
+  Avatar,
   Badge,
-  Button,
   Flex,
   Group,
   List,
@@ -90,13 +90,14 @@ function RenderMcqQuestion({
         align={"start"}
         justify={"start"}
       >
-        <ActionIcon size={"sm"} variant="light">
+        <Avatar color="cyan" radius="xl" size={"sm"}>
           {index + 1}
-        </ActionIcon>
+        </Avatar>
         <Flex
           direction={"column"}
           h={"100%"}
           gap={"sm"}
+          align={"start"}
           styles={{
             root: {
               flexGrow: 1,
@@ -109,34 +110,38 @@ function RenderMcqQuestion({
             justify="space-between"
             align={"start"}
           >
-            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} maw={"85%"}>
+            <Text
+              pl={"xs"}
+              size="sm"
+              fw={"bold"}
+              c={theme.colors.gray[7]}
+              maw={"85%"}
+            >
               {question.question}
             </Text>
-            <Group gap={"xs"}>
+            <Group gap={"xs"} justify="center">
               <Tooltip label="Edit question">
-                <Button
+                <ActionIcon
                   variant="transparent"
                   size="xs"
                   onClick={(e) => {
                     openEditModal();
                   }}
-                  ml={"auto"}
                 >
                   <IconEdit />
-                </Button>
+                </ActionIcon>
               </Tooltip>
               <Tooltip label="Delete questions">
-                <Button
+                <ActionIcon
                   loading={deletingQuestion}
                   variant="transparent"
                   size="xs"
                   onClick={(e) => {
                     deleteQuestionByIdx();
                   }}
-                  ml={"auto"}
                 >
                   <IconTrash />
-                </Button>
+                </ActionIcon>
               </Tooltip>
             </Group>
           </Flex>
@@ -157,12 +162,12 @@ function RenderMcqQuestion({
                   <List.Item
                     key={key}
                     icon={
-                      <ThemeIcon color="blue" size={"sm"} radius="xl">
+                      <ThemeIcon color="blue" size={"xs"} radius="xl">
                         {String.fromCharCode(65 + index)}
                       </ThemeIcon>
                     }
                   >
-                    <Text size="sm" lh={"xs"}>
+                    <Text size="xs" lh={"xs"}>
                       {value}
                     </Text>
                   </List.Item>
@@ -196,4 +201,3 @@ function RenderMcqQuestion({
 }
 
 export { RenderMcqQuestion };
-

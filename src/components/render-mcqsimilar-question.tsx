@@ -6,8 +6,8 @@ import {
 } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
+  Avatar,
   Badge,
-  Button,
   Flex,
   Group,
   List,
@@ -92,9 +92,9 @@ function RenderMcqSimilarQuestion({
         align={"start"}
         justify={"start"}
       >
-        <ActionIcon size={"sm"} variant="light">
+        <Avatar color="cyan" radius="xl" size={"sm"}>
           {index + 1}
-        </ActionIcon>
+        </Avatar>
         <Flex
           direction={"column"}
           h={"100%"}
@@ -106,12 +106,18 @@ function RenderMcqSimilarQuestion({
           }}
         >
           <Flex direction={"row"} w={"100%"} justify="space-between">
-            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} maw={"85%"}>
+            <Text
+              pl={"xs"}
+              fw={"bold"}
+              c={theme.colors.gray[7]}
+              maw={"85%"}
+              size="sm"
+            >
               {question.question}
             </Text>
             <Group gap={"xs"}>
               <Tooltip label="Edit question">
-                <Button
+                <ActionIcon
                   variant="transparent"
                   size="xs"
                   onClick={(e) => {
@@ -120,10 +126,10 @@ function RenderMcqSimilarQuestion({
                   ml={"auto"}
                 >
                   <IconEdit />
-                </Button>
+                </ActionIcon>
               </Tooltip>
               <Tooltip label="Delete questions">
-                <Button
+                <ActionIcon
                   loading={deletingQuestion}
                   variant="transparent"
                   size="xs"
@@ -133,7 +139,7 @@ function RenderMcqSimilarQuestion({
                   ml={"auto"}
                 >
                   <IconTrash />
-                </Button>
+                </ActionIcon>
               </Tooltip>
             </Group>
           </Flex>

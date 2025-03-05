@@ -4,12 +4,12 @@ import { OpenendedQuestionSchema } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
   Alert,
-  Button,
+  Avatar,
   Flex,
   Group,
   Text,
   Tooltip,
-  useMantineTheme,
+  useMantineTheme
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
@@ -95,9 +95,9 @@ function RenderOpenEndedQuestion({
         align={"start"}
         justify={"start"}
       >
-        <ActionIcon size={"sm"} variant="light">
+        <Avatar color="cyan" radius="xl" size={"sm"}>
           {index + 1}
-        </ActionIcon>
+        </Avatar>
         <Flex
           direction={"column"}
           h={"100%"}
@@ -109,12 +109,12 @@ function RenderOpenEndedQuestion({
           }}
         >
           <Flex direction={"row"} w={"100%"} justify="space-between">
-            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]}>
+            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} size="sm">
               {question.question}
             </Text>
             <Group gap={"xs"}>
               <Tooltip label="Edit question">
-                <Button
+                <ActionIcon
                   variant="transparent"
                   size="xs"
                   onClick={(e) => {
@@ -123,10 +123,10 @@ function RenderOpenEndedQuestion({
                   ml={"auto"}
                 >
                   <IconEdit />
-                </Button>
+                </ActionIcon>
               </Tooltip>
               <Tooltip label="Delete questions">
-                <Button
+                <ActionIcon
                   loading={deletingQuestion}
                   variant="transparent"
                   size="xs"
@@ -136,7 +136,7 @@ function RenderOpenEndedQuestion({
                   ml={"auto"}
                 >
                   <IconTrash />
-                </Button>
+                </ActionIcon>
               </Tooltip>
             </Group>
           </Flex>
@@ -168,4 +168,3 @@ function RenderOpenEndedQuestion({
 }
 
 export { RenderOpenEndedQuestion };
-

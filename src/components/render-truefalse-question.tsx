@@ -3,8 +3,8 @@ import { useAppStore } from "@/store/app-store";
 import { TrueFalseQuestionScheam } from "@/utllities/zod-schemas-types";
 import {
   ActionIcon,
+  Avatar,
   Badge,
-  Button,
   Flex,
   Group,
   Text,
@@ -99,9 +99,9 @@ function RenderTrueFalseQuestion({
         align={"start"}
         justify={"start"}
       >
-        <ActionIcon size={"sm"} variant="light">
+        <Avatar color="cyan" radius="xl" size={"sm"}>
           {index + 1}
-        </ActionIcon>
+        </Avatar>
         <Flex
           direction={"column"}
           h={"100%"}
@@ -118,12 +118,12 @@ function RenderTrueFalseQuestion({
             justify="space-between"
             align={"flex-start"}
           >
-            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} maw={"85%"}>
+            <Text pl={"xs"} fw={"bold"} c={theme.colors.gray[7]} maw={"85%"} size="sm">
               {questionLabelElement}
             </Text>
             <Group gap={"xs"}>
               <Tooltip label="Edit question">
-                <Button
+                <ActionIcon
                   variant="transparent"
                   size="xs"
                   onClick={(e) => {
@@ -132,10 +132,10 @@ function RenderTrueFalseQuestion({
                   ml={"auto"}
                 >
                   <IconEdit />
-                </Button>
+                </ActionIcon>
               </Tooltip>
               <Tooltip label="Delete questions">
-                <Button
+                <ActionIcon
                   loading={deletingQuestion}
                   variant="transparent"
                   size="xs"
@@ -145,7 +145,7 @@ function RenderTrueFalseQuestion({
                   ml={"auto"}
                 >
                   <IconTrash />
-                </Button>
+                </ActionIcon>
               </Tooltip>
             </Group>
           </Flex>
@@ -177,4 +177,3 @@ function RenderTrueFalseQuestion({
 }
 
 export { RenderTrueFalseQuestion };
-
