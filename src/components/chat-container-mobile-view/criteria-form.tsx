@@ -405,12 +405,15 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
         right: 0,
         left: 0,
         transition: "min-height 0.3s ease",
+        background:
+          "linear-gradient(346deg, rgba(15,128,136,1) 36%, rgba(26,128,198,1) 83%)",
+        color: "whitesmoke",
       }}
       mb={"xs"}
     >
       <ActionIcon
         variant="outline"
-        radius="xl"
+        bd={0}
         aria-label="Toggle Height"
         pos={"absolute"}
         top={0}
@@ -419,7 +422,11 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
         size={"sm"}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        {isExpanded ? <IconCaretDownFilled /> : <IconCaretUpFilled />}
+        {isExpanded ? (
+          <IconCaretDownFilled color="white" />
+        ) : (
+          <IconCaretUpFilled color="white" />
+        )}
       </ActionIcon>
       {user && isLoaded && isSignedIn && (
         <>
@@ -440,6 +447,7 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
                       setContentType(
                         value as "Resume" | "Courses" | "Keywords"
                       );
+                      form.setFieldValue("outputType", "question");
                     }
                   }}
                   data={[
@@ -456,7 +464,7 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
                 <Select
                   label="Output Type"
                   placeholder="Pick an output type"
-                  disabled={disableFields}
+                  disabled={disableFields || contentType === "Keywords"}
                   data={[
                     { label: "Question Bank", value: "question" },
                     { label: "Guidance", value: "guidance" },
@@ -568,6 +576,8 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
                     form.reset();
                   }}
                   disabled={disableActionButton}
+                  variant="outline"
+                  bg={"white"}
                 >
                   Reset
                 </Button>
@@ -576,7 +586,7 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
                 <Popover.Target>
                   <ActionIcon
                     variant="outline"
-                    radius="xl"
+                    bd={0}
                     size={"sm"}
                     aria-label="Settings"
                     pos={"absolute"}
@@ -587,6 +597,7 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
                     <IconAdjustments
                       style={{ width: "70%", height: "70%" }}
                       stroke={1.5}
+                      color="white"
                     />
                   </ActionIcon>
                 </Popover.Target>

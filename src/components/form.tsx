@@ -402,6 +402,7 @@ function Form({ subscription, userId }: CriteriaFormProps) {
                 onChange={(value) => {
                   if (value) {
                     setContentType(value as "Resume" | "Courses" | "Keywords");
+                    form.setFieldValue("outputType", "question");
                   }
                 }}
                 data={[
@@ -415,7 +416,7 @@ function Form({ subscription, userId }: CriteriaFormProps) {
               <Select
                 label="Output Type"
                 placeholder="Pick an output type"
-                disabled={disableFields}
+                disabled={disableFields || contentType === "Keywords"}
                 data={[
                   { label: "Question Bank", value: "question" },
                   { label: "Guidance", value: "guidance" },
@@ -671,28 +672,29 @@ function Form({ subscription, userId }: CriteriaFormProps) {
                 </Grid.Col>
               </>
             )}
-            {form.values.outputType !== "question" && form.values.outputType !== "summary" && (
-              <>
-                <Grid.Col span={12}>
-                  <Textarea
-                    label="Career Goal"
-                    placeholder="Write your career goals"
-                    disabled={disableFields}
-                    rows={2}
-                    {...form.getInputProps("careerGoal")}
-                  />
-                </Grid.Col>
-                <Grid.Col span={12}>
-                  <Textarea
-                    label="Geography"
-                    placeholder=""
-                    disabled={disableFields}
-                    rows={2}
-                    {...form.getInputProps("geography")}
-                  />
-                </Grid.Col>
-              </>
-            )}
+            {form.values.outputType !== "question" &&
+              form.values.outputType !== "summary" && (
+                <>
+                  <Grid.Col span={12}>
+                    <Textarea
+                      label="Career Goal"
+                      placeholder="Write your career goals"
+                      disabled={disableFields}
+                      rows={2}
+                      {...form.getInputProps("careerGoal")}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={12}>
+                    <Textarea
+                      label="Geography"
+                      placeholder=""
+                      disabled={disableFields}
+                      rows={2}
+                      {...form.getInputProps("geography")}
+                    />
+                  </Grid.Col>
+                </>
+              )}
             <Grid.Col span={12}>
               <Textarea
                 label="Instructions"
@@ -702,7 +704,7 @@ function Form({ subscription, userId }: CriteriaFormProps) {
                 {...form.getInputProps("instructions")}
               />
             </Grid.Col>
-            <Grid.Col span={12}>
+            <Grid.Col span={{ base: 12, lg: 6 }}>
               <Button
                 loading={isGenerating}
                 disabled={disableActionButton}
@@ -715,7 +717,7 @@ function Form({ subscription, userId }: CriteriaFormProps) {
                 {outputType === "summary" && "Generate summary"}
               </Button>
             </Grid.Col>
-            <Grid.Col span={12}>
+            <Grid.Col span={{ base: 12, lg: 6 }}>
               <Button
                 fullWidth
                 type="reset"
