@@ -393,7 +393,7 @@ async function createGoogleDoc(payload: GoogleDocSchema) {
 async function getInstitutes(): Promise<Institutes> {
   try {
     const response = await fetch(
-      "https://examd.ai/canvaslms/api/v1/canvas-institute-details"
+      "https://autoproctor.com/canvaslms/api/v1/canvas-institute-details"
     );
     const jsonRes = await response.json();
 
