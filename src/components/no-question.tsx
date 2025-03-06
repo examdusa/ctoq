@@ -2,6 +2,7 @@
 
 import { useAppStore } from "@/store/app-store";
 import {
+  Avatar,
   Card,
   Flex,
   Skeleton,
@@ -9,6 +10,7 @@ import {
   Title,
   useMantineTheme,
 } from "@mantine/core";
+import { IconHistory } from "@tabler/icons-react";
 import Image from "next/image";
 import { useMemo } from "react";
 
@@ -26,8 +28,22 @@ function NoQuestion() {
 
   if (!renderQIdx && questionsAvailable) {
     return (
-      <Flex h={"100%"} w={"100%"} align={"center"} justify={"center"} direction={"column"}>
-        <Card shadow="sm" padding="lg" radius="md" withBorder w={"50%"}>
+      <Flex
+        align={"center"}
+        justify={"center"}
+        direction={"column"}
+        my={"auto"}
+        mx={"auto"}
+        w={"auto"}
+      >
+        <Card
+          shadow="sm"
+          padding="lg"
+          radius="md"
+          withBorder
+          w={"100%"}
+          h={"100%"}
+        >
           <Card.Section
             h={{ xs: 50, md: 80 }}
             mx={"sm"}
@@ -39,6 +55,7 @@ function NoQuestion() {
                 position: "relative",
               },
             }}
+            visibleFrom="lg"
           >
             <Skeleton height={30} radius="sm" width={"60%"} animate={false} />
             <Skeleton
@@ -68,9 +85,14 @@ function NoQuestion() {
               <path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z" />
             </svg>
           </Card.Section>
+          <Card.Section hiddenFrom="lg" mx={"auto"}>
+            <Avatar variant="filled" color={"blue"}>
+              <IconHistory />
+            </Avatar>
+          </Card.Section>
           <Text size="md" c="black" pt={"md"} ta={"center"}>
-            The left pane of the screen displays all previously generated
-            questions. Select one to view.
+            Use the icon located at the top left to see all the historical
+            generated question banks.
           </Text>
         </Card>
       </Flex>
@@ -102,7 +124,7 @@ function NoQuestion() {
               display: "flex",
               flexDirection: "column",
               width: "100%",
-              height: "auto",
+              height: "100%",
               alignItems: "center",
               gap: theme.spacing.sm,
             },
@@ -114,11 +136,15 @@ function NoQuestion() {
             height={150}
             alt="No history"
           />
-          <Title fw={300} order={2} styles={{
-            root: {
-              color: theme.colors.gray[7]
-            }
-          }}>
+          <Title
+            fw={300}
+            order={2}
+            styles={{
+              root: {
+                color: theme.colors.gray[7],
+              },
+            }}
+          >
             No records
           </Title>
         </Card>

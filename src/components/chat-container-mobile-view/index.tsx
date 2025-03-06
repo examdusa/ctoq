@@ -34,7 +34,7 @@ function ChatContainerMobileView() {
         pos={"absolute"}
         top={0}
         left={0}
-        m={"xs"}
+        m={3}
         onClick={toggle}
         styles={{
           root: {

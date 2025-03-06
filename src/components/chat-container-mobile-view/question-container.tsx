@@ -543,42 +543,46 @@ function QuestionContainerMobilView({ subscription, questions }: Props) {
 
   return (
     <ScrollArea
-      style={{ height: "calc(90vh - 8vh)", width: "100%" }}
       offsetScrollbars={"x"}
       my={"xs"}
+      w={"100%"}
+      h={"85vh"}
       p={3}
-      viewportRef={viewportRef}
+      display={"flex"}
       styles={{
-        viewport: {
-          height: "100%",
+        root: {
+          flexDirection: "column",
         },
       }}
+      flex={1}
     >
       <NoQuestion />
-      <Flex
-        direction={"column"}
-        w={"100%"}
-        h={"100%"}
-        ref={containerRef}
-        id="question-container"
-        styles={{
-          root: {
-            paddingInline: 0,
-          },
-        }}
-        align={"center"}
-        gap={10}
-      >
-        {user && user.primaryEmailAddressId && question && (
-          <RenderQuestionRecrod
-            record={question}
-            planName={subscription.planName ?? ""}
-            userEmail={user.primaryEmailAddress?.emailAddress ?? ""}
-            deleteQuestionBank={handleDeleteQBank}
-            deletingQBank={deletingQBank}
-          />
-        )}
-      </Flex>
+      {renderQIdx && (
+        <Flex
+          direction={"column"}
+          w={"100%"}
+          h={"100%"}
+          ref={containerRef}
+          id="question-container"
+          styles={{
+            root: {
+              paddingInline: 0,
+            },
+          }}
+          align={"center"}
+          gap={10}
+        >
+          {user && user.primaryEmailAddressId && question && (
+            <RenderQuestionRecrod
+              record={question}
+              planName={subscription.planName ?? ""}
+              userEmail={user.primaryEmailAddress?.emailAddress ?? ""}
+              deleteQuestionBank={handleDeleteQBank}
+              deletingQBank={deletingQBank}
+            />
+          )}
+        </Flex>
+      )}
     </ScrollArea>
   );
 }
