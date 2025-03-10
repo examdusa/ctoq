@@ -390,10 +390,10 @@ async function createGoogleDoc(payload: GoogleDocSchema) {
   }
 }
 
-async function getInstitutes(): Promise<Institutes> {
+async function getInstitutes(): Promise<Institutes | null> {
   try {
     const response = await fetch(
-      "https://autoproctor.com/canvaslms/api/v1/canvas-institute-details"
+      "https://augmentbyai.com/llmchat/api/v1/canvas-institute-details"
     );
     const jsonRes = await response.json();
 
@@ -405,7 +405,7 @@ async function getInstitutes(): Promise<Institutes> {
 
     throw error;
   } catch (err) {
-    throw err;
+    return null
   }
 }
 

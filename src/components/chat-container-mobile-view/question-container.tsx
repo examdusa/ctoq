@@ -400,8 +400,8 @@ function RenderQuestionRecrod({
           >
             Brought to you by ~{" "}
             {userProfile && institutesById
-              ? institutesById[userProfile.instituteName].instituteName
-              : null}
+              ? institutesById[userProfile.instituteName]?.instituteName
+              : 'Content2Quiz'}
           </Badge>
         </Flex>
         <Divider />

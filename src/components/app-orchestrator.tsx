@@ -39,6 +39,10 @@ function AppOrchestrator() {
   const { mutateAsync: getAllInstitute } = useMutation({
     mutationFn: getInstitutes,
     onSuccess: (data) => {
+      if (!data) {
+        setInstitutes(null);
+        return;
+      }
       const institutes = data.reduce<Record<string, Institute>>(
         (acc, institute) => {
           acc[institute.guid] = { ...institute };
@@ -53,7 +57,7 @@ function AppOrchestrator() {
     },
     onError: (err) => {
       console.log(JSON.stringify(err, null, 2));
-      setInstitutes({});
+      setInstitutes(null);
     },
   });
 
@@ -61,16 +65,13 @@ function AppOrchestrator() {
     if (user && isLoaded && isSignedIn && !userProfile && !institutesById) {
       const { id } = user;
       async function initData() {
-        const [
-          profileDetials,
-          questions,
-          subscriptionDetails,
-        ] = await Promise.all([
-          getProfileDetails({ userId: id }),
-          fetchUserQuestionBank({ userId: id }),
-          getSubscriptionDetails({ userId: id }),
-          getAllInstitute(),
-        ]);
+        const [profileDetials, questions, subscriptionDetails] =
+          await Promise.all([
+            getProfileDetails({ userId: id }),
+            fetchUserQuestionBank({ userId: id }),
+            getSubscriptionDetails({ userId: id }),
+            getAllInstitute(),
+          ]);
 
         const { code, data } = profileDetials;
 
@@ -106,28 +107,29 @@ function AppOrchestrator() {
 
       initData();
     } else {
-      (async() => {
-        const [subscriptionPlans,
-          products] = await Promise.all([fetchSubscriptionPlans(),
-          fetchProducts()])
-          if (
-            subscriptionPlans.data?.code === "SUCCESS" &&
-            products.data?.code === "SUCCESS"
-          ) {
-            const productsById = { ...products.data.data };
-            const plans: PlanDetails[] = [];
-            subscriptionPlans.data.data.data.forEach((item) => {
-              if (item.product in productsById) {
-                plans.push({
-                  ...productsById[item.product],
-                  amount: item.unit_amount,
-                });
-              }
-            });
-  
-            setSubscrptionPlans(plans);
-          }
-      })()
+      (async () => {
+        const [subscriptionPlans, products] = await Promise.all([
+          fetchSubscriptionPlans(),
+          fetchProducts(),
+        ]);
+        if (
+          subscriptionPlans.data?.code === "SUCCESS" &&
+          products.data?.code === "SUCCESS"
+        ) {
+          const productsById = { ...products.data.data };
+          const plans: PlanDetails[] = [];
+          subscriptionPlans.data.data.data.forEach((item) => {
+            if (item.product in productsById) {
+              plans.push({
+                ...productsById[item.product],
+                amount: item.unit_amount,
+              });
+            }
+          });
+
+          setSubscrptionPlans(plans);
+        }
+      })();
     }
 
     if (!isSignedIn) {

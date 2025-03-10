@@ -16,7 +16,6 @@ export default function ChatContainer() {
   const { user } = useUser();
 
   const userProfile = useAppStore((state) => state.userProfile);
-  const institutesById = useAppStore((state) => state.institutesById);
   const subscription = useAppStore((state) => state.subscription);
   const questions = useAppStore((state) => state.questions);
 
@@ -26,7 +25,7 @@ export default function ChatContainer() {
     }
   }, [user, subscription, userProfile]);
 
-  if (!userProfile || !institutesById) {
+  if (!userProfile) {
     return <DashboardLoader />;
   }
 
