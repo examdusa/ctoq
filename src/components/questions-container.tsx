@@ -532,11 +532,11 @@ function QuestionContainer({ subscription, questions }: Props) {
 
   return (
     <ScrollArea
-      // style={{ height: "calc(100vh - 8vh)", width: "100%" }}
-      h={"100vh"}
+      style={{ height: "calc(100vh - 8vh)", width: "100%" }}
+      // h={"100vh"}
       offsetScrollbars={"x"}
       my={"xs"}
-      w={'100%'}
+      // w={'100%'}
       p={3}
       // viewportRef={viewportRef}
     >
