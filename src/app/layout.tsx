@@ -42,7 +42,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-hidden`}
       >
         <Provider>
-          <MantineProvider defaultColorScheme="light" forceColorScheme="light">
+          <MantineProvider
+            defaultColorScheme="light"
+            forceColorScheme="light"
+          >
             <ClerkAuthWrapper>
               {children}
               <PendingJobsHandler />

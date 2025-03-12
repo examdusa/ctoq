@@ -22,12 +22,7 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import {
-  IconBrain,
-  IconDownload,
-  IconEye,
-  IconTool,
-} from "@tabler/icons-react";
+import { IconDownload, IconEye, IconTool } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -102,7 +97,7 @@ function AppHeader() {
         pathname === path || pathname.includes(path) ? "bold" : "lighter",
       color:
         pathname === path || pathname.includes(path)
-          ? "#4B0082"
+          ? theme.colors.blue[6]
           : theme.colors.dark[5],
     };
   }
@@ -122,9 +117,8 @@ function AppHeader() {
         align={"center"}
         justify={"start"}
       >
-        <IconBrain size={30} color="#4B0082" />
         <Link href={"/"}>
-          <Text fw={700} c={"#4B0082"} size="xl">
+          <Text fw={700} c={theme.colors.blue[6]} size="xl">
             Content2Quiz
           </Text>
         </Link>

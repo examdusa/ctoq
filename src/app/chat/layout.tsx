@@ -14,11 +14,5 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <Provider>
-      <MantineProvider defaultColorScheme="light" forceColorScheme="light">
-        {children}
-      </MantineProvider>
-    </Provider>
-  );
+  return <Provider>{children}</Provider>;
 }

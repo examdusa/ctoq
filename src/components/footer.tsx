@@ -1,6 +1,5 @@
 import { Divider, Flex, Group, Text } from "@mantine/core";
 import {
-  IconBrain,
   IconBrandFacebook,
   IconBrandInstagram,
   IconBrandLinkedin,
@@ -31,19 +30,12 @@ export default function Footer() {
         justify={"space-between"}
         styles={{
           root: {
-            color: "whitesmoke"
-          }
+            color: "whitesmoke",
+          },
         }}
       >
         <Flex direction={"column"} w={"100%"} gap={"md"}>
-          <Flex
-            direction={"row"}
-            w={"auto"}
-            gap={3}
-            align={"start"}
-            h={"100%"}
-          >
-            <IconBrain size={35} color="#6f00ff" />
+          <Flex direction={"row"} w={"auto"} gap={3} align={"start"} h={"100%"}>
             <Text size={"xl"} fw={"bolder"}>
               Content2Quiz
             </Text>

@@ -79,14 +79,14 @@ export default function Home() {
               px={{ base: "xs", lg: 0 }}
             >
               <Text fz={"h1"} fw={"bold"}>
-                Transform Your Content Into Engaing Quizzes
+                Transform Your Content Into Engaging Quizzes
               </Text>
               <Text fz={"md"}>
                 Convert your articles, blog posts and training materials into
                 interactive quizzes in seconds with our AI-powered platform.
               </Text>
               <Flex direction={"row"} justify={"start"} gap={"md"} mt={"md"}>
-                <Button variant="filled" bg={"#4B0082"} onClick={handleSignIn}>
+                <Button variant="filled" onClick={handleSignIn}>
                   Get started free
                 </Button>
                 <Button variant="default" onClick={openDemoVideo}>
@@ -138,14 +138,14 @@ export default function Home() {
                   styles={{
                     root: {
                       display: "flex",
-                      flexDirection: "row",
+                      flexDirection: "column",
                       justifyContent: "start",
                       alignItems: "start",
                       gap: theme.spacing.sm,
                     },
                   }}
                 >
-                  <IconFileIsr size={40} color="#4B0082" />
+                  <IconFileIsr size={40} color={theme.colors.blue[6]} />
                   <Text fw={"bold"} size="lg">
                     Effortless quiz creation
                   </Text>
@@ -173,7 +173,7 @@ export default function Home() {
                     },
                   }}
                 >
-                  <IconAdjustments size={40} color="#4B0082" />
+                  <IconAdjustments size={40} color={theme.colors.blue[6]} />
                   <Text fw={"bold"} size="lg">
                     Customizable and interactive
                   </Text>
@@ -201,7 +201,7 @@ export default function Home() {
                     },
                   }}
                 >
-                  <IconChartHistogram size={40} color="#4B0082" />
+                  <IconChartHistogram size={40} color={theme.colors.blue[6]} />
                   <Text fw={"bold"} size="lg">
                     Data driven insights
                   </Text>
@@ -229,7 +229,7 @@ export default function Home() {
                     },
                   }}
                 >
-                  <IconShare size={40} color="#4B0082" />
+                  <IconShare size={40} color={theme.colors.blue[6]} />
                   <Text fw={"bold"} size="lg">
                     Seemless integration
                   </Text>
@@ -258,7 +258,7 @@ export default function Home() {
             styles={{
               root: {
                 background: "#4B0082",
-                color: 'whitesmoke'
+                color: "whitesmoke",
               },
             }}
           >

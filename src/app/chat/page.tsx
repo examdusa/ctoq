@@ -8,7 +8,7 @@ import { QBankCreateHistory } from "@/components/qbank-create-history";
 import { QuestionContainer } from "@/components/questions-container";
 import { useAppStore } from "@/store/app-store";
 import { useUser } from "@clerk/nextjs";
-import { Flex } from "@mantine/core";
+import { Flex, MantineProvider } from "@mantine/core";
 import { redirect } from "next/navigation";
 import { useEffect } from "react";
 
@@ -30,23 +30,30 @@ export default function ChatContainer() {
   }
 
   return (
-    <ThemeWrapper>
-      <Flex
-        direction={"row"}
-        w={"100%"}
-        h={"100%"}
-        justify={"center"}
-        gap={10}
-        visibleFrom="lg"
-      >
-        <QBankCreateHistory />
-        <QuestionContainer
-          subscription={subscription ? subscription : undefined}
-          questions={questions}
-        />
-        <CriteriaForm subscription={subscription ? subscription : undefined} />
-      </Flex>
-      <ChatContainerMobileView />
-    </ThemeWrapper>
+    <MantineProvider
+      defaultColorScheme="light"
+      forceColorScheme="light"
+    >
+      <ThemeWrapper>
+        <Flex
+          direction={"row"}
+          w={"100%"}
+          h={"100%"}
+          justify={"center"}
+          gap={10}
+          visibleFrom="lg"
+        >
+          <QBankCreateHistory />
+          <QuestionContainer
+            subscription={subscription ? subscription : undefined}
+            questions={questions}
+          />
+          <CriteriaForm
+            subscription={subscription ? subscription : undefined}
+          />
+        </Flex>
+        <ChatContainerMobileView />
+      </ThemeWrapper>
+    </MantineProvider>
   );
 }
