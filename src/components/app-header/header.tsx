@@ -119,7 +119,7 @@ function AppHeader() {
       >
         <Link href={"/"}>
           <Text fw={700} c={theme.colors.blue[6]} size="xl">
-            Content2Quiz
+            Content To Quiz
           </Text>
         </Link>
       </Flex>

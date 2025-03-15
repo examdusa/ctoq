@@ -37,7 +37,7 @@ export default function Footer() {
         <Flex direction={"column"} w={"100%"} gap={"md"}>
           <Flex direction={"row"} w={"auto"} gap={3} align={"start"} h={"100%"}>
             <Text size={"xl"} fw={"bolder"}>
-              Content2Quiz
+              Content To Quiz
             </Text>
           </Flex>
           <Text size="sm" c={"white"}>

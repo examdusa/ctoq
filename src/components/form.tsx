@@ -375,6 +375,17 @@ function Form({ subscription, userId }: CriteriaFormProps) {
 
   const { outputType } = form.values;
 
+  const qCountMsg = useMemo(() => {
+    if (subscription) {
+      const { planName, planId } = subscription;
+      const plan = subscriptionPlans.filter(
+        (plan) => plan.default_price === planId
+      )[0];
+      return `${planName} plan has a limit of generating ${plan.metadata.questionCount} questions`;
+    }
+    return null;
+  }, [subscription]);
+
   return (
     <>
       <ScrollArea
@@ -465,17 +476,24 @@ function Form({ subscription, userId }: CriteriaFormProps) {
             {form.values.outputType === "question" && (
               <Grid.Col span={{ xs: 12, md: 6 }}>
                 <NumberInput
-                  label="# of Questions"
+                  label={
+                    <Flex direction="row" align="center" gap="xs">
+                      <Text fz={theme.fontSizes.sm}># of Questions</Text>
+                      <Tooltip label={qCountMsg} withArrow>
+                        <IconInfoCircle size={16} />
+                      </Tooltip>
+                    </Flex>
+                  }
                   disabled={disableFields}
                   placeholder="eg: 10"
                   {...form.getInputProps("qCount")}
                   min={1}
                   max={
                     planDetails
-                      ? planDetails.metadata.planName === "Integrated"
-                        ? 50
-                        : 10
-                      : 10
+                      ? parseInt(planDetails.metadata.questionCount) < 0
+                        ? undefined
+                        : parseInt(planDetails.metadata.questionCount)
+                      : undefined
                   }
                 />
               </Grid.Col>
