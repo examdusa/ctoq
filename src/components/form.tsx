@@ -384,7 +384,7 @@ function Form({ subscription, userId }: CriteriaFormProps) {
       return `${planName} plan has a limit of generating ${plan.metadata.questionCount} questions`;
     }
     return null;
-  }, [subscription]);
+  }, [subscription, subscriptionPlans]);
 
   return (
     <>
