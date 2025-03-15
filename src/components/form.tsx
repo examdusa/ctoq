@@ -381,7 +381,9 @@ function Form({ subscription, userId }: CriteriaFormProps) {
       const plan = subscriptionPlans.filter(
         (plan) => plan.default_price === planId
       )[0];
-      return `${planName} plan has a limit of generating ${plan.metadata.questionCount} questions`;
+      if (plan) {
+        return `${planName} plan has a limit of generating ${plan.metadata.questionCount} questions`;
+      }
     }
     return null;
   }, [subscription, subscriptionPlans]);
