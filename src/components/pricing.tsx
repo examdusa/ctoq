@@ -2,7 +2,6 @@
 
 import { trpc } from "@/app/_trpc/client";
 import { ThemeWrapper } from "@/components/app-layout";
-import Footer from "@/components/footer";
 import {
   CancelSubscription,
   UpgradeSubscription,
@@ -76,7 +75,7 @@ function RenderPriceItem({
       if (item.amount > subscriptionDetails.amountPaid) {
         return "Upgrade";
       } else {
-        return "Downgrade"
+        return "Downgrade";
       }
     }
     return "Subscribe";
@@ -122,7 +121,6 @@ function RenderPriceItem({
         root: {
           display: "flex",
           flexDirection: "column",
-          flexGrow: 1,
         },
       }}
       radius={"md"}
@@ -358,21 +356,20 @@ function Pricing() {
           align={"center"}
           className="rounded-md"
           gap={"md"}
+          p={{base: 0,  md: theme.spacing.lg }}
           styles={{
             root: {
-              padding: `${theme.spacing.lg}`,
               flexGrow: 1,
             },
           }}
         >
           {title}
-          <ScrollArea style={{ height: "calc(100vh- 20vh)", width: "100%" }}>
+          <ScrollArea style={{ width: "100%" }} h={{ base: "50%", md: "100%" }}>
             <Flex
-              direction={{ xs: "column", md: "row" }}
+              direction={{ base: "column", md: "row" }}
               w={"100%"}
               gap={"md"}
-              h={"100%"}
-              p={{ xs: "xs", md: "lg" }}
+              p={{ base: "xs", md: "lg" }}
               justify={"space-around"}
             >
               {subscriptionPlans.map((item, index) => (
@@ -390,7 +387,7 @@ function Pricing() {
           </ScrollArea>
         </Flex>
       </Elements>
-      <Footer />
+      {/* <Footer /> */}
     </ThemeWrapper>
   );
 }

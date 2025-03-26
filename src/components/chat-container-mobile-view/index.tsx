@@ -33,6 +33,7 @@ function ChatContainerMobileView() {
         aria-label="History"
         pos={"absolute"}
         top={0}
+        hidden={!subscription}
         left={0}
         m={3}
         onClick={toggle}

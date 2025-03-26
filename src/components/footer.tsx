@@ -46,7 +46,7 @@ export default function Footer() {
         </Flex>
         <Flex direction={"column"} w={"100%"} maw={"40%"} gap={"md"}>
           <Text size={"xl"} fw={"bolder"}>
-            Quiz Links
+            Quick Links
           </Text>
           <Group
             styles={{

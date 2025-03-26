@@ -409,7 +409,7 @@ function CriteriaForm({ subscription, userId }: CriteriaFormProps) {
           "linear-gradient(346deg, rgba(15,128,136,1) 36%, rgba(26,128,198,1) 83%)",
         color: "whitesmoke",
       }}
-      mb={"xs"}
+      className="hidden"
     >
       <ActionIcon
         variant="outline"

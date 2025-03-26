@@ -3,6 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { usePathname } from "next/navigation";
 import { ReactNode, useEffect } from "react";
 import { AppHeader } from "./app-header/header";
 
@@ -13,6 +14,7 @@ interface Props {
 function AppLayout({ children }: Props) {
   const [, { close, open }] = useDisclosure();
   const { isSignedIn } = useUser();
+  const path = usePathname();
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -54,6 +56,7 @@ function AppLayout({ children }: Props) {
             marginBottom: 0,
           },
         }}
+        pt={{ base: path.includes("/chat") ? "8%" : "15%", md: "3.5%" }}
       >
         {children}
       </AppShell.Main>

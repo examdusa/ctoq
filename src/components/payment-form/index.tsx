@@ -256,6 +256,7 @@ function PaymentForm({ open, close, plan }: Props) {
       radius={theme.radius.md}
       closeOnClickOutside={false}
       mih={"30pc"}
+      fullScreen={window.innerWidth <= 768} // Fullscreen on mobile screens
       styles={{
         body: {
           minHeight: "60vh",
@@ -267,18 +268,22 @@ function PaymentForm({ open, close, plan }: Props) {
     >
       {showForm && (
         <Flex direction={"column"} h={"100%"} w={"100%"} gap={"sm"} flex={1}>
-          <Flex direction={"row"} w={"100%"} gap={"sm"} flex={1}>
+          <Flex
+            direction={{ base: "column", md: "row" }}
+            w={"100%"}
+            gap={"sm"}
+            flex={1}
+          >
             {showDiscountMenu && (
               <Paper
                 bg={"#F0F8FF"}
-                w={"30%"}
+                w={{ base: "100%", md: "30%" }}
                 p={"xs"}
                 radius={theme.radius.md}
                 styles={{
                   root: {
                     display: "flex",
                     flexDirection: "column",
-                    width: "100%",
                     alignItems: "center",
                     gap: theme.spacing.sm,
                   },
@@ -288,10 +293,14 @@ function PaymentForm({ open, close, plan }: Props) {
                 <Title order={1} c={theme.colors.teal[6]}>
                   $ {finalAmount}
                 </Title>
-                <Divider my={"md"} orientation="horizontal" w={"80%"} />
+                <Divider
+                  my={{ base: "xs", md: "md" }}
+                  orientation="horizontal"
+                  w={"80%"}
+                />
                 <Container
                   fluid
-                  pt={"md"}
+                  pt={{ base: "xs", md: "md" }}
                   m={0}
                   w={"100%"}
                   styles={{
@@ -360,7 +369,12 @@ function PaymentForm({ open, close, plan }: Props) {
                     </Flex>
                   )}
                 </Container>
-                <Flex w={"100%"} justify={"space-between"} px={"xs"} mt={"md"}>
+                <Flex
+                  w={"100%"}
+                  justify={"space-between"}
+                  px={"xs"}
+                  mt={{ base: "xs", md: "md" }}
+                >
                   <Title order={5}>Final amount</Title>
                   <Title order={5}>$ {finalAmount}</Title>
                 </Flex>
@@ -368,10 +382,11 @@ function PaymentForm({ open, close, plan }: Props) {
             )}
             <Flex direction={"column"} gap={"md"} flex={1} h={"100%"}>
               <Flex
-                direction={"row"}
+                direction={{ base: "column", md: "row" }}
                 w={"100%"}
                 justify={"space-between"}
-                align={"center"}
+                gap={{ base: "xs", md: 0 }}
+                align={{ base: "start", md: "center" }}
               >
                 <Pill
                   size="lg"
@@ -390,7 +405,7 @@ function PaymentForm({ open, close, plan }: Props) {
                   radius={theme.radius.md}
                   fit="cover"
                   alt="cards-logo"
-                  ml={"auto"}
+                  ml={{ base: 0, md: "auto" }}
                   className="w-full h-10 max-w-xs"
                   styles={{
                     root: {

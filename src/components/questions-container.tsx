@@ -524,7 +524,7 @@ function QuestionContainer({ subscription, questions }: Props) {
 
   if (!subscription) {
     return (
-      <Flex direction={"column"} w={"100%"} my={"xs"} align={"center"} gap={10}>
+      <Flex direction={"column"} w={"100%"} my={{base: 0, md:"xs"}} align={"center"} gap={10}>
         <Pricing />
       </Flex>
     );
