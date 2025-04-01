@@ -9,7 +9,6 @@ import {
 import { PaymentForm } from "@/components/payment-form";
 import { SelectSubscription } from "@/db/schema";
 import { PlanDetails, useAppStore } from "@/store/app-store";
-import { createCheckoutSession } from "@/utllities/apiFunctions";
 import { useUser } from "@clerk/nextjs";
 import {
   Badge,
@@ -29,7 +28,6 @@ import { useDisclosure } from "@mantine/hooks";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { IconCircleCheck } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -84,26 +82,6 @@ function RenderPriceItem({
     }
     return false;
   }, [subscriptionDetails]);
-
-  const {
-    mutateAsync: creatPayIntent,
-    isLoading: creatingPayIntent,
-    isError: errorPayIntent,
-  } = useMutation({
-    mutationFn: async ({
-      userId,
-      email,
-      priceId,
-      prdtName,
-    }: {
-      userId: string;
-      email: string;
-      priceId: string;
-      prdtName: string;
-    }) => {
-      return createCheckoutSession(priceId, email, userId, prdtName);
-    },
-  });
 
   async function handleSubsCancel() {
     openCancellationModal();
@@ -219,9 +197,9 @@ function RenderPriceItem({
         <Button
           variant="filled"
           fullWidth
-          loading={creatingPayIntent || errorPayIntent || loading}
+          loading={loading}
           loaderProps={{
-            textRendering: creatingPayIntent ? "Processing..." : "Error",
+            textRendering: loading ? "Processing..." : "Error",
           }}
           mt={"auto"}
           disabled={
@@ -316,7 +294,6 @@ export default function Pricing() {
       const data = await fetchSubsDetails({ userId });
 
       if (data.length > 0) {
-        console.log("Setting updated subscription");
         useAppStore.setState({ subscription: { ...data[0] } });
       }
     },

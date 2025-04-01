@@ -15,18 +15,23 @@ import {
   ActionIcon,
   Avatar,
   Badge,
+  Button,
+  Card,
   Divider,
   Flex,
   Grid,
+  Group,
   Paper,
   ScrollArea,
   Text,
+  Title,
   Tooltip,
   UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
+  IconAlertCircle,
   IconEditCircle,
   IconEye,
   IconEyeClosed,
@@ -37,6 +42,7 @@ import {
 import dayjs from "dayjs";
 import tz from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { redirect } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AddFillBlankQuestion from "./modals/add-fillblank-question-modal";
 import AddMcqQuestion from "./modals/add-mcq-question-model";
@@ -47,7 +53,6 @@ import EditQuestionLabelModal from "./modals/edit-question-label";
 import { GoogleQuizModal } from "./modals/google-quiz-modal";
 import { ShareExam } from "./modals/share-exam";
 import { NoQuestion } from "./no-question";
-import { Pricing } from "./pricing";
 import { RenderFillBlankQuestion } from "./render-fillblank-question";
 import { RenderGuidanceOrSummaryResult } from "./render-guidance-summary-result";
 import { RenderMcqQuestion } from "./render-mcq-question";
@@ -525,7 +530,29 @@ function QuestionContainer({ subscription, questions }: Props) {
         align={"center"}
         gap={10}
       >
-        <Pricing />
+        <Card shadow="lg" padding="xl" radius="lg" withBorder>
+          <Group gap="xs" mb="md" align="center">
+            <IconAlertCircle size={20} color={"blue"} />
+            <Text fw={500}>Subscription Required</Text>
+          </Group>
+
+          <Title order={3} mb="sm">
+            Get More With a Subscription
+          </Title>
+          <Text size="sm" c="dimmed" mb="lg">
+            You currently don&apos;t have a subscription. Please subscribe to unlock
+            all features and use the app.
+          </Text>
+
+          <Button
+            variant="filled"
+            onClick={() => {
+              redirect("/pricing");
+            }}
+          >
+            View Subscription Options
+          </Button>
+        </Card>
       </Flex>
     );
   }
