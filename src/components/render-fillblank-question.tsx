@@ -117,7 +117,7 @@ function RenderFillBlankQuestion({
                   <IconEdit />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label="Delete questions">
+              <Tooltip label="Delete question">
                 <ActionIcon
                   loading={deletingQuestion}
                   variant="transparent"

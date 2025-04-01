@@ -65,7 +65,7 @@ function RenderPriceItem({
   ] = useDisclosure(false);
 
   const action = useMemo(() => {
-    if (subscriptionDetails && subscriptionDetails.amountPaid) {
+    if (subscriptionDetails && subscriptionDetails.amountPaid !== null) {
       if (item.amount > subscriptionDetails.amountPaid) {
         return "Upgrade";
       } else {
@@ -77,7 +77,10 @@ function RenderPriceItem({
 
   const isSubscribed = useMemo(() => {
     if (subscriptionDetails) {
-      return subscriptionDetails.planId ? true : false;
+      return subscriptionDetails.planId &&
+        subscriptionDetails.planName !== "Free"
+        ? true
+        : false;
     }
     return false;
   }, [subscriptionDetails]);
@@ -224,7 +227,9 @@ function RenderPriceItem({
           disabled={
             !isSignedIn ||
             (subscriptionDetails?.status === "requested_cancellation" &&
-              subscriptionDetails.planId === item.default_price)
+              subscriptionDetails.planId === item.default_price) ||
+            (subscriptionDetails?.planId === item.default_price &&
+              item.amount === 0)
               ? true
               : false
           }
@@ -298,7 +303,6 @@ export default function Pricing() {
   const theme = useMantineTheme();
   const pathName = usePathname();
   const { user } = useUser();
-  const setSubscription = useAppStore((state) => state.setSubscription);
   const subscription = useAppStore((state) => state.subscription);
   const subscriptionPlans = useAppStore((state) => state.subscriptionPlans);
   const {
@@ -309,16 +313,14 @@ export default function Pricing() {
 
   const fetchSubscriptionDetails = useCallback(
     async (userId: string) => {
-      await fetchSubsDetails(
-        { userId },
-        {
-          onSuccess: (data) => {
-            setSubscription(data[0]);
-          },
-        }
-      );
+      const data = await fetchSubsDetails({ userId });
+
+      if (data.length > 0) {
+        console.log("Setting updated subscription");
+        useAppStore.setState({ subscription: { ...data[0] } });
+      }
     },
-    [fetchSubsDetails, setSubscription]
+    [fetchSubsDetails]
   );
 
   const title = useMemo(() => {
@@ -392,7 +394,7 @@ export default function Pricing() {
                     subscriptionDetails={subscription}
                     loading={fetchingSubsDetails}
                     refetchSubscriptionDetails={(userId: string) =>
-                      fetchSubsDetails({ userId })
+                      fetchSubscriptionDetails(userId)
                     }
                   />
                 ))}

@@ -161,9 +161,8 @@ function QBankCreateHistory() {
                   key={key}
                   arrowSize={6}
                   multiline
-                  w={"100%"}
-                  maw={"30%"}
                   h={"auto"}
+                  position="top-start"
                   withArrow
                   transitionProps={{ duration: 200 }}
                 >

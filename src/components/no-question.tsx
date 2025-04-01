@@ -118,13 +118,12 @@ function NoQuestion() {
           padding="lg"
           radius="md"
           withBorder
-          w={"50%"}
+          maw={'40%'}
           styles={{
             root: {
               display: "flex",
               flexDirection: "column",
-              width: "100%",
-              height: "100%",
+              width: '100%',
               alignItems: "center",
               gap: theme.spacing.sm,
             },

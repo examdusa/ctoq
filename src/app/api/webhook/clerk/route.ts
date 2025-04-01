@@ -1,9 +1,16 @@
 import { db } from "@/db";
-import { userProfile } from "@/db/schema";
-import { DeletedObjectJSON, UserJSON, WebhookEvent } from "@clerk/nextjs/server";
+import { subscription, userProfile } from "@/db/schema";
+import {
+  DeletedObjectJSON,
+  UserJSON,
+  WebhookEvent,
+} from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
+import Stripe from "stripe";
 import { Webhook } from "svix";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 async function handleUserCreated(userData: UserJSON) {
   try {
@@ -13,9 +20,12 @@ async function handleUserCreated(userData: UserJSON) {
     // - Set up initial preferences
     // - Send welcome email
     console.log("User created:", userData);
-    const { id, first_name, last_name, email_addresses, external_accounts } = userData;
-    const googleAccount = external_accounts?.find(account => account.provider === 'google');
-    const googleId = googleAccount?.provider_user_id || '';
+    const { id, first_name, last_name, email_addresses, external_accounts } =
+      userData;
+    const googleAccount = external_accounts?.find(
+      (account) => account.provider === "google"
+    );
+    const googleId = googleAccount?.provider_user_id || "";
 
     await db.insert(userProfile).values({
       id: id,
@@ -27,7 +37,7 @@ async function handleUserCreated(userData: UserJSON) {
       language: "english",
       googleid: googleId,
       createdAt: new Date(),
-      instituteName: 'https://www.content2quiz.com'
+      instituteName: "https://www.content2quiz.com",
     });
   } catch (error) {
     console.error("Error handling user creation:", error);
@@ -43,11 +53,14 @@ async function handleUserUpdated(userData: UserJSON) {
     console.log("User updated:", userData);
     const { id, first_name, last_name, email_addresses } = userData;
 
-    await db.update(userProfile).set({
-      firstname: first_name || "",
-      lastname: last_name || "",
-      email: email_addresses[0].email_address,
-    }).where(eq(userProfile.id, id));
+    await db
+      .update(userProfile)
+      .set({
+        firstname: first_name || "",
+        lastname: last_name || "",
+        email: email_addresses[0].email_address,
+      })
+      .where(eq(userProfile.id, id));
   } catch (error) {
     console.error("Error handling user update:", error);
   }
@@ -56,15 +69,26 @@ async function handleUserUpdated(userData: UserJSON) {
 async function handleUserDeleted(userData: DeletedObjectJSON) {
   try {
     // Handle user deletion
-    // You may want to:
     // - Delete or deactivate user profile
     // - Clean up user data
     // - Cancel subscriptions
     console.log("User deleted:", userData);
     const { id } = userData;
 
-    if (typeof id === 'string') {
-      await db.delete(userProfile).where(eq(userProfile.id, id));
+    if (typeof id === "string") {
+      const records = await db
+        .select()
+        .from(subscription)
+        .where(eq(userProfile.id, id));
+
+      if (records.length > 0) {
+        const { id: subId } = records[0];
+        await Promise.all([
+          db.delete(userProfile).where(eq(userProfile.id, id)),
+          stripe.subscriptionItems.del(subId),
+        ]);
+        await stripe.subscriptions.cancel(subId);
+      }
     } else {
       console.error("Error: User ID is undefined or not a string");
     }

@@ -381,7 +381,12 @@ function Form({ subscription, userId }: CriteriaFormProps) {
       const plan = subscriptionPlans.filter(
         (plan) => plan.default_price === planId
       )[0];
+      console.log(plan);
       if (plan) {
+        if (Number(plan.metadata.questionCount) < 0) {
+          return "Generate unlimited questions";
+        }
+
         return `${planName} plan has a limit of generating ${plan.metadata.questionCount} questions`;
       }
     }
@@ -450,6 +455,7 @@ function Form({ subscription, userId }: CriteriaFormProps) {
                     { label: "Fill blanks", value: "fill_blank" },
                     { label: "True False", value: "true_false" },
                     { label: "Short Answers", value: "open_ended" },
+                    { label: "Mixed", value: "mixed" },
                   ]}
                   {...form.getInputProps("qType")}
                 />

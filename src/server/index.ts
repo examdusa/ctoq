@@ -1334,8 +1334,8 @@ export const appRouter = router({
         fetchCustomerByEmail(userEmail),
       ]);
       if (fsoResult.data && fceResult.data) {
-        const {id, current_period_end} = fsoResult.data;
-        const {id: customerId} = fceResult.data;
+        const { id, current_period_end } = fsoResult.data;
+        const { id: customerId } = fceResult.data;
         try {
           const payload: Stripe.SubscriptionScheduleCreateParams = {
             customer: customerId,
@@ -1349,7 +1349,7 @@ export const appRouter = router({
           await stripe.subscriptionSchedules.create({
             ...payload,
           });
-  
+
           return { code: "WILL_CHANGE", data: null } as const;
         } catch (err) {
           console.log("Downgrade error: ", err);
@@ -1357,6 +1357,49 @@ export const appRouter = router({
         }
       } else {
         return { code: "FAILED", data: null } as const;
+      }
+    }),
+  addFreeSubscription: procedure
+    .input(
+      z.object({
+        userId: z.string(),
+        amount: z.number(),
+        priceId: z.string(),
+        queries: z.number(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { amount, priceId, userId, queries } = input;
+      try {
+        const startDay = dayjs();
+        const endDay = startDay.add(1, "month");
+
+        const rows = await db
+          .insert(subscription)
+          .values({
+            id: `${priceId}_${userId}`,
+            userId,
+            amountDue: amount,
+            amountPaid: amount,
+            currency: "usd",
+            customerId: "",
+            planName: "Free",
+            startDate: startDay.toISOString(),
+            endDate: endDay.toISOString(),
+            queries,
+            status: "paid",
+            planId: priceId
+          })
+          .returning();
+
+        if (rows.length === 0) {
+          return { code: "FAILED", data: null } as const;
+        }
+
+        return { code: "SUCCESS", data: rows[0] } as const;
+      } catch (err) {
+        console.log("Add free plan error: ", JSON.stringify(err));
+        return { code: "ERROR", data: null } as const;
       }
     }),
 });

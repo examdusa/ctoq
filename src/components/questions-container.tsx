@@ -23,7 +23,7 @@ import {
   Text,
   Tooltip,
   UnstyledButton,
-  useMantineTheme
+  useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -37,7 +37,6 @@ import {
 import dayjs from "dayjs";
 import tz from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import { redirect } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AddFillBlankQuestion from "./modals/add-fillblank-question-modal";
 import AddMcqQuestion from "./modals/add-mcq-question-model";
@@ -197,11 +196,6 @@ function RenderQuestionRecrod({
     openGQuizModal();
   }
 
-  function handleRedirect() {
-    close();
-    redirect("/pricing");
-  }
-
   function printQuestion(jobId: string) {
     const printContent = document.getElementById(jobId);
 
@@ -304,7 +298,7 @@ function RenderQuestionRecrod({
           <Flex direction={"row"} w={"auto"} gap={"sm"} align={"center"}>
             <Tooltip label={"Share"}>
               <ActionIcon
-                variant="transparent"
+                variant="subtle"
                 onClick={toggle}
                 disabled={disableShareButton}
               >
@@ -524,7 +518,13 @@ function QuestionContainer({ subscription, questions }: Props) {
 
   if (!subscription) {
     return (
-      <Flex direction={"column"} w={"100%"} my={{base: 0, md:"xs"}} align={"center"} gap={10}>
+      <Flex
+        direction={"column"}
+        w={"100%"}
+        my={{ base: 0, md: "xs" }}
+        align={"center"}
+        gap={10}
+      >
         <Pricing />
       </Flex>
     );

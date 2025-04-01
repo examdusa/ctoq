@@ -36,7 +36,7 @@ async function handleInvoiceEvent(event: any) {
         invoiceId: id,
         invoicePdfUrl: invoice_pdf,
         status: status,
-        amountDue: amount_due,
+        amountDue: 0,
       })
       .where(eq(subscription.id, subscriptionId));
   } catch (err) {
@@ -111,6 +111,25 @@ async function updateSubscriptionCancellationDetail(customerId: string) {
   }
 }
 
+async function deleteFreePlanRecord(userId: string) {
+  try {
+    const rows = await db
+      .select()
+      .from(subscription)
+      .where(eq(subscription.userId, userId));
+
+    if (rows.length > 0) {
+      const { planName } = rows[0];
+
+      if (planName === "Free") {
+        await db.delete(subscription).where(eq(subscription.userId, userId));
+      }
+    }
+  } catch (err) {
+    console.log("Free plan rec del error: ", JSON.stringify(err));
+  }
+}
+
 async function handleSubscriptionCreateEvent(
   event: any,
   products: Stripe.Response<Stripe.ApiList<Stripe.Product>>
@@ -135,6 +154,7 @@ async function handleSubscriptionCreateEvent(
   }
 
   try {
+    await deleteFreePlanRecord(userId);
     const { rowsAffected } = await db.insert(subscription).values({
       id: subscriptionId,
       userId: userId,

@@ -1,7 +1,7 @@
 "use client";
 
 import { trpc } from "@/app/_trpc/client";
-import { PlanDetails } from "@/store/app-store";
+import { PlanDetails, useAppStore } from "@/store/app-store";
 import {
   CARD_ELEMENT_OPTIONS,
   stripeSupportedCountries,
@@ -40,6 +40,7 @@ import {
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import CardsLogo from "../../../public/images/cards_logo.png";
+import { FreePlanSubscription } from "./free-plan-subscription";
 import { ErrorAlert, SuccessAlert } from "./payment-alerts";
 
 interface Props {
@@ -207,7 +208,7 @@ function PaymentForm({ open, close, plan }: Props) {
       return;
     }
 
-    const { code: csCode, data: csData } = await createSubscription({
+    const { code: csCode } = await createSubscription({
       couponCode:
         couponData && couponData.data ? couponData.data.data[0].id : "",
       currency: currency,
@@ -244,6 +245,17 @@ function PaymentForm({ open, close, plan }: Props) {
     createSubscriptionError,
     createSubscriptionSuccess,
   ]);
+
+  if (plan.amount === 0 && user) {
+    return (
+      <FreePlanSubscription
+        open={open}
+        close={close}
+        plan={plan}
+        userId={user.id}
+      />
+    );
+  }
 
   return (
     <Modal
