@@ -20,22 +20,6 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: false,
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: `
-              default-src 'self'; 
-              connect-src 'self' https://*.supabase.co https://*.cloudflareinsights.com https://www.thelearn.online;
-            `.replace(/\s{2,}/g, ' ').trim(),
-          },
-        ],
-      },
-    ];
-  },
 };
 
 export default nextConfig;
