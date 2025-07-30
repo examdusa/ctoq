@@ -41,7 +41,7 @@ export const formObject = z
       "open_ended",
     ]),
     difficulty: z.enum(["easy", "medium", "hard"]),
-    qCount: z.number().min(0).max(50),
+    qCount: z.number().min(10).max(50, "You can select up to 50 questions per content or keywords."),
     keyword: z.string(),
     resumeUrl: z.string().url({ message: "Enter resume url" }),
     resumeFile: z.instanceof(File) as z.ZodType<File | null>,
@@ -120,8 +120,8 @@ function Form({ subscription, userId }: CriteriaFormProps) {
     },
     validate: {
       qCount: (value) => {
-        if (value < 0) {
-          return "Invalid count";
+        if (value < 0 || value > 50) {
+          return "You can select up to 50 questions per content or keywords.";
         }
         if (subscription) {
           if (planDetails) {
@@ -384,7 +384,7 @@ function Form({ subscription, userId }: CriteriaFormProps) {
       console.log(plan);
       if (plan) {
         if (Number(plan.metadata.questionCount) < 0) {
-          return "Generate unlimited questions";
+          return "You can select up to 50 questions per content or keywords.";
         }
 
         return `${planName} plan has a limit of generating ${plan.metadata.questionCount} questions`;
