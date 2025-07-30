@@ -121,12 +121,12 @@ function Form({ subscription, userId }: CriteriaFormProps) {
     validate: {
       qCount: (value) => {
         if (value < 0) {
-          return "Invalid email";
+          return "Invalid count";
         }
         if (subscription) {
           if (planDetails) {
-            const { questionCount, planName } = planDetails.metadata;
-            if (planName === "Integrated") {
+            const { questionCount } = planDetails.metadata;
+            if (planDetails.name === "Integrated" || planDetails.name === 'Premium') {
               return null;
             }
             if (value > Number(questionCount)) {
